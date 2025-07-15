@@ -6,13 +6,16 @@
 import './style.css'
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {GeolocateControl, Map as MapLibreMap, Marker, NavigationControl, Popup} from 'maplibre-gl';
-import {LayersControl} from "./LayerControl.ts";
+import {LayersControl} from "./controls/LayerControl.ts";
 import type {LayerInfo} from "./types/LayerInfo.ts";
 import type {TraccarPosition} from "./types/TraccarPosition.ts";
+import {SearchControl} from "./controls/SearchControl.ts";
+import {MapEntityProvider} from "./dataProviders/entities.ts";
+import type {MapEntity} from "./types/MapEntity.ts";
 
-const serverURL = ''; // Base URL for the MapTiler server
+const serverURL = 'http://localhost:8080'; // Base URL for the MapTiler server
 
-const defaultStyle = serverURL + '/vector/styles/maptiler-basic/style.json';
+const defaultStyle = serverURL + '/styles/maptiler-basic/style.json';
 const overlayURL = serverURL + '/overlays/available.json'
 
 let mapCenter: [number, number] = [0, 0]; // Default map center coordinates
@@ -21,10 +24,10 @@ let mapZoom: number = 2; // Default zoom level
 if (localStorage.getItem('mapCenter')) {
     mapCenter = JSON.parse(localStorage.getItem('mapCenter') || '[0, 0]');
 }
+
 if (localStorage.getItem('mapZoom')) {
     mapZoom = parseFloat(localStorage.getItem('mapZoom') || '13');
 }
-
 
 /**
  * Initialize the MapLibre map with basic configuration
@@ -45,7 +48,9 @@ map.addControl(
         positionOptions: {
             enableHighAccuracy: true  // Use high accuracy for better location precision
         },
-        trackUserLocation: true       // Continuously update user's location
+        trackUserLocation: true,       // Continuously update user's location
+        showAccuracyCircle: true, // Show accuracy circle around user's location
+        showUserLocation: true,  // Show user's location on the map
     })
 );
 
@@ -57,12 +62,29 @@ map.on('load', async () => {
      * Fetch available overlay layers from the server
      */
     map.on('moveend', () => {
-        console.log("Map moved to:", map.getCenter().toArray(), "Zoom level:", map.getZoom());
+        // console.log("Map moved to:", map.getCenter().toArray(), "Zoom level:", map.getZoom());
         localStorage.setItem('mapCenter', JSON.stringify(map.getCenter().toArray()));
         localStorage.setItem('mapZoom', map.getZoom().toString());
     });
 
     try {
+        let entities: MapEntity[] = await MapEntityProvider.getProductionEntities();
+        let searchControl = new SearchControl({entities: entities});
+        map.addControl(searchControl, 'top-left');
+    } catch (e) {
+        console.error(e);
+    }
+
+    try {
+
+        let preactiveOverlays: string[] = [];
+
+        if (localStorage.getItem('activeOverlays')) {
+            preactiveOverlays = JSON.parse(localStorage.getItem('activeOverlays') || '[]');
+        }
+
+        // console.log("Preactive overlays:", preactiveOverlays);
+
         let data = await fetch(overlayURL, {
             headers: {
                 'Authorization': 'Basic ' + btoa("nilswitt:l8keGMqB") // Use MapTiler API key for authentication
@@ -92,7 +114,9 @@ map.on('load', async () => {
             });
 
             // Initially hide the layer - will be toggled by the layer control
-            map.setLayoutProperty(layer.id + '-layer', 'visibility', 'none');
+            if (!preactiveOverlays.includes(layer.id)) {
+                map.setLayoutProperty(layer.id + '-layer', 'visibility', 'none');
+            }
         });
 
         /**
@@ -100,6 +124,9 @@ map.on('load', async () => {
          */
         let lc = new LayersControl(availableLayers);
         map.addControl(lc, 'top-left');  // Position in the top-left corner of the map
+
+
+        // Position in the top-right corner of the map
     } catch (e) {
         console.error("Error loading overlay layers:", e);
     }
@@ -115,14 +142,13 @@ map.on('load', async () => {
     });
     map.addControl(navControl, 'bottom-left');  // Position in the bottom-left corner
 
-
 });
 
 
 (async () => {
     const ws = new WebSocket('wss://map.nils-witt.de/traccar/');
     ws.onopen = () => {
-        console.log('WebSocket connection established');
+        // console.log('WebSocket connection established');
     };
     ws.onmessage = (event) => {
         try {
@@ -130,7 +156,6 @@ map.on('load', async () => {
             if (message.positions) {
                 console.log('Received positions:', message.positions);
                 for (const position of message.positions) {
-                    console.log(position.deviceId, position.latitude, position.longitude);
                     if (devices.has(position.deviceId)) {
                         // Update existing marker
                         const marker = devices.get(position.deviceId);
@@ -155,6 +180,6 @@ map.on('load', async () => {
         console.error('WebSocket error:', error);
     };
     ws.onclose = () => {
-        console.log('WebSocket connection closed');
+        // console.log('WebSocket connection closed');
     };
 })();

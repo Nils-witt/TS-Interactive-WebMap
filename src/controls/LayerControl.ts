@@ -1,5 +1,5 @@
 import {Evented, type IControl, Map as MapLibreMap} from "maplibre-gl";
-import type {LayerInfo} from "./types/LayerInfo.ts";
+import type {LayerInfo} from "../types/LayerInfo.ts";
 
 /**
  * A control for MapLibre GL JS that allows users to toggle the visibility of map layers.
@@ -30,6 +30,8 @@ export class LayersControl extends Evented implements IControl {
      * Map of layer IDs to their corresponding LayerInfo objects for quick lookup
      */
     private layers: Map<string, LayerInfo> = new Map();
+
+    private activeOverlays: Map<string, boolean> = new Map();
 
     /**
      * Creates a new LayersControl instance
@@ -93,6 +95,12 @@ export class LayersControl extends Evented implements IControl {
             if (layer && this.map) {
                 // Update the layer's visibility property in the map
                 this.map.setLayoutProperty(layer.id + "-layer", "visibility", visibility);
+                if (visibility === "visible") {
+                    this.activeOverlays.set(layer.id, true);
+                } else {
+                    this.activeOverlays.delete(layer.id);
+                }
+                localStorage.setItem("activeOverlays", JSON.stringify(Array.from(this.activeOverlays.keys())));
             }
         });
 
@@ -128,6 +136,11 @@ export class LayersControl extends Evented implements IControl {
 
                 // Set checkbox state to match layer visibility
                 input.checked = is_visible;
+                if (is_visible) {
+                    this.activeOverlays.set(layer.id, true);
+                } else {
+                    this.activeOverlays.delete(layer.id);
+                }
             }
         }
 
