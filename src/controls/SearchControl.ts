@@ -27,16 +27,33 @@ export class SearchControl extends Evented implements IControl {
      */
     private container: HTMLElement;
 
+    /**
+     * Array of MapEntity objects representing available entities
+     * @private
+     */
     private entities: MapEntity[];
 
     private searchInput: HTMLInputElement | undefined;
     private searchResultsTable: HTMLTableElement | undefined;
 
+    /**
+     * The maximum number of search results to display
+     * @private
+     */
     private resultLimit: number = 5;
 
+    /**
+     * Map of shown entity IDs to their corresponding Marker objects for quick lookup
+     * @private
+     */
     private shownMarkers: Map<string, Marker> = new Map<string, Marker>();
 
-    private isOpen: boolean = false; // Track if the control is currently open
+    /**
+     * Flag to track if the control is currently open
+     * @private
+     */
+    private isOpen: boolean = false;
+
     /**
      * Creates a new LayersControl instance
      *
@@ -72,7 +89,10 @@ export class SearchControl extends Evented implements IControl {
         }
     }
 
-
+    /**
+     * Shows a single entity on the map by creating a marker at its location.
+     * @param entity
+     */
     showSingleEntity(entity: MapEntity): void {
 
         if (!this.map) {
@@ -101,6 +121,10 @@ export class SearchControl extends Evented implements IControl {
 
     }
 
+    /**
+     * Creates a button that, when clicked, will show the entity on the map and fly to its location.
+     * @param entity
+     */
     showMarkerButton(entity: MapEntity): HTMLButtonElement {
         let button = document.createElement("button");
         button.textContent = "<>";
@@ -116,8 +140,12 @@ export class SearchControl extends Evented implements IControl {
         return button;
     }
 
+    /**
+     * Handles updates to the search box input.
+     * @param query
+     */
     onSearchBoxUpdate(query: string): void {
-        query = query.trim()
+        query = query.trim();
         if (!this.searchResultsTable) {
             console.error("Search results table not initialized");
             return;
@@ -125,7 +153,6 @@ export class SearchControl extends Evented implements IControl {
         this.searchResultsTable.innerHTML = ""; // Clear previous results
 
         UrlDataHandler.setQueryString(query);
-
 
         let resultCount = 0;
         for (const entity of this.entities) {
@@ -141,6 +168,10 @@ export class SearchControl extends Evented implements IControl {
         }
     }
 
+    /**
+     * Searches for entities based on the provided query string.
+     * @param query
+     */
     search(query: string): void {
         if (!this.searchInput) {
             console.error("Search input not initialized");
@@ -159,11 +190,6 @@ export class SearchControl extends Evented implements IControl {
      */
     onAdd(map: MapLibreMap): HTMLElement {
         this.map = map;
-
-
-        //this.showSingleEntity(this.entities[0]);
-        // this.showEntity(this.entities[1]);
-        //this.search("Dummy Entity 2");
 
         this.loadStateFromUrl();
         // Return the container element to be added to the map
@@ -184,6 +210,10 @@ export class SearchControl extends Evented implements IControl {
         this.map = undefined;
     }
 
+    /**
+     * Loads the state from the URL parameters.
+     * @private
+     */
     private loadStateFromUrl() {
         let queryString = UrlDataHandler.getQueryString();
         if (queryString) {
@@ -205,6 +235,10 @@ export class SearchControl extends Evented implements IControl {
 
     }
 
+    /**
+     * Creates the search input and results table elements.
+     * @private
+     */
     private createSearchContainer(): void {
         this.searchResultsTable = document.createElement("table");
         this.searchResultsTable.style.display = "none";
@@ -220,6 +254,12 @@ export class SearchControl extends Evented implements IControl {
         this.container.appendChild(this.searchResultsTable);
     }
 
+    /**
+     * Sets the open state of the control.
+     * If isOpen is true, the search input and results table are displayed.
+     * If isOpen is false, they are hidden.
+     * @param isOpen - Whether to open or close the control
+     */
     setOpen(isOpen: boolean): void {
         if (this.isOpen === isOpen) {
             return; // No change needed

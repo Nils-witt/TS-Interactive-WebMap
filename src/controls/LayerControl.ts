@@ -31,6 +31,11 @@ export class LayersControl extends Evented implements IControl {
      */
     private layers: Map<string, LayerInfo> = new Map();
 
+    /**
+     * Map to track active overlays by their IDs
+     * This is used to persist the state of active overlays across sessions
+     * @private
+     */
     private activeOverlays: Map<string, boolean> = new Map();
 
     /**

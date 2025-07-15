@@ -15,6 +15,8 @@ import type {MapEntity} from "./types/MapEntity.ts";
 
 const serverURL = 'http://localhost:8080'; // Base URL for the MapTiler server
 
+const debugMode = false; // Set to true for debugging purposes, will log additional information
+
 const defaultStyle = serverURL + '/styles/maptiler-basic/style.json';
 const overlayURL = serverURL + '/overlays/available.json'
 
@@ -38,7 +40,8 @@ const map = new MapLibreMap({
     center: mapCenter,                                      // Initial center of the map
     zoom: mapZoom,                                         // Initial zoom level
 });
-var devices = new Map<number, Marker>();
+
+let devices = new Map<number, Marker>();
 
 /**
  * Add geolocation control to allow users to find and track their location
@@ -62,7 +65,10 @@ map.on('load', async () => {
      * Fetch available overlay layers from the server
      */
     map.on('moveend', () => {
-        // console.log("Map moved to:", map.getCenter().toArray(), "Zoom level:", map.getZoom());
+        if (debugMode) {
+            // Log the map center and zoom level after moving the map
+            console.log("Map moved to:", map.getCenter().toArray(), "Zoom level:", map.getZoom());
+        }
         localStorage.setItem('mapCenter', JSON.stringify(map.getCenter().toArray()));
         localStorage.setItem('mapZoom', map.getZoom().toString());
     });
@@ -72,7 +78,7 @@ map.on('load', async () => {
         let searchControl = new SearchControl({entities: entities});
         map.addControl(searchControl, 'top-left');
     } catch (e) {
-        console.error(e);
+        console.error("Error loading searchControl:", e);
     }
 
     try {
@@ -82,9 +88,9 @@ map.on('load', async () => {
         if (localStorage.getItem('activeOverlays')) {
             preactiveOverlays = JSON.parse(localStorage.getItem('activeOverlays') || '[]');
         }
-
-        // console.log("Preactive overlays:", preactiveOverlays);
-
+        if (debugMode) {
+            console.log("Preactive overlays:", preactiveOverlays);
+        }
         let data = await fetch(overlayURL, {
             headers: {
                 'Authorization': 'Basic ' + btoa("nilswitt:l8keGMqB") // Use MapTiler API key for authentication
@@ -147,9 +153,11 @@ map.on('load', async () => {
 
 (async () => {
     const ws = new WebSocket('wss://map.nils-witt.de/traccar/');
-    ws.onopen = () => {
-        // console.log('WebSocket connection established');
-    };
+    if (debugMode) {
+        ws.onopen = () => {
+            // console.log('WebSocket connection established');
+        };
+    }
     ws.onmessage = (event) => {
         try {
             const message: { positions: TraccarPosition[] } = JSON.parse(event.data);
@@ -179,7 +187,9 @@ map.on('load', async () => {
     ws.onerror = (error) => {
         console.error('WebSocket error:', error);
     };
-    ws.onclose = () => {
-        // console.log('WebSocket connection closed');
-    };
+    if (debugMode) {
+        ws.onclose = () => {
+            // console.log('WebSocket connection closed');
+        };
+    }
 })();

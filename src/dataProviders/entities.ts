@@ -6,7 +6,6 @@ export class MapEntityProvider {
 
         let entities: MapEntity[] = [];
 
-
         entities.push({
             name: "Dummy Entity 1",
             id: "dummy-entity-1",
@@ -29,8 +28,8 @@ export class MapEntityProvider {
                 name: `Dummy Entity ${i}`,
                 id: `dummy-entity-${i}`,
                 description: `This is a dummy entity number ${i} for testing purposes.`,
-                latitude: 50.72 + (i * 0.001),
-                longitude: 7.02 + (i * 0.001),
+                latitude: 50.72 + (i * 0.002),
+                longitude: 7.02 + (i * 0.002),
                 groups: [1]
             });
         }
@@ -40,9 +39,9 @@ export class MapEntityProvider {
     }
 
     static async getProductionEntities(): Promise<MapEntity[]> {
-        const url = 'http://127.0.0.1:8000/api/mapobjects/'
+        const url = 'http://127.0.0.1:8000/api/mapobjects/';
 
-        let data = await fetch(url)
+        let data = await fetch(url);
 
         if (data.ok) {
             let jsonData = await data.json();
@@ -52,7 +51,7 @@ export class MapEntityProvider {
                 description: "No description available",
                 latitude: item.latitude,
                 longitude: item.longitude,
-                groups:  []
+                groups: []
             }) as MapEntity);
         } else {
             console.error("Failed to fetch entities:", data.statusText);
