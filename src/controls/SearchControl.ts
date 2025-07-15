@@ -35,6 +35,7 @@ export class SearchControl extends Evented implements IControl {
 
     private searchInput: HTMLInputElement | undefined;
     private searchResultsTable: HTMLTableElement | undefined;
+    private searchIcon: HTMLLabelElement | undefined;
 
     /**
      * The maximum number of search results to display
@@ -77,9 +78,9 @@ export class SearchControl extends Evented implements IControl {
 
         this.createSearchContainer();
 
-        let searchIcon = document.createElement("label");
-        searchIcon.innerText = "Search";
-        this.container.appendChild(searchIcon);
+        this.searchIcon = document.createElement("label");
+        this.searchIcon.innerText = "Search";
+        this.container.appendChild(this.searchIcon);
 
         this.container.onmouseover = () => {
             this.setOpen(true);
@@ -153,6 +154,9 @@ export class SearchControl extends Evented implements IControl {
         this.searchResultsTable.innerHTML = ""; // Clear previous results
 
         UrlDataHandler.setQueryString(query);
+        if (query.length === 0) {
+            return;
+        }
 
         let resultCount = 0;
         for (const entity of this.entities) {
@@ -265,15 +269,17 @@ export class SearchControl extends Evented implements IControl {
             return; // No change needed
         }
         this.isOpen = isOpen;
-        if (!this.searchInput || !this.searchResultsTable) {
+        if (!this.searchInput || !this.searchResultsTable || !this.searchIcon) {
             return;
         }
         if (this.isOpen) {
             this.searchInput.style.display = "block"; // Show the control
             this.searchResultsTable.style.display = "block"; // Show the control
+            this.searchIcon.style.display = "none"; // Show the control
         } else {
             this.searchInput.style.display = "none"; // Hide the control
             this.searchResultsTable.style.display = "none"; // Hide the control
+            this.searchIcon.style.display = "block"; // Hide the control
         }
     }
 }
