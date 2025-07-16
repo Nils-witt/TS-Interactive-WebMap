@@ -7,6 +7,7 @@ export type MapEntity = {
     latitude: number; // The latitude coordinate of the entity's location
     longitude: number; // The longitude coordinate of the entity's location
     groups: number[]; // Array of group names the entity belongs to, used for filtering and categorization
+    zoomLevel?: number; // Optional zoom level for the entity, used to control visibility at different zoom levels
 
 }
 
