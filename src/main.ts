@@ -10,15 +10,10 @@ import {LayersControl} from "./controls/LayerControl.ts";
 import type {LayerInfo} from "./types/LayerInfo.ts";
 import type {TraccarPosition} from "./types/TraccarPosition.ts";
 import {SearchControl} from "./controls/SearchControl.ts";
-import {MapEntityProvider} from "./dataProviders/entities.ts";
 import type {MapEntity} from "./types/MapEntity.ts";
-
-const serverURL = 'http://localhost:8080'; // Base URL for the MapTiler server
+import {ApiProvider} from "./dataProviders/ApiProvider.ts";
 
 const debugMode = false; // Set to true for debugging purposes, will log additional information
-
-const defaultStyle = serverURL + '/styles/maptiler-basic/style.json';
-const overlayURL = serverURL + '/overlays/available.json'
 
 let mapCenter: [number, number] = [0, 0]; // Default map center coordinates
 let mapZoom: number = 2; // Default zoom level
@@ -36,7 +31,7 @@ if (localStorage.getItem('mapZoom')) {
  */
 const map = new MapLibreMap({
     container: 'map',                                           // HTML element ID where the map will be rendered
-    style: defaultStyle, // Base map style URL
+    //  style: defaultStyle, // Base map style URL
     center: mapCenter,                                      // Initial center of the map
     zoom: mapZoom,                                         // Initial zoom level
 });
@@ -54,9 +49,29 @@ map.addControl(
         trackUserLocation: true,       // Continuously update user's location
         showAccuracyCircle: true, // Show accuracy circle around user's location
         showUserLocation: true,  // Show user's location on the map
-    })
+    }), 'top-right'
 );
+/**
+ * Add navigation controls (zoom, rotation, etc.)
+ */
+let navControl = new NavigationControl({
+    showCompass: true,      // Show compass for rotation
+    visualizePitch: true,   // Show pitch control
+    showZoom: true          // Show zoom controls
+});
+map.addControl(navControl, 'top-right');  // Position in the bottom-left corner
 
+
+(async () => {
+    try {
+        let mapStyles = await ApiProvider.getInstance().getMapStyles();
+        console.log("Available map styles:", mapStyles);
+        map.setStyle(mapStyles[0].url); // Set the first style as the default style
+
+    }catch (e) {
+        console.error("Error loading map styles:", e);
+    }
+})();
 /**
  * Set up map layers and controls once the map is loaded
  */
@@ -74,7 +89,7 @@ map.on('load', async () => {
     });
 
     try {
-        let entities: MapEntity[] = await MapEntityProvider.getProductionEntities();
+        let entities: MapEntity[] = await ApiProvider.getInstance().getMapObjects();
         let searchControl = new SearchControl({entities: entities});
         map.addControl(searchControl, 'top-left');
     } catch (e) {
@@ -91,13 +106,7 @@ map.on('load', async () => {
         if (debugMode) {
             console.log("Preactive overlays:", preactiveOverlays);
         }
-        let data = await fetch(overlayURL, {
-            headers: {
-                'Authorization': 'Basic ' + btoa("nilswitt:l8keGMqB") // Use MapTiler API key for authentication
-            }
-        })
-        let availableLayers: LayerInfo[] = await data.json();
-
+        let availableLayers: LayerInfo[] = await ApiProvider.getInstance().getOverlayLayers();
         /**
          * For each available layer:
          * 1. Add it as a source to the map
@@ -136,17 +145,6 @@ map.on('load', async () => {
     } catch (e) {
         console.error("Error loading overlay layers:", e);
     }
-
-
-    /**
-     * Add navigation controls (zoom, rotation, etc.)
-     */
-    let navControl = new NavigationControl({
-        showCompass: true,      // Show compass for rotation
-        visualizePitch: true,   // Show pitch control
-        showZoom: true          // Show zoom controls
-    });
-    map.addControl(navControl, 'bottom-left');  // Position in the bottom-left corner
 
 });
 
