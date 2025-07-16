@@ -133,7 +133,7 @@ export class SearchControl extends Evented implements IControl {
             this.showSingleEntity(entity);
             this.map?.flyTo({
                 center: [entity.longitude, entity.latitude],
-                zoom: 15, // Adjust zoom level as needed
+                zoom: entity.zoomLevel || 15, // Adjust zoom level as needed
                 essential: true // This ensures the animation is not interrupted
             });
             UrlDataHandler.setSelectedMarker(entity.id);
