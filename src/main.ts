@@ -138,7 +138,7 @@ map.on('load', async () => {
          * Add layer control to allow users to toggle overlay layers
          */
         let lc = new LayersControl(availableLayers);
-        map.addControl(lc, 'top-left');  // Position in the top-left corner of the map
+        map.addControl(lc, 'bottom-left');  // Position in the top-left corner of the map
 
 
         // Position in the top-right corner of the map

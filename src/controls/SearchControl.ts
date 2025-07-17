@@ -70,7 +70,7 @@ export class SearchControl extends Evented implements IControl {
         this.container.classList.add(
             "maplibregl-ctrl",        // Standard MapLibre control class
             "maplibregl-ctrl-group",  // Groups the control visually
-            "layers-control",         // Custom class for styling
+            "search-control",         // Custom class for styling
         );
         this.options = options;
 

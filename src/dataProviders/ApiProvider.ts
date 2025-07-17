@@ -4,7 +4,7 @@ import type {MapEntity} from "../types/MapEntity.ts";
 
 export class ApiProvider {
 
-    private static readonly BASE_URL = 'http://127.0.0.1:8000/api'
+    private static readonly BASE_URL = 'https://map.nils-witt.de/api'
 
     private static instance: ApiProvider;
 
