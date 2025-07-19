@@ -14,21 +14,21 @@ export class DrawingController {
             let data = event.data as NamedGeoReferencedObject[];
             for (const item of data) {
                 if (this.markers.has(item.id)) {
-                    // If the marker already exists, update its position
-                    const marker = this.markers.get(item.id);
-                    if (marker) {
-                        marker.setLngLat([item.longitude, item.latitude]);
+                    let marker = this.markers.get(item.id)!;
+
+                    if (item.symbol) {
+                        DisplayHelper.updateTacMarker(marker.getElement()!, item.symbol);
                     }
+                    marker.setLngLat([item.longitude, item.latitude]);
+
                 } else {
                     let newMarker: Marker;
                     if (item.symbol) {
-                        newMarker = new Marker({element: DisplayHelper.createTacMarker(item.symbol)})
-                            .setLngLat([item.longitude, item.latitude]);
-                    }else {
+                        newMarker = new Marker({element: DisplayHelper.createTacMarker(item.symbol)});
+                    } else {
                         newMarker = new Marker()
-                            .setLngLat([item.longitude, item.latitude]);
                     }
-                    // If the marker does not exist, create a new one
+                    newMarker.setLngLat([item.longitude, item.latitude]);
 
                     this.markers.set(item.id, newMarker);
                     if (this.map && item.showOnMap !== false) {

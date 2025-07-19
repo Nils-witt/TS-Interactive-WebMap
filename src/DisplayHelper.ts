@@ -20,4 +20,14 @@ export class DisplayHelper {
 
         return el;
     }
+
+    public static updateTacMarker(el: HTMLElement, conf: TaktischesZeichen): void {
+        let icon = el.querySelector('img');
+        if (icon) {
+            let tac = erzeugeTaktischesZeichen(conf);
+            icon.src = tac.dataUrl;
+        } else {
+            console.warn("No image found in the marker element to update.");
+        }
+    }
 }
