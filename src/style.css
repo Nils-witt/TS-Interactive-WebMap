@@ -39,3 +39,13 @@ html, body {
     min-width: 3em;
     min-height: 3em;
 }
+
+.icon-editor-container {
+    position: absolute;
+    display: grid;
+    top: 10%;
+    left: 10%;
+    width: 80%;
+    background: white;
+    z-index: 1000;
+}

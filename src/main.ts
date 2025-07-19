@@ -99,10 +99,7 @@ map.on('moveend', () => {
     localStorage.setItem('mapZoom', map.getZoom().toString());
 });
 
-setTimeout(() => {
-    ApiProvider.getInstance().loadAllData(dataProvider);
-}
-, 1000); // Delay to ensure map is fully initialized before loading data
+ApiProvider.getInstance().loadAllData(dataProvider);
 
 /*
 (async () => {
