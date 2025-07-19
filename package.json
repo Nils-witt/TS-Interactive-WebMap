@@ -10,7 +10,8 @@
   },
   "devDependencies": {
     "typescript": "~5.8.3",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "@types/node": "^24.0.15"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
@@ -19,7 +20,6 @@
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "maplibre-gl": "^5.6.0",
     "maplibre-gl-opacity": "^1.8.0",
-    "taktische-zeichen-core": "^0.9.0",
-    "vite-plugin-pwa": "^1.0.0"
+    "taktische-zeichen-core": "^0.9.0"
   }
 }

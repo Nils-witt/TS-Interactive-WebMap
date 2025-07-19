@@ -62,7 +62,6 @@ export class EditorController {
         let headerRow = head.insertRow();
         headerRow.insertCell().textContent = 'Name';
         headerRow.insertCell().textContent = 'Groups';
-
     }
 
     private fullUpdateItemTable(): void {
@@ -393,6 +392,7 @@ export class EditorController {
                 organisationName: selectOrgName.value,
             }
             this.dataProvider.addMapLocation(id, item);
+            ApiProvider.getInstance().saveMapItem(item);
             console.log("Editor: Save icon for item", id, item.symbol);
             div.remove();
         };
