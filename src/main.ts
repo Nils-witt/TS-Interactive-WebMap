@@ -19,7 +19,7 @@ const debugMode = false; // Set to true for debugging purposes, will log additio
 
 
 const config = new Config();
-const data = new DataProvider();
+const dataProvider = new DataProvider();
 
 const mapContainer = document.createElement('div');
 const editorLayout = document.createElement('div');
@@ -42,7 +42,7 @@ if (config.editMode) {
     mapContainer.classList.add("map-fullscreen")
 }
 
-const drawingController = new DrawingController(data);
+const drawingController = new DrawingController(dataProvider);
 /**
  * Initialize the MapLibre map with basic configuration
  */
@@ -66,9 +66,8 @@ let navControl = new NavigationControl({
     showZoom: true          // Show zoom controls
 });
 
-const searchControl = new SearchControl({dataProvider: data});
-
-const layersControl = new LayersControl([]);
+const searchControl = new SearchControl({dataProvider: dataProvider});
+const layersControl = new LayersControl({dataProvider: dataProvider});
 
 map.addControl(navControl, 'top-right');  // Position in the bottom-left corner
 map.addControl(layersControl, 'bottom-left');  // Position in the top-left corner of the
@@ -82,67 +81,13 @@ drawingController.addTo(map); // Set the map for the drawing controller
 
 
 if (config.editMode) {
-    new EditorController(editorControls, map, data);
+    new EditorController(editorControls, map, dataProvider);
 }
 
 
-data.on(DataProviderEventType.MAP_STYLE_UPDATED, (event) => {
+dataProvider.on(DataProviderEventType.MAP_STYLE_UPDATED, (event) => {
     const style = event.data as LayerInfo;
     map.setStyle(style.url);
-});
-
-/**
- * Set up map layers and controls once the map is loaded
- */
-map.on('load', async () => {
-    /**
-     * Fetch available overlay layers from the server
-     */
-
-    try {
-
-        let preactiveOverlays: string[] = [];
-
-        if (localStorage.getItem('activeOverlays')) {
-            preactiveOverlays = JSON.parse(localStorage.getItem('activeOverlays') || '[]');
-        }
-        if (debugMode) {
-            console.log("Preactive overlays:", preactiveOverlays);
-        }
-        let availableLayers: LayerInfo[] = await ApiProvider.getInstance().getOverlayLayers();
-        /**
-         * For each available layer:
-         * 1. Add it as a source to the map
-         * 2. Create a layer using that source
-         * 3. Set the layer to be initially hidden
-         */
-        availableLayers.forEach((layer) => {
-            // Add the layer source
-            map.addSource(layer.id, {
-                type: "raster",           // Use raster tiles
-                tiles: [layer.url],       // URL template for the tiles
-                tileSize: 256             // Standard tile size
-            });
-
-            // Create a map layer using the source
-            map.addLayer({
-                id: layer.id + '-layer',  // Create unique layer ID
-                type: "raster",           // Render as raster layer
-                source: layer.id,         // Reference to the source created above
-            });
-
-            // Initially hide the layer - will be toggled by the layer control
-            if (!preactiveOverlays.includes(layer.id)) {
-                map.setLayoutProperty(layer.id + '-layer', 'visibility', 'none');
-            }
-        });
-
-        layersControl.setLayers(availableLayers); // Update the layers control with available layers
-
-    } catch (e) {
-        console.error("Error loading overlay layers:", e);
-    }
-
 });
 
 map.on('moveend', () => {
@@ -154,7 +99,10 @@ map.on('moveend', () => {
     localStorage.setItem('mapZoom', map.getZoom().toString());
 });
 
-ApiProvider.getInstance().loadAllData(data);
+setTimeout(() => {
+    ApiProvider.getInstance().loadAllData(dataProvider);
+}
+, 1000); // Delay to ensure map is fully initialized before loading data
 
 /*
 (async () => {
