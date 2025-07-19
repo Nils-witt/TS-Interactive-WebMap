@@ -1,19 +1,24 @@
+import type {TaktischesZeichen} from "taktische-zeichen-core/dist/types/types";
 
 
-export type MapEntity = {
-    name: string; // The name of the entity, used for display purposes
+export interface IAbstractEntity {
     id: string; // Unique identifier for the entity, used for source and layer creation
-    description: string; // A brief description of the entity's content and purpose
-    latitude: number; // The latitude coordinate of the entity's location
-    longitude: number; // The longitude coordinate of the entity's location
-    groups: number[]; // Array of group names the entity belongs to, used for filtering and categorization
-    zoomLevel?: number; // Optional zoom level for the entity, used to control visibility at different zoom levels
-
 }
 
-export type MapEntityGroup = {
-    id: number; // Unique identifier for the group
+export interface IMapGroup extends IAbstractEntity {
     name: string; // Name of the group, used for display purposes
-    description: string; // Description of the group, providing context about its purpose
-    color: string; // Color associated with the group, used for visual representation on the map
+    description?: string; // Optional description of the group
+}
+
+export interface IGeoReferencedObject extends IAbstractEntity {
+    latitude: number; // Latitude coordinate of the object
+    longitude: number; // Longitude coordinate of the object
+    zoomLevel?: number; // Optional zoom level for the object, used to control visibility at different zoom levels
+    showOnMap?: boolean; // Flag to indicate if the object should be displayed on the map
+}
+
+export interface INamedGeoReferencedObject extends IGeoReferencedObject {
+    name: string; // Name of the object, used for display purposes
+    description?: string; // Optional description of the object
+    symbol?: TaktischesZeichen;
 }

@@ -72,6 +72,30 @@ export class LayersControl extends Evented implements IControl {
     }
 
     /**
+     * Sets the layers for the control
+     * This method can be used to update the layers dynamically
+     *
+     * @param layers - Array of LayerInfo objects representing available layers
+     */
+    public setLayers(layers: LayerInfo[]): void {
+        // Clear existing inputs and container
+        this.inputs = [];
+        this.container.innerHTML = "";
+
+        // Update the layers map
+        this.layers.clear();
+        for (const layer of layers) {
+            this.layers.set(layer.id, layer);
+        }
+
+        // Create a checkbox for each new layer and add it to the container
+        for (const layer of layers) {
+            let labeled_checkbox = this.createLabeledCheckbox(layer);
+            this.container.appendChild(labeled_checkbox);
+        }
+    }
+
+    /**
      * Creates a labeled checkbox for a layer
      *
      * @param layer - The layer information object
@@ -91,6 +115,10 @@ export class LayersControl extends Evented implements IControl {
 
         input.type = "checkbox";
         input.id = layer.id;
+
+        if (this.map?.getLayoutProperty(layer.id + "-layer","visibility") != "none") {
+            input.checked = true; // Default to checked if layer is visible
+        }
 
         // Add event listener to toggle layer visibility when checkbox is clicked
         input.addEventListener("change", () => {
@@ -122,7 +150,7 @@ export class LayersControl extends Evented implements IControl {
      * @param map - The MapLibre map instance
      * @returns The control's container element
      */
-    onAdd(map: MapLibreMap): HTMLElement {
+    public onAdd(map: MapLibreMap): HTMLElement {
         this.map = map;
 
         // Initialize checkbox states based on layer visibility in the map
@@ -157,7 +185,7 @@ export class LayersControl extends Evented implements IControl {
      * Removes the control from the map
      * Required method for MapLibre IControl interface
      */
-    onRemove() {
+    public onRemove() {
         // Remove the container from its parent element
         if (this.container.parentNode) {
             this.container.parentNode.removeChild(this.container);

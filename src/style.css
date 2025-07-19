@@ -4,7 +4,38 @@ html, body {
     padding: 0;
     height: 100%;
 }
-#map {
+.map-fullscreen {
     width: 100%;
     height: 100%;
+    flex: 2;
+}
+
+.editor-layout {
+    display: flex;
+    height: 100%;
+}
+
+.editor-controls {
+    height: 100%;
+    width: 100%;
+    flex: 1;
+}
+
+.item-table {
+    width: 100%;
+}
+
+.login-container {
+    position: absolute;
+    top: 30%;
+    left: 30%;
+    height: 40%;
+    width: 40%;
+    background: white;
+    z-index: 1000;
+}
+
+.search-control {
+    min-width: 3em;
+    min-height: 3em;
 }

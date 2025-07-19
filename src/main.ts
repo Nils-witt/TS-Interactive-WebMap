@@ -5,73 +5,92 @@
 
 import './style.css'
 import 'maplibre-gl/dist/maplibre-gl.css';
-import {GeolocateControl, Map as MapLibreMap, Marker, NavigationControl, Popup} from 'maplibre-gl';
+import {GeolocateControl, Map as MapLibreMap, NavigationControl} from 'maplibre-gl';
 import {LayersControl} from "./controls/LayerControl.ts";
 import type {LayerInfo} from "./types/LayerInfo.ts";
-import type {TraccarPosition} from "./types/TraccarPosition.ts";
-import {SearchControl} from "./controls/SearchControl.ts";
-import type {MapEntity} from "./types/MapEntity.ts";
 import {ApiProvider} from "./dataProviders/ApiProvider.ts";
+import {DrawingController} from "./controls/DrawingController.ts";
+import {Config} from "./Config.ts";
+import {DataProvider, DataProviderEventType} from "./dataProviders/DataProvider.ts";
+import {EditorController} from "./EditorController.ts";
+import {SearchControl} from "./controls/SearchControl.ts";
 
 const debugMode = false; // Set to true for debugging purposes, will log additional information
 
-let mapCenter: [number, number] = [0, 0]; // Default map center coordinates
-let mapZoom: number = 2; // Default zoom level
 
-if (localStorage.getItem('mapCenter')) {
-    mapCenter = JSON.parse(localStorage.getItem('mapCenter') || '[0, 0]');
+const config = new Config();
+const data = new DataProvider();
+
+const mapContainer = document.createElement('div');
+const editorLayout = document.createElement('div');
+const editorControls = document.createElement('div');
+
+mapContainer.id = 'map';
+mapContainer.innerText = 'Error loading the map';
+
+if (config.editMode) {
+    document.body.appendChild(editorLayout);
+    editorLayout.appendChild(mapContainer);
+    editorLayout.appendChild(editorControls);
+    mapContainer.classList.add("map-fullscreen")
+    editorControls.classList.add('editor-controls'); // Add a class for styling
+    editorLayout.classList.add('editor-layout'); // Add a class for styling
+
+    //mapContainer.classList.add('edit-mode'); // Add a class for styling
+} else {
+    document.body.appendChild(mapContainer);
+    mapContainer.classList.add("map-fullscreen")
 }
 
-if (localStorage.getItem('mapZoom')) {
-    mapZoom = parseFloat(localStorage.getItem('mapZoom') || '13');
-}
-
+const drawingController = new DrawingController(data);
 /**
  * Initialize the MapLibre map with basic configuration
  */
 const map = new MapLibreMap({
     container: 'map',                                           // HTML element ID where the map will be rendered
-    //  style: defaultStyle, // Base map style URL
-    center: mapCenter,                                      // Initial center of the map
-    zoom: mapZoom,                                         // Initial zoom level
+    center: config.mapCenter,                                     // Initial center of the map
+    zoom: config.mapZoom,                                         // Initial zoom level
 });
 
-let devices = new Map<number, Marker>();
-
-/**
- * Add geolocation control to allow users to find and track their location
- */
-map.addControl(
-    new GeolocateControl({
-        positionOptions: {
-            enableHighAccuracy: true  // Use high accuracy for better location precision
-        },
-        trackUserLocation: true,       // Continuously update user's location
-        showAccuracyCircle: true, // Show accuracy circle around user's location
-        showUserLocation: true,  // Show user's location on the map
-    }), 'top-right'
-);
-/**
- * Add navigation controls (zoom, rotation, etc.)
- */
+const geolocate = new GeolocateControl({
+    positionOptions: {
+        enableHighAccuracy: true  // Use high accuracy for better location precision
+    },
+    trackUserLocation: true,       // Continuously update user's location
+    showAccuracyCircle: true, // Show accuracy circle around user's location
+    showUserLocation: true,  // Show user's location on the map
+});
 let navControl = new NavigationControl({
     showCompass: true,      // Show compass for rotation
     visualizePitch: true,   // Show pitch control
     showZoom: true          // Show zoom controls
 });
+
+const searchControl = new SearchControl({dataProvider: data});
+
+const layersControl = new LayersControl([]);
+
 map.addControl(navControl, 'top-right');  // Position in the bottom-left corner
+map.addControl(layersControl, 'bottom-left');  // Position in the top-left corner of the
+
+if (!config.editMode) {
+    map.addControl(geolocate, 'top-right'); // Add geolocation control to the map
+    map.addControl(searchControl, 'top-left');
+}
+
+drawingController.addTo(map); // Set the map for the drawing controller
 
 
-(async () => {
-    try {
-        let mapStyles = await ApiProvider.getInstance().getMapStyles();
-        console.log("Available map styles:", mapStyles);
-        map.setStyle(mapStyles[0].url); // Set the first style as the default style
+if (config.editMode) {
+    new EditorController(editorControls, map, data);
+}
 
-    }catch (e) {
-        console.error("Error loading map styles:", e);
-    }
-})();
+
+data.on(DataProviderEventType.MAP_STYLE_UPDATED, (event) => {
+    const style = event.data as LayerInfo;
+    map.setStyle(style.url);
+});
+
 /**
  * Set up map layers and controls once the map is loaded
  */
@@ -79,22 +98,6 @@ map.on('load', async () => {
     /**
      * Fetch available overlay layers from the server
      */
-    map.on('moveend', () => {
-        if (debugMode) {
-            // Log the map center and zoom level after moving the map
-            console.log("Map moved to:", map.getCenter().toArray(), "Zoom level:", map.getZoom());
-        }
-        localStorage.setItem('mapCenter', JSON.stringify(map.getCenter().toArray()));
-        localStorage.setItem('mapZoom', map.getZoom().toString());
-    });
-
-    try {
-        let entities: MapEntity[] = await ApiProvider.getInstance().getMapObjects();
-        let searchControl = new SearchControl({entities: entities});
-        map.addControl(searchControl, 'top-left');
-    } catch (e) {
-        console.error("Error loading searchControl:", e);
-    }
 
     try {
 
@@ -134,21 +137,26 @@ map.on('load', async () => {
             }
         });
 
-        /**
-         * Add layer control to allow users to toggle overlay layers
-         */
-        let lc = new LayersControl(availableLayers);
-        map.addControl(lc, 'bottom-left');  // Position in the top-left corner of the map
+        layersControl.setLayers(availableLayers); // Update the layers control with available layers
 
-
-        // Position in the top-right corner of the map
     } catch (e) {
         console.error("Error loading overlay layers:", e);
     }
 
 });
 
+map.on('moveend', () => {
+    if (debugMode) {
+        // Log the map center and zoom level after moving the map
+        console.log("Map moved to:", map.getCenter().toArray(), "Zoom level:", map.getZoom());
+    }
+    localStorage.setItem('mapCenter', JSON.stringify(map.getCenter().toArray()));
+    localStorage.setItem('mapZoom', map.getZoom().toString());
+});
 
+ApiProvider.getInstance().loadAllData(data);
+
+/*
 (async () => {
     const ws = new WebSocket('wss://map.nils-witt.de/traccar/');
     if (debugMode) {
@@ -162,9 +170,9 @@ map.on('load', async () => {
             if (message.positions) {
                 console.log('Received positions:', message.positions);
                 for (const position of message.positions) {
-                    if (devices.has(position.deviceId)) {
+                    if (data.devices.has(position.deviceId)) {
                         // Update existing marker
-                        const marker = devices.get(position.deviceId);
+                        const marker = data.devices.get(position.deviceId);
                         if (marker) {
                             marker.setLngLat([position.longitude, position.latitude]);
                         }
@@ -174,7 +182,7 @@ map.on('load', async () => {
                             .setLngLat([position.longitude, position.latitude])
                             .setPopup(new Popup().setText(`Device ID: ${position.deviceId}`))
                             .addTo(map);
-                        devices.set(position.deviceId, marker);
+                        data.devices.set(position.deviceId, marker);
                     }
                 }
             }
@@ -191,3 +199,4 @@ map.on('load', async () => {
         };
     }
 })();
+*/

@@ -1,10 +1,15 @@
 import {Evented, type IControl, Map as MapLibreMap, Marker} from "maplibre-gl";
-import type {MapEntity} from "../types/MapEntity.ts";
 import UrlDataHandler from "../dataProviders/UrlDataHandler.ts";
+import {type DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
+import type {NamedGeoReferencedObject} from "../enitites/NamedGeoReferencedObject.ts";
+import {faHouse} from "@fortawesome/free-solid-svg-icons/faHouse";
+import {icon} from "@fortawesome/fontawesome-svg-core";
+import {faMagnifyingGlass} from "@fortawesome/free-solid-svg-icons/faMagnifyingGlass";
+import {faMapLocationDot} from "@fortawesome/free-solid-svg-icons/faMapLocationDot";
 
 
 type SearchControlOptions = {
-    entities: MapEntity[];
+    dataProvider: DataProvider;
 }
 
 /**
@@ -27,15 +32,11 @@ export class SearchControl extends Evented implements IControl {
      */
     private container: HTMLElement;
 
-    /**
-     * Array of MapEntity objects representing available entities
-     * @private
-     */
-    private entities: MapEntity[];
+    private dataProvider: DataProvider;
 
     private searchInput: HTMLInputElement | undefined;
     private searchResultsTable: HTMLTableElement | undefined;
-    private searchIcon: HTMLLabelElement | undefined;
+    private searchIcon: HTMLDivElement | undefined;
 
     /**
      * The maximum number of search results to display
@@ -60,7 +61,7 @@ export class SearchControl extends Evented implements IControl {
      *
      * @param options - Array of LayerInfo objects representing available layers
      */
-    constructor(options: SearchControlOptions) {
+    public constructor(options: SearchControlOptions) {
         super();
 
         this.map = undefined;
@@ -74,27 +75,48 @@ export class SearchControl extends Evented implements IControl {
         );
         this.options = options;
 
-        this.entities = options.entities;
+        console.log(icon(faHouse).html);
+
+
+        this.dataProvider = options.dataProvider;
 
         this.createSearchContainer();
 
-        this.searchIcon = document.createElement("label");
-        this.searchIcon.innerText = "Search";
-        this.container.appendChild(this.searchIcon);
 
+        let searchIconHtml = icon(faMagnifyingGlass).html;
+
+
+        this.searchIcon = document.createElement("div");
+        if (searchIconHtml.length > 0) {
+            this.searchIcon.innerHTML = searchIconHtml[0];
+
+            if (this.searchIcon.children.item(0)) {
+                let icon = this.searchIcon.children.item(0) as HTMLElement;
+                icon.style.setProperty("height", "2em")
+            }
+        }
+
+        this.container.appendChild(this.searchIcon);
+        this.container.style.textAlign = "center";
         this.container.onmouseover = () => {
             this.setOpen(true);
         }
         this.container.onmouseout = () => {
             this.setOpen(false);
         }
+
+        this.dataProvider.on(DataProviderEventType.MAP_LOCATIONS_UPDATED, () => {
+            if (this.searchInput && this.searchInput.value.trim().length > 0) {
+                this.onSearchBoxUpdate(this.searchInput.value);
+            }
+        });
     }
 
     /**
      * Shows a single entity on the map by creating a marker at its location.
      * @param entity
      */
-    showSingleEntity(entity: MapEntity): void {
+    private showSingleEntity(entity: NamedGeoReferencedObject): void {
 
         if (!this.map) {
             return;
@@ -126,9 +148,11 @@ export class SearchControl extends Evented implements IControl {
      * Creates a button that, when clicked, will show the entity on the map and fly to its location.
      * @param entity
      */
-    showMarkerButton(entity: MapEntity): HTMLButtonElement {
+    private showMarkerButton(entity: NamedGeoReferencedObject): HTMLButtonElement {
         let button = document.createElement("button");
-        button.textContent = "<>";
+
+        //button.textContent = "<>";
+        button.innerHTML = icon(faMapLocationDot).html[0]
         button.onclick = () => {
             this.showSingleEntity(entity);
             this.map?.flyTo({
@@ -145,7 +169,7 @@ export class SearchControl extends Evented implements IControl {
      * Handles updates to the search box input.
      * @param query
      */
-    onSearchBoxUpdate(query: string): void {
+    private onSearchBoxUpdate(query: string): void {
         query = query.trim();
         if (!this.searchResultsTable) {
             console.error("Search results table not initialized");
@@ -159,11 +183,12 @@ export class SearchControl extends Evented implements IControl {
         }
 
         let resultCount = 0;
-        for (const entity of this.entities) {
+        for (const entity of this.dataProvider.getMapLocations().values()) {
             if (entity.name.toLowerCase().includes(query.toLowerCase())) {
                 let row = this.searchResultsTable.insertRow()
-                row.insertCell().textContent = entity.name;
                 row.insertCell().appendChild(this.showMarkerButton(entity));
+
+                row.insertCell().textContent = entity.name;
                 resultCount++;
                 if (resultCount >= this.resultLimit) {
                     break; // Stop after reaching the result limit
@@ -176,7 +201,7 @@ export class SearchControl extends Evented implements IControl {
      * Searches for entities based on the provided query string.
      * @param query
      */
-    search(query: string): void {
+    public search(query: string): void {
         if (!this.searchInput) {
             console.error("Search input not initialized");
             return;
@@ -192,7 +217,7 @@ export class SearchControl extends Evented implements IControl {
      * @param map - The MapLibre map instance
      * @returns The control's container element
      */
-    onAdd(map: MapLibreMap): HTMLElement {
+    public onAdd(map: MapLibreMap): HTMLElement {
         this.map = map;
 
         this.loadStateFromUrl();
@@ -204,7 +229,7 @@ export class SearchControl extends Evented implements IControl {
      * Removes the control from the map
      * Required method for MapLibre IControl interface
      */
-    onRemove() {
+    public onRemove() {
         // Remove the container from its parent element
         if (this.container.parentNode) {
             this.container.parentNode.removeChild(this.container);
@@ -223,20 +248,6 @@ export class SearchControl extends Evented implements IControl {
         if (queryString) {
             this.search(queryString);
         }
-
-        let selectedMarker = UrlDataHandler.getSelectedMarker();
-        if (selectedMarker) {
-            let entity = this.entities.find(e => e.id === selectedMarker);
-            if (entity) {
-                this.showSingleEntity(entity);
-                this.map?.flyTo({
-                    center: [entity.longitude, entity.latitude],
-                    zoom: 15, // Adjust zoom level as needed
-                    essential: true // This ensures the animation is not interrupted
-                });
-            }
-        }
-
     }
 
     /**
@@ -264,7 +275,7 @@ export class SearchControl extends Evented implements IControl {
      * If isOpen is false, they are hidden.
      * @param isOpen - Whether to open or close the control
      */
-    setOpen(isOpen: boolean): void {
+    private setOpen(isOpen: boolean): void {
         if (this.isOpen === isOpen) {
             return; // No change needed
         }
