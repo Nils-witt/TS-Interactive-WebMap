@@ -1,5 +1,11 @@
 import {Evented, type IControl, Map as MapLibreMap} from "maplibre-gl";
 import type {LayerInfo} from "../types/LayerInfo.ts";
+import {type DataProvider, type DataProviderEvent, DataProviderEventType} from "../dataProviders/DataProvider.ts";
+
+
+export type LayersControlOptions = {
+    dataProvider: DataProvider; // Optional data provider to fetch layer information
+}
 
 /**
  * A control for MapLibre GL JS that allows users to toggle the visibility of map layers.
@@ -10,11 +16,6 @@ export class LayersControl extends Evented implements IControl {
      * Reference to the MapLibre map instance
      */
     private map: MapLibreMap | undefined;
-
-    /**
-     * Array of layer information objects passed to the constructor
-     */
-    public readonly options: LayerInfo[];
 
     /**
      * The HTML container element that holds the control UI
@@ -38,12 +39,15 @@ export class LayersControl extends Evented implements IControl {
      */
     private activeOverlays: Map<string, boolean> = new Map();
 
+
+    dataProvider: DataProvider;
+
     /**
      * Creates a new LayersControl instance
      *
      * @param options - Array of LayerInfo objects representing available layers
      */
-    constructor(options: LayerInfo[]) {
+    constructor(options: LayersControlOptions) {
         super();
 
         this.map = undefined;
@@ -55,19 +59,24 @@ export class LayersControl extends Evented implements IControl {
             "maplibregl-ctrl-group",  // Groups the control visually
             "layers-control",         // Custom class for styling
         );
-        this.options = options;
 
         // Create a map of layer IDs to LayerInfo objects for quick lookup
-        for (const layer of options) {
-            this.layers.set(layer.id, layer);
-        }
-
+        this.dataProvider = options.dataProvider;
+        this.dataProvider.on(DataProviderEventType.OVERLAY_ADDED, (event    : DataProviderEvent) => {
+            let data = event.data as LayerInfo;
+            console.log("LayersControl: Overlay added", data);
+            this.addLayer(data);
+        });
+        this.setLayers(this.dataProvider.getOverlays());
         this.inputs = [];
 
-        // Create a checkbox for each layer and add it to the container
-        for (const layer of this.options) {
-            let labeled_checkbox = this.createLabeledCheckbox(layer);
-            this.container.appendChild(labeled_checkbox);
+        let previouslyActiveOverlays = localStorage.getItem("activeOverlays");
+        if (previouslyActiveOverlays) {
+            // Parse the stored active overlays and set them in the map
+            const activeOverlaysArray = JSON.parse(previouslyActiveOverlays) as string[];
+            for (const overlayId of activeOverlaysArray) {
+                this.activeOverlays.set(overlayId, true);
+            }
         }
     }
 
@@ -75,24 +84,73 @@ export class LayersControl extends Evented implements IControl {
      * Sets the layers for the control
      * This method can be used to update the layers dynamically
      *
-     * @param layers - Array of LayerInfo objects representing available layers
+     * @param overlays
      */
-    public setLayers(layers: LayerInfo[]): void {
+    private setLayers(overlays: Map<string, LayerInfo>): void {
         // Clear existing inputs and container
         this.inputs = [];
         this.container.innerHTML = "";
 
         // Update the layers map
         this.layers.clear();
-        for (const layer of layers) {
+        for (const layer of overlays.values()) {
             this.layers.set(layer.id, layer);
         }
 
         // Create a checkbox for each new layer and add it to the container
-        for (const layer of layers) {
+        for (const layer of overlays.values()) {
             let labeled_checkbox = this.createLabeledCheckbox(layer);
             this.container.appendChild(labeled_checkbox);
         }
+        console.log(this.container)
+    }
+
+    private addLayer(layer: LayerInfo): void {
+        if (this.map === undefined) {
+            console.error("LayersControl: Map is not initialized. Cannot add layer.");
+            return;
+        }
+        if (this.map.loaded()){
+            // Add the layer source
+            this.map.addSource(layer.id, {
+                type: "raster",           // Use raster tiles
+                tiles: [layer.url],       // URL template for the tiles
+                tileSize: 256             // Standard tile size
+            });
+
+            // Create a map layer using the source
+            this.map.addLayer({
+                id: layer.id + '-layer',  // Create unique layer ID
+                type: "raster",           // Render as raster layer
+                source: layer.id,         // Reference to the source created above
+            });
+            if (!this.activeOverlays.has(layer.id)) {
+                this.map.setLayoutProperty(layer.id + "-layer", "visibility", "none");
+            }
+        }else {
+            this.map.once('load', () => {
+                // Add the layer source
+                this.map?.addSource(layer.id, {
+                    type: "raster",           // Use raster tiles
+                    tiles: [layer.url],       // URL template for the tiles
+                    tileSize: 256             // Standard tile size
+                });
+
+                // Create a map layer using the source
+                this.map?.addLayer({
+                    id: layer.id + '-layer',  // Create unique layer ID
+                    type: "raster",           // Render as raster layer
+                    source: layer.id,         // Reference to the source created above
+                });
+                if (!this.activeOverlays.has(layer.id)) {
+                    this.map?.setLayoutProperty(layer.id + "-layer", "visibility", "none");
+                }
+            });
+        }
+        this.layers.set(layer.id, layer);
+        let labeled_checkbox = this.createLabeledCheckbox(layer);
+
+        this.container.appendChild(labeled_checkbox);
     }
 
     /**
@@ -115,10 +173,22 @@ export class LayersControl extends Evented implements IControl {
 
         input.type = "checkbox";
         input.id = layer.id;
-
-        if (this.map?.getLayoutProperty(layer.id + "-layer","visibility") != "none") {
-            input.checked = true; // Default to checked if layer is visible
+        if(this.map?.loaded()){
+            if (this.map.getLayoutProperty(layer.id + "-layer","visibility") != "none") {
+                input.checked = true; // Default to checked if layer is visible
+            }
+        }else{
+            input.checked = false; // Default to unchecked if no map is available
+            input.disabled = true; // Disable checkbox if no map is available
+            this.map?.once('load', () => {
+                // Enable the checkbox once the map is loaded
+                input.disabled = false;
+                if (this.map?.getLayoutProperty(layer.id + "-layer","visibility") != "none") {
+                    input.checked = true; // Default to checked if layer is visible
+                }
+            });
         }
+
 
         // Add event listener to toggle layer visibility when checkbox is clicked
         input.addEventListener("change", () => {

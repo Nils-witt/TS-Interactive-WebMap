@@ -22,7 +22,6 @@ export class DataProvider {
     private mapStyle: LayerInfo | undefined;
     private overlays: Map<string, LayerInfo> = new Map();
 
-
     public constructor() {
     }
 
