@@ -1,5 +1,6 @@
 import type {NamedGeoReferencedObject} from "../enitites/NamedGeoReferencedObject.ts";
 import type {LayerInfo} from "../types/LayerInfo.ts";
+import {IMapGroup} from "../types/MapEntity.ts";
 
 
 export interface DataProviderEvent {
@@ -10,6 +11,7 @@ export interface DataProviderEvent {
 export enum DataProviderEventType {
     MAP_LOCATIONS_UPDATED = 'mapLocations-updated',
     MAP_STYLE_UPDATED = 'mapStyle-updated',
+    MAP_GROUPS_UPDATED = 'mapGroups-updated',
     OVERLAY_ADDED = 'overlay-added',
     LOGIN_SUCCESS = 'login-success',
     LOGIN_FAILURE = 'login-failure'
@@ -21,6 +23,8 @@ export class DataProvider {
     private eventListeners: Map<string, ((event: DataProviderEvent) => void)[]> = new Map();
     private mapStyle: LayerInfo | undefined;
     private overlays: Map<string, LayerInfo> = new Map();
+
+    private mapGroups: Map<string, IMapGroup> = new Map();
 
     public constructor() {
     }
@@ -40,6 +44,14 @@ export class DataProvider {
         return this.mapLocations;
     }
 
+    addMapGroup(id: string, group: IMapGroup): void {
+        this.mapGroups.set(id, group);
+        this.triggerEvent(DataProviderEventType.MAP_GROUPS_UPDATED, group);
+    }
+
+    getMapGroups(): Map<string, IMapGroup> {
+        return this.mapGroups;
+    }
 
     setMapStyle(style: LayerInfo): void {
         this.mapStyle = style;

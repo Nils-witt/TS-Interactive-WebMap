@@ -183,17 +183,20 @@ export class SearchControl extends Evented implements IControl {
         }
 
         let resultCount = 0;
-        for (const entity of this.dataProvider.getMapLocations().values()) {
-            if (entity.name.toLowerCase().includes(query.toLowerCase())) {
-                let row = this.searchResultsTable.insertRow()
-                row.insertCell().appendChild(this.showMarkerButton(entity));
 
-                row.insertCell().textContent = entity.name;
-                resultCount++;
-                if (resultCount >= this.resultLimit) {
-                    break; // Stop after reaching the result limit
-                }
+        let entries = Array.from(this.dataProvider.getMapLocations().values()).filter(entity => entity.name.toLowerCase().includes(query.toLowerCase()));
+        entries = entries.sort((a, b) => a.name.localeCompare(b.name)); // Sort results by name
+
+        for (const entity of entries) {
+            let row = this.searchResultsTable.insertRow()
+            row.insertCell().appendChild(this.showMarkerButton(entity));
+
+            row.insertCell().textContent = entity.name;
+            resultCount++;
+            if (resultCount >= this.resultLimit) {
+                break; // Stop after reaching the result limit
             }
+
         }
     }
 

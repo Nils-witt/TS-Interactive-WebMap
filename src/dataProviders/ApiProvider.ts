@@ -1,6 +1,7 @@
 import type {LayerInfo} from "../types/LayerInfo.ts";
 import {NamedGeoReferencedObject} from "../enitites/NamedGeoReferencedObject.ts";
 import type {DataProvider} from "./DataProvider.ts";
+import {IMapGroup} from "../types/MapEntity.ts";
 
 
 export enum ApiProviderEventTypes {
@@ -47,6 +48,34 @@ export class ApiProvider {
                 dataProvider.addMapLocation(item.id, item);
             }
         });
+        this.getMapGroups().then(items => {
+            for (const item of items) {
+                dataProvider.addMapGroup(item.id, item);
+            }
+        });
+    }
+
+    public async testLogin(): Promise<void> {
+        const url = ApiProvider.BASE_URL + '/token/verify/';
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+
+        let data = {
+            token: this.token
+        };
+        const requestOptions = {
+            method: "POST",
+            headers: myHeaders,
+            body: JSON.stringify(data)
+        };
+        try {
+            let res = await fetch(url, requestOptions);
+            if (res.status == 401) {
+                this.notifyListeners(ApiProviderEventTypes.UNAUTHORIZED, {message: "Unauthorized access - check your token."});
+            }
+        } catch (e) {
+            console.error("Error preparing request options:", e);
+        }
     }
 
 
@@ -135,7 +164,8 @@ export class ApiProvider {
                     longitude: item.longitude,
                     zoomLevel: item.zoom_level,
                     symbol: item.symbol,
-                    showOnMap: item.show_on_map
+                    showOnMap: item.show_on_map,
+                    groupId: item.group_id
                 });
             });
         } else {
@@ -144,17 +174,51 @@ export class ApiProvider {
         return [];
     }
 
-    public async saveMapItem(item: NamedGeoReferencedObject): Promise<void> {
-        const url = ApiProvider.BASE_URL + `/items/${item.id}/`;
+    public async getMapGroups(): Promise<IMapGroup[]> {
+        const url = ApiProvider.BASE_URL + '/map_groups/';
+
+        let data = await fetch(url);
+
+        if (data.ok) {
+            let jsonData = await data.json();
+            return jsonData.map((item: any) => {
+                return {
+                    id: item.id,
+                    name: item.name,
+                    description: item.description
+                }
+            });
+        } else {
+            console.error("Failed to fetch entities:", data.statusText);
+        }
+        return [];
+    }
+
+    public async saveMapItem(item: NamedGeoReferencedObject): Promise<NamedGeoReferencedObject | null> {
+
+
+        let url = ApiProvider.BASE_URL + `/items/${item.id}/`;
+        let method = "PUT";
+
+        if (!item.id) {
+            url = ApiProvider.BASE_URL + '/items/';
+            method = "POST"; // Use POST for creating new items
+        }
+
         console.log("Saving item:", item, "to URL:", url);
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
         myHeaders.append("Authorization", `Bearer ${this.token}`);
 
-        const raw = JSON.stringify(item);
+        const raw = JSON.stringify({
+            ...item,
+            group: item.groupId ? ApiProvider.BASE_URL + '/map_groups/' + item.groupId + '/' : null,
+        });
+
+        console.log("Request body:", raw);
 
         const requestOptions = {
-            method: "PUT",
+            method: method,
             headers: myHeaders,
             body: raw
         };
@@ -163,6 +227,17 @@ export class ApiProvider {
             console.log("Save result:", result.status, result.statusText);
             if (result.ok) {
                 console.log("Item saved successfully:", item.id);
+                let resData = await result.json();
+                return new NamedGeoReferencedObject({
+                    id: resData.id,
+                    name: resData.name,
+                    latitude: resData.latitude,
+                    longitude: resData.longitude,
+                    zoomLevel: resData.zoom_level,
+                    symbol: resData.symbol,
+                    showOnMap: resData.show_on_map,
+                    groupId: resData.group_id
+                });
             } else {
                 if (result.status === 403) {
                     this.notifyListeners(ApiProviderEventTypes.UNAUTHORIZED, {message: "Unauthorized access - check your token."});
@@ -174,6 +249,7 @@ export class ApiProvider {
         } catch (e) {
             console.error("Error preparing request options:", e);
         }
+        return null;
     }
 
     private notifyListeners(event: string, data: { message: string }) {

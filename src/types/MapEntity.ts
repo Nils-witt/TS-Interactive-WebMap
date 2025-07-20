@@ -15,6 +15,7 @@ export interface IGeoReferencedObject extends IAbstractEntity {
     longitude: number; // Longitude coordinate of the object
     zoomLevel?: number; // Optional zoom level for the object, used to control visibility at different zoom levels
     showOnMap?: boolean; // Flag to indicate if the object should be displayed on the map
+    groupId?: string | undefined; // Optional group ID for categorization, used to group objects together
 }
 
 export interface INamedGeoReferencedObject extends IGeoReferencedObject {

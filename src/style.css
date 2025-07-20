@@ -49,3 +49,14 @@ html, body {
     background: white;
     z-index: 1000;
 }
+
+.symbol-edit-box {
+    padding: 1em;
+}
+
+.map-edit-context-menu {
+    position: absolute;
+    z-index: 1000;
+    background: white;
+    visibility: hidden;
+}

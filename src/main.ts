@@ -14,9 +14,9 @@ import {Config} from "./Config.ts";
 import {DataProvider, DataProviderEventType} from "./dataProviders/DataProvider.ts";
 import {EditorController} from "./EditorController.ts";
 import {SearchControl} from "./controls/SearchControl.ts";
+import {MapEditContextMenu} from "./controls/MapEditContextMenu.ts";
 
 const debugMode = false; // Set to true for debugging purposes, will log additional information
-
 
 const config = new Config();
 const dataProvider = new DataProvider();
@@ -27,6 +27,7 @@ const editorControls = document.createElement('div');
 
 mapContainer.id = 'map';
 mapContainer.innerText = 'Error loading the map';
+
 
 if (config.editMode) {
     document.body.appendChild(editorLayout);
@@ -81,9 +82,12 @@ drawingController.addTo(map); // Set the map for the drawing controller
 
 
 if (config.editMode) {
-    new EditorController(editorControls, map, dataProvider);
+    const editorController = new EditorController(editorControls, map, dataProvider);
+    new MapEditContextMenu({
+        map: map,
+        editor: editorController
+    });
 }
-
 
 dataProvider.on(DataProviderEventType.MAP_STYLE_UPDATED, (event) => {
     const style = event.data as LayerInfo;
