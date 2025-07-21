@@ -1,6 +1,6 @@
 import {type Map as MapLibreMap, MapMouseEvent} from "maplibre-gl";
 import {type DataProvider, DataProviderEventType} from "./dataProviders/DataProvider.ts";
-import {ApiProvider, ApiProviderEventTypes} from "./dataProviders/ApiProvider.ts";
+import {ApiProvider} from "./dataProviders/ApiProvider.ts";
 import {EditorEditBox} from "./controls/EditorEditBox.ts";
 import {NamedGeoReferencedObject} from "./enitites/NamedGeoReferencedObject.ts";
 
@@ -49,9 +49,6 @@ export class EditorController {
             this.fullUpdateItemTable();
         });
 
-        ApiProvider.getInstance().on(ApiProviderEventTypes.UNAUTHORIZED, () => {
-            this.updateCredentials();
-        });
         ApiProvider.getInstance().testLogin();
 
     }
@@ -185,53 +182,6 @@ export class EditorController {
             cellActions.appendChild(editIconBtn);
         }
     }
-
-    private updateCredentials(): void {
-        let container = document.createElement('div');
-        container.classList.add('login-container');
-
-        container.classList.add('absolute', 'top-0', 'left-0', 'w-full', 'h-full', 'items-center', 'justify-center', 'bg-white', 'z-1001');
-
-        document.body.appendChild(container);
-        let label = document.createElement('label');
-        label.textContent = 'Username:';
-        let input = document.createElement('input');
-        input.type = 'text';
-
-        let labelPassword = document.createElement('label');
-        labelPassword.textContent = 'Password:';
-        let inputPassword = document.createElement('input');
-        inputPassword.type = 'password';
-        let button = document.createElement('button');
-        button.textContent = 'Login';
-        button.onclick = async () => {
-            let username = input.value;
-            let password = inputPassword.value;
-            button.disabled = true; // Disable the button to prevent multiple clicks
-            try {
-                await ApiProvider.getInstance().login(username, password);
-            } catch (error) {
-                console.error("Login failed:", error);
-                alert("Login failed. Please check your credentials.");
-            }
-        };
-        container.appendChild(label);
-        container.appendChild(input);
-
-        container.appendChild(labelPassword);
-        container.appendChild(inputPassword);
-
-        container.appendChild(button);
-
-        ApiProvider.getInstance().on(ApiProviderEventTypes.LOGIN_SUCCESS, () => {
-            console.log("Login successful, updating item table");
-            container.remove(); // Remove the login form after successful login
-        });
-        ApiProvider.getInstance().on(ApiProviderEventTypes.LOGIN_FAILURE, () => {
-            button.disabled = false; // Re-enable the button on failure
-        });
-    }
-
 
     public createNewItem(position: {lng: number, lat: number}): void {
         let item = new NamedGeoReferencedObject({

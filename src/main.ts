@@ -7,7 +7,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {GeolocateControl, Map as MapLibreMap, NavigationControl} from 'maplibre-gl';
 import {LayersControl} from "./controls/LayerControl.ts";
 import type {LayerInfo} from "./types/LayerInfo.ts";
-import {ApiProvider} from "./dataProviders/ApiProvider.ts";
+import {ApiProvider, ApiProviderEventTypes} from "./dataProviders/ApiProvider.ts";
 import {DrawingController} from "./controls/DrawingController.ts";
 import {Config} from "./Config.ts";
 import {DataProvider, DataProviderEventType} from "./dataProviders/DataProvider.ts";
@@ -15,12 +15,14 @@ import {EditorController} from "./EditorController.ts";
 import {SearchControl} from "./controls/SearchControl.ts";
 import {MapEditContextMenu} from "./controls/MapEditContextMenu.ts";
 import './style.css'
+import {LoginController} from "./controls/LoginController.ts";
 
 
 const debugMode = false; // Set to true for debugging purposes, will log additional information
 
 const config = new Config();
 const dataProvider = new DataProvider();
+ApiProvider.getInstance();
 
 const mapContainer = document.createElement('div');
 const editorLayout = document.createElement('div');
@@ -43,6 +45,8 @@ if (config.editMode) {
 }
 
 const drawingController = new DrawingController(dataProvider);
+
+LoginController.getInstance();
 /**
  * Initialize the MapLibre map with basic configuration
  */
@@ -102,8 +106,11 @@ map.on('moveend', () => {
     localStorage.setItem('mapZoom', map.getZoom().toString());
 });
 
-ApiProvider.getInstance().loadAllData(dataProvider);
+ApiProvider.getInstance().on(ApiProviderEventTypes.LOGIN_SUCCESS, () => {
+    ApiProvider.getInstance().loadAllData(dataProvider);
+});
 
+ApiProvider.getInstance().loadAllData(dataProvider);
 /*
 (async () => {
     const ws = new WebSocket('wss://map.nils-witt.de/traccar/');

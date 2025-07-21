@@ -97,10 +97,8 @@ export class ApiProvider {
             console.log("Login response:", res.status, res.statusText);
             if (res.ok) {
                 let data = await res.json();
-
                 this.token = data.access; // Store the token for future requests
                 localStorage.setItem('authToken', data.access); // Store token in local storage
-                console.log("Login successful, token:", this.token);
                 this.notifyListeners(ApiProviderEventTypes.LOGIN_SUCCESS, {message: "Login successful"});
             } else {
                 this.notifyListeners(ApiProviderEventTypes.LOGIN_FAILURE, {message: "Login failed"});
@@ -117,12 +115,34 @@ export class ApiProvider {
         this.listeners.get(event)?.push(callback);
     }
 
-    public async fetchData(url: string): Promise<any> {
-        const response = await fetch(url);
+
+    private async callApi(url: string, method: string, headers: Headers = new Headers(), body?: any): Promise<any> {
+
+        if (this.token) {
+            headers.append("Authorization", `Bearer ${this.token}`);
+        }
+
+        const requestOptions = {
+            method: method,
+            headers: headers
+        };
+        if (body) {
+            requestOptions['body'] = JSON.stringify(body);
+            headers.append("Content-Type", "application/json");
+        }
+
+        const response = await fetch(url, requestOptions);
         if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                this.notifyListeners(ApiProviderEventTypes.UNAUTHORIZED, {message: `Unauthorized access - check your token. ${response.status}`});
+            }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
+    }
+
+    public async fetchData(url: string): Promise<any> {
+        return this.callApi(url, 'GET');
     }
 
     public async getOverlayLayers(): Promise<LayerInfo[]> {
@@ -150,13 +170,11 @@ export class ApiProvider {
     }
 
     public async getMapItems(): Promise<NamedGeoReferencedObject[]> {
-        const url = ApiProvider.BASE_URL + '/items/';
 
-        let data = await fetch(url);
-
-        if (data.ok) {
-            let jsonData = await data.json();
-            return jsonData.map((item: any) => {
+        try {
+            const url = ApiProvider.BASE_URL + '/items/'
+            let data = await this.fetchData(url);
+            return data.map((item: any) => {
                 return new NamedGeoReferencedObject({
                     id: item.id,
                     name: item.name,
@@ -168,30 +186,23 @@ export class ApiProvider {
                     groupId: item.group_id
                 });
             });
-        } else {
-            console.error("Failed to fetch entities:", data.statusText);
+        } catch (error) {
+            console.error("Error fetching items:", error);
+            return []; // Return empty array on error
         }
-        return [];
+
     }
 
-    public async getMapGroups(): Promise<IMapGroup[]> {
-        const url = ApiProvider.BASE_URL + '/map_groups/';
-
-        let data = await fetch(url);
-
-        if (data.ok) {
-            let jsonData = await data.json();
-            return jsonData.map((item: any) => {
-                return {
-                    id: item.id,
-                    name: item.name,
-                    description: item.description
-                }
-            });
-        } else {
-            console.error("Failed to fetch entities:", data.statusText);
+    public async getMapGroups()
+        :
+        Promise<IMapGroup[]> {
+        try {
+            const url = ApiProvider.BASE_URL + '/map_groups/'
+            return await this.fetchData(url);
+        } catch (error) {
+            console.error("Error fetching overlay layers:", error);
+            return []; // Return empty array on error
         }
-        return [];
     }
 
     public async saveMapItem(item: NamedGeoReferencedObject): Promise<NamedGeoReferencedObject | null> {
@@ -205,47 +216,23 @@ export class ApiProvider {
             method = "POST"; // Use POST for creating new items
         }
 
-        console.log("Saving item:", item, "to URL:", url);
-        const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-        myHeaders.append("Authorization", `Bearer ${this.token}`);
-
-        const raw = JSON.stringify({
+        const data = {
             ...item,
             group: item.groupId ? ApiProvider.BASE_URL + '/map_groups/' + item.groupId + '/' : null,
-        });
+        }
 
-        console.log("Request body:", raw);
-
-        const requestOptions = {
-            method: method,
-            headers: myHeaders,
-            body: raw
-        };
         try {
-            let result = await fetch(url, requestOptions)
-            console.log("Save result:", result.status, result.statusText);
-            if (result.ok) {
-                console.log("Item saved successfully:", item.id);
-                let resData = await result.json();
-                return new NamedGeoReferencedObject({
-                    id: resData.id,
-                    name: resData.name,
-                    latitude: resData.latitude,
-                    longitude: resData.longitude,
-                    zoomLevel: resData.zoom_level,
-                    symbol: resData.symbol,
-                    showOnMap: resData.show_on_map,
-                    groupId: resData.group_id
-                });
-            } else {
-                if (result.status === 403) {
-                    this.notifyListeners(ApiProviderEventTypes.UNAUTHORIZED, {message: "Unauthorized access - check your token."});
-                    this.on('login-success', () => {
-                        this.saveMapItem(item); // Retry saving after successful login
-                    });
-                }
-            }
+            let resData = await this.callApi(url, method, new Headers(), data);
+            return new NamedGeoReferencedObject({
+                id: resData.id,
+                name: resData.name,
+                latitude: resData.latitude,
+                longitude: resData.longitude,
+                zoomLevel: resData.zoom_level,
+                symbol: resData.symbol,
+                showOnMap: resData.show_on_map,
+                groupId: resData.group_id
+            });
         } catch (e) {
             console.error("Error preparing request options:", e);
         }
