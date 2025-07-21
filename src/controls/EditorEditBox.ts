@@ -313,6 +313,11 @@ export class EditorEditBox {
             this.setItem(null); // Clear the item
         }
         this.container.appendChild(this.cancelButton);
+        this.container.classList.add('p-4')
+
+        this.saveButton.classList.add('bg-white', 'hover:bg-gray-400', 'text-black', 'font-bold', 'py-2', 'px-4','border','border-black','rounded', 'm-2');
+        this.cancelButton.classList.add('bg-white', 'hover:bg-gray-400', 'text-black', 'font-bold', 'py-2', 'px-4','border','border-black','rounded', 'm-2');
+
         this.controlsEnabled(false); // Initially disable controls until an item is set
         this.enableImageControls(false);
     }
