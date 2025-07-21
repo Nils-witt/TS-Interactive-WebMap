@@ -34,20 +34,21 @@ export class MapEditContextMenu {
 
         this.contextMenu.style.top = `${event.originalEvent.clientY}px`;
         this.contextMenu.style.left = `${event.originalEvent.clientX}px`;
-        this.contextMenu.style.visibility = 'visible'; // Show the context menu
-        this.event = event; // Store the event for later use
+        this.contextMenu.classList.remove('hidden');
+        this.event = event;
     }
 
     private setupContextMenu(): void {
-        this.contextMenu.classList.add('map-edit-context-menu');
+        this.contextMenu.classList.add('absolute', 'hidden');
         document.body.appendChild(this.contextMenu);
 
 
         let btnCreate = document.createElement('button');
         btnCreate.innerText = 'Create Item';
+        btnCreate.classList.add('bg-white', 'hover:bg-gray-400', 'text-black', 'font-bold', 'py-2', 'px-4');
         btnCreate.onclick = () => {
             this.editor.createNewItem(this.event!.lngLat);
-            this.contextMenu.style.visibility = 'hidden'; // Hide the context menu after action
+            this.contextMenu.classList.add('hidden');
         };
         this.contextMenu.appendChild(btnCreate);
 

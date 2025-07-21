@@ -26,13 +26,37 @@ export class DataProvider {
 
     private mapGroups: Map<string, IMapGroup> = new Map();
 
+    //TODO: Implement BroadcastChannel communication
+  //  private dataChannel: BroadcastChannel = new BroadcastChannel('dataProviderChannel');
+
     public constructor() {
+        //TODO: Implement BroadcastChannel communication
+        /*
+                this.dataChannel.onmessage = (event) => {
+                    console.log("DataProvider: Received message from BroadcastChannel", event);
+
+                    let recData: { event: DataProviderEventType, data: any } = event.data;
+
+                    this.eventListeners.get(recData.event)?.forEach(callback => {
+                        callback({type: recData.event, data: recData.data});
+                    });
+                }
+          */
     }
 
     private triggerEvent(eventType: string, data: any): void {
         this.eventListeners.get(eventType)?.forEach(callback => {
             callback({type: eventType, data});
         });
+
+        //TODO: Implement BroadcastChannel communication
+        /*
+        this.dataChannel.postMessage({
+            'event': eventType,
+            'data': data
+        });
+
+         */
     }
 
     addMapLocation(id: string, item: NamedGeoReferencedObject): void {

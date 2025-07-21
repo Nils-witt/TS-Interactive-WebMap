@@ -2,7 +2,6 @@ import {Evented, type IControl, Map as MapLibreMap, Marker} from "maplibre-gl";
 import UrlDataHandler from "../dataProviders/UrlDataHandler.ts";
 import {type DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
 import type {NamedGeoReferencedObject} from "../enitites/NamedGeoReferencedObject.ts";
-import {faHouse} from "@fortawesome/free-solid-svg-icons/faHouse";
 import {icon} from "@fortawesome/fontawesome-svg-core";
 import {faMagnifyingGlass} from "@fortawesome/free-solid-svg-icons/faMagnifyingGlass";
 import {faMapLocationDot} from "@fortawesome/free-solid-svg-icons/faMapLocationDot";
@@ -35,9 +34,9 @@ export class SearchControl extends Evented implements IControl {
     private dataProvider: DataProvider;
 
     private searchInput: HTMLInputElement | undefined;
-    private searchResultsTable: HTMLTableElement | undefined;
-    private searchIcon: HTMLDivElement | undefined;
-
+    private searchResultsBody: HTMLTableSectionElement | undefined;
+    private searchIconContainer: HTMLDivElement | undefined;
+    private searchContentContainer: HTMLDivElement | undefined;
     /**
      * The maximum number of search results to display
      * @private
@@ -75,35 +74,9 @@ export class SearchControl extends Evented implements IControl {
         );
         this.options = options;
 
-        console.log(icon(faHouse).html);
-
-
         this.dataProvider = options.dataProvider;
 
         this.createSearchContainer();
-
-
-        let searchIconHtml = icon(faMagnifyingGlass).html;
-
-
-        this.searchIcon = document.createElement("div");
-        if (searchIconHtml.length > 0) {
-            this.searchIcon.innerHTML = searchIconHtml[0];
-
-            if (this.searchIcon.children.item(0)) {
-                let icon = this.searchIcon.children.item(0) as HTMLElement;
-                icon.style.setProperty("height", "2em")
-            }
-        }
-
-        this.container.appendChild(this.searchIcon);
-        this.container.style.textAlign = "center";
-        this.container.onmouseover = () => {
-            this.setOpen(true);
-        }
-        this.container.onmouseout = () => {
-            this.setOpen(false);
-        }
 
         this.dataProvider.on(DataProviderEventType.MAP_LOCATIONS_UPDATED, () => {
             if (this.searchInput && this.searchInput.value.trim().length > 0) {
@@ -171,11 +144,12 @@ export class SearchControl extends Evented implements IControl {
      */
     private onSearchBoxUpdate(query: string): void {
         query = query.trim();
-        if (!this.searchResultsTable) {
+        if (!this.searchResultsBody) {
             console.error("Search results table not initialized");
             return;
         }
-        this.searchResultsTable.innerHTML = ""; // Clear previous results
+
+        this.searchResultsBody.innerHTML = ""; // Clear previous results
 
         UrlDataHandler.setQueryString(query);
         if (query.length === 0) {
@@ -188,16 +162,21 @@ export class SearchControl extends Evented implements IControl {
         entries = entries.sort((a, b) => a.name.localeCompare(b.name)); // Sort results by name
 
         for (const entity of entries) {
-            let row = this.searchResultsTable.insertRow()
-            row.insertCell().appendChild(this.showMarkerButton(entity));
+            let row = this.searchResultsBody.insertRow()
+            let actionCell = row.insertCell();
+            actionCell.classList.add("px-2");
+            actionCell.appendChild(this.showMarkerButton(entity));
 
-            row.insertCell().textContent = entity.name;
+            let nameCell = row.insertCell();
+            nameCell.classList.add("pl-6");
+            nameCell.innerText = entity.name;
             resultCount++;
             if (resultCount >= this.resultLimit) {
                 break; // Stop after reaching the result limit
             }
 
         }
+
     }
 
     /**
@@ -258,18 +237,84 @@ export class SearchControl extends Evented implements IControl {
      * @private
      */
     private createSearchContainer(): void {
-        this.searchResultsTable = document.createElement("table");
-        this.searchResultsTable.style.display = "none";
 
-        this.searchInput = document.createElement("input");
-        this.searchInput.style.display = "none";
+        this.searchIconContainer = document.createElement("div");
+
+        let spanIcon = document.createElement("span");
+        this.searchIconContainer.appendChild(spanIcon);
+        spanIcon.classList.add("p-[5px]");
+        spanIcon.innerHTML = icon(faMagnifyingGlass).html[0];
+
+
+        let container = document.createElement("div");
+        this.searchContentContainer = container;
+        container.classList.add("overflow-x-auto", "bg-white");
+
+        let searchContainer = document.createElement("div");
+        container.appendChild(searchContainer);
+        searchContainer.classList.add("relative", "m-[2px]", "mb-3", "mr-5", "float-left");
+        let searchLabel = document.createElement("label");
+        searchContainer.appendChild(searchLabel);
+        searchLabel.classList.add("sr-only");
+        searchLabel.textContent = "Search";
+        let searchInput = document.createElement("input");
+        searchContainer.appendChild(searchInput);
+        this.searchInput = searchInput;
+        searchInput.type = "text";
+        searchInput.classList.add("block", "w-40", "rounded-lg", "border", "py-2", "pl-10", "pr-4", "text-sm", "focus:border-blue-400", "focus:outline-none", "focus:ring-1", "focus:ring-blue-400");
+        let spanIcon2 = document.createElement("span");
+        searchContainer.appendChild(spanIcon2);
+        spanIcon2.classList.add("pointer-events-none", "absolute", "left-3", "top-1/2", "-translate-y-1/2", "transform");
+        spanIcon2.innerHTML = icon(faMagnifyingGlass).html[0];
+
+
+        //TODO insert Filter
+
+
+        let table = document.createElement("table");
+        container.appendChild(table);
+        table.classList.add("min-w-full", "text-left", "text-xs", "whitespace-nowrap");
+
+        let thead = table.createTHead();
+        let headerRow = thead.insertRow();
+        let cell1 = headerRow.insertCell();
+        cell1.textContent = "Action";
+        cell1.classList.add("px-2", "py-4");
+        let cell2 = headerRow.insertCell();
+        cell2.textContent = "Name"
+        cell2.classList.add("px-6", "py-4");
+
+        let tBody = table.createTBody();
+        this.searchResultsBody = tBody;
+        let row = tBody.insertRow();
+        row.classList.add("border-b", "dark:border-neutral-600")
+        let cellAction = row.insertCell();
+
+
+        cellAction.classList.add("py-4");
+
+        let cellName = row.insertCell();
+        cellName.classList.add("px-6", "py-4");
+        cellName.textContent = "Search for a location";
+
+        this.container.innerHTML = ""; // Clear any existing content in the container
+        this.container.appendChild(this.searchIconContainer);
+        this.container.appendChild(container);
+
         this.searchInput.addEventListener("input", (e) => {
             const target = e.target as HTMLInputElement;
             this.onSearchBoxUpdate(target.value);
+            console.log("Search input updated:", target.value);
         });
 
-        this.container.appendChild(this.searchInput);
-        this.container.appendChild(this.searchResultsTable);
+        this.searchIconContainer.addEventListener("click", () => {
+            this.setOpen(!this.isOpen); // Toggle the open state
+        });
+
+        this.searchIconContainer.classList.add("cursor-pointer")
+
+        this.setOpen(false); // Initialize the control as closed
+
     }
 
     /**
@@ -279,21 +324,16 @@ export class SearchControl extends Evented implements IControl {
      * @param isOpen - Whether to open or close the control
      */
     private setOpen(isOpen: boolean): void {
-        if (this.isOpen === isOpen) {
-            return; // No change needed
-        }
         this.isOpen = isOpen;
-        if (!this.searchInput || !this.searchResultsTable || !this.searchIcon) {
+        if (!this.searchContentContainer || !this.searchIconContainer) {
             return;
         }
         if (this.isOpen) {
-            this.searchInput.style.display = "block"; // Show the control
-            this.searchResultsTable.style.display = "block"; // Show the control
-            this.searchIcon.style.display = "none"; // Show the control
+            this.searchContentContainer.style.display = "block"; // Show the control
+            this.searchIconContainer.style.display = "none"; // Show the control
         } else {
-            this.searchInput.style.display = "none"; // Hide the control
-            this.searchResultsTable.style.display = "none"; // Hide the control
-            this.searchIcon.style.display = "block"; // Hide the control
+            this.searchContentContainer.style.display = "none"; // Hide the control
+            this.searchIconContainer.style.display = "block"; // Hide the control
         }
     }
 }

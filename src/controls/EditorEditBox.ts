@@ -79,6 +79,7 @@ export class EditorEditBox {
 
     private setupBox() {
 
+
         this.headerLabel.textContent = '-/-';
         this.container.appendChild(this.headerLabel);
 

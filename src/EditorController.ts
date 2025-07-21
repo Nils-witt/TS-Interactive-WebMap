@@ -27,13 +27,20 @@ export class EditorController {
         this.controlsContainer.append(this.editorEditBox.getContainer());
         this.editorEditBox.setup();
 
+        this.controlsContainer.classList.add('h-100%');
+
         this.setupGroupSelect(this.mapGroupSelect, dataProvider);
 
-
+        let tableContainer = document.createElement('div');
         let table = document.createElement('table');
         this.setUpTable(table);
-        this.controlsContainer.append(table);
+        tableContainer.appendChild(table);
+        this.controlsContainer.append(tableContainer);
         this.itemTableBody = table.createTBody();
+        tableContainer.classList.add('overflow-y-scroll');
+
+
+        this.controlsContainer.classList.add('flex', 'flex-col');
 
 
         map.on('click', this.mapClickHandler);
@@ -182,6 +189,9 @@ export class EditorController {
     private updateCredentials(): void {
         let container = document.createElement('div');
         container.classList.add('login-container');
+
+        container.classList.add('absolute', 'top-0', 'left-0', 'w-full', 'h-full', 'items-center', 'justify-center', 'bg-white', 'z-1001');
+
         document.body.appendChild(container);
         let label = document.createElement('label');
         label.textContent = 'Username:';

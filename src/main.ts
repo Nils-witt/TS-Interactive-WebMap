@@ -3,7 +3,6 @@
  * This file initializes the map, loads available layers, and sets up the UI controls.
  */
 
-import './style.css'
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {GeolocateControl, Map as MapLibreMap, NavigationControl} from 'maplibre-gl';
 import {LayersControl} from "./controls/LayerControl.ts";
@@ -15,6 +14,8 @@ import {DataProvider, DataProviderEventType} from "./dataProviders/DataProvider.
 import {EditorController} from "./EditorController.ts";
 import {SearchControl} from "./controls/SearchControl.ts";
 import {MapEditContextMenu} from "./controls/MapEditContextMenu.ts";
+import './style.css'
+
 
 const debugMode = false; // Set to true for debugging purposes, will log additional information
 
@@ -27,20 +28,18 @@ const editorControls = document.createElement('div');
 
 mapContainer.id = 'map';
 mapContainer.innerText = 'Error loading the map';
-
+mapContainer.classList.add('w-full'); // Add a class for styling
+mapContainer.classList.add('h-full'); // Add a class for styling
 
 if (config.editMode) {
     document.body.appendChild(editorLayout);
     editorLayout.appendChild(mapContainer);
     editorLayout.appendChild(editorControls);
-    mapContainer.classList.add("map-fullscreen")
-    editorControls.classList.add('editor-controls'); // Add a class for styling
-    editorLayout.classList.add('editor-layout'); // Add a class for styling
-
-    //mapContainer.classList.add('edit-mode'); // Add a class for styling
+    editorLayout.classList.add('w-full'); // Add a class for styling
+    editorLayout.classList.add('h-full'); // Add a class for styling
+    editorLayout.classList.add('flex'); // Use flexbox for layout
 } else {
     document.body.appendChild(mapContainer);
-    mapContainer.classList.add("map-fullscreen")
 }
 
 const drawingController = new DrawingController(dataProvider);
