@@ -56,13 +56,13 @@ export class LayersControl extends Evented implements IControl {
         this.container = document.createElement("div");
         this.container.classList.add(
             "maplibregl-ctrl",        // Standard MapLibre control class
-            "maplibregl-ctrl-group",  // Groups the control visually
-            "layers-control",         // Custom class for styling
+            "maplibregl-ctrl-group"  // Groups the control visually
+            , "grid"
         );
 
         // Create a map of layer IDs to LayerInfo objects for quick lookup
         this.dataProvider = options.dataProvider;
-        this.dataProvider.on(DataProviderEventType.OVERLAY_ADDED, (event    : DataProviderEvent) => {
+        this.dataProvider.on(DataProviderEventType.OVERLAY_ADDED, (event: DataProviderEvent) => {
             let data = event.data as LayerInfo;
             console.log("LayersControl: Overlay added", data);
             this.addLayer(data);
@@ -110,7 +110,7 @@ export class LayersControl extends Evented implements IControl {
             console.error("LayersControl: Map is not initialized. Cannot add layer.");
             return;
         }
-        if (this.map.loaded()){
+        if (this.map.loaded()) {
             // Add the layer source
             this.map.addSource(layer.id, {
                 type: "raster",           // Use raster tiles
@@ -127,7 +127,7 @@ export class LayersControl extends Evented implements IControl {
             if (!this.activeOverlays.has(layer.id)) {
                 this.map.setLayoutProperty(layer.id + "-layer", "visibility", "none");
             }
-        }else {
+        } else {
             this.map.once('load', () => {
                 // Add the layer source
                 this.map?.addSource(layer.id, {
@@ -159,31 +159,48 @@ export class LayersControl extends Evented implements IControl {
      * @param layer - The layer information object
      * @returns A label element containing a checkbox and the layer name
      */
-    private createLabeledCheckbox(layer: LayerInfo): HTMLLabelElement {
-        // Create the label element that will contain the checkbox and text
-        let label = document.createElement("label");
-        label.classList.add("layer-control");
+    private createLabeledCheckbox(layer: LayerInfo): HTMLDivElement {
+        let container = document.createElement("div");
+        container.classList.add("m-1")
+        container.classList.add("inline-flex", "items-center");
 
-        // Create a text node with the layer name
-        let text = document.createTextNode(layer.name);
 
-        // Create the checkbox input element
+        let cLabel = document.createElement("label");
+        container.appendChild(cLabel);
+        cLabel.classList.add("flex", "items-center", "cursor-pointer", "relative");
+
         let input = document.createElement("input");
-        this.inputs.push(input);
-
+        cLabel.appendChild(input);
         input.type = "checkbox";
-        input.id = layer.id;
-        if(this.map?.loaded()){
-            if (this.map.getLayoutProperty(layer.id + "-layer","visibility") != "none") {
+        input.id = "cb-"+layer.id; // Set the ID to the layer ID for easy reference
+        input.classList.add("peer", "h-5", "w-5", "cursor-pointer", "transition-all", "appearance-none", "rounded", "shadow", "hover:shadow-md", "border", "border-slate-300", "checked:bg-slate-800", "checked:border-slate-800")
+
+        let span = document.createElement("span");
+        cLabel.appendChild(span);
+        span.classList.add("absolute", "text-white", "opacity-0", "peer-checked:opacity-100", "top-1/2", "left-1/2", "transform", "-translate-x-1/2", "-translate-y-1/2");
+        span.innerHTML = '      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"\n' +
+            '        stroke="currentColor" stroke-width="1">\n' +
+            '        <path fill-rule="evenodd"\n' +
+            '        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"\n' +
+            '        clip-rule="evenodd"></path>\n' +
+            '      </svg>'
+        let textLabel = document.createElement("label");
+        container.appendChild(textLabel);
+        textLabel.classList.add("cursor-pointer", "ml-2", "text-slate-600", "text-sm");
+        textLabel.textContent = layer.name;
+
+
+        if (this.map?.loaded()) {
+            if (this.map.getLayoutProperty(layer.id + "-layer", "visibility") != "none") {
                 input.checked = true; // Default to checked if layer is visible
             }
-        }else{
+        } else {
             input.checked = false; // Default to unchecked if no map is available
             input.disabled = true; // Disable checkbox if no map is available
             this.map?.once('load', () => {
                 // Enable the checkbox once the map is loaded
                 input.disabled = false;
-                if (this.map?.getLayoutProperty(layer.id + "-layer","visibility") != "none") {
+                if (this.map?.getLayoutProperty(layer.id + "-layer", "visibility") != "none") {
                     input.checked = true; // Default to checked if layer is visible
                 }
             });
@@ -194,7 +211,9 @@ export class LayersControl extends Evented implements IControl {
         input.addEventListener("change", () => {
             // Set visibility based on checkbox state
             let visibility = input.checked ? "visible" : "none";
-            const layer = this.layers.get(input.id);
+            const layer = this.layers.get(input.id.substring(3));
+            console.log("Checkbox changed for layer:", layer, "Checked:", input.checked);
+
             if (layer && this.map) {
                 // Update the layer's visibility property in the map
                 this.map.setLayoutProperty(layer.id + "-layer", "visibility", visibility);
@@ -207,10 +226,7 @@ export class LayersControl extends Evented implements IControl {
             }
         });
 
-        // Assemble the label with the checkbox and text
-        label.appendChild(input);
-        label.appendChild(text);
-        return label;
+        return container;
     }
 
     /**
