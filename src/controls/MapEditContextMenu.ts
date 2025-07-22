@@ -52,5 +52,11 @@ export class MapEditContextMenu {
         };
         this.contextMenu.appendChild(btnCreate);
 
+        document.body.addEventListener('click', (e) => {
+            if (!this.contextMenu.contains(e.target as Node)) {
+                this.contextMenu.classList.add('hidden');
+                this.event = undefined; // Clear the event when clicking outside
+            }
+        });
     }
 }
