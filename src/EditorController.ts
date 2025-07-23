@@ -3,6 +3,10 @@ import {type DataProvider, DataProviderEventType} from "./dataProviders/DataProv
 import {ApiProvider} from "./dataProviders/ApiProvider.ts";
 import {EditorEditBox} from "./controls/EditorEditBox.ts";
 import {NamedGeoReferencedObject} from "./enitites/NamedGeoReferencedObject.ts";
+import {icon} from "@fortawesome/fontawesome-svg-core";
+import {faMap} from "@fortawesome/free-solid-svg-icons/faMap";
+import {faMapPin} from "@fortawesome/free-solid-svg-icons/faMapPin";
+import {faPenToSquare} from "@fortawesome/free-solid-svg-icons/faPenToSquare";
 
 
 export class EditorController {
@@ -29,6 +33,15 @@ export class EditorController {
 
         this.controlsContainer.classList.add('h-100%');
 
+        this.editorEditBox.addEventListener('cancel', () => {
+            if (this.internalClickAbortHandler){
+                this.internalClickAbortHandler(); // Abort any previous click handler
+                this.internalClickSuccessHandler = undefined;
+                this.internalClickAbortHandler = undefined;
+            }
+        });
+
+
         this.setupGroupSelect(this.mapGroupSelect, dataProvider);
 
         let tableContainer = document.createElement('div');
@@ -38,7 +51,6 @@ export class EditorController {
         this.controlsContainer.append(tableContainer);
         this.itemTableBody = table.createTBody();
         tableContainer.classList.add('overflow-y-scroll');
-
 
         this.controlsContainer.classList.add('flex', 'flex-col');
 
@@ -83,7 +95,13 @@ export class EditorController {
             this.fullUpdateItemTable();
         });
 
-        this.controlsContainer.appendChild(select);
+        let groupLabel = document.createElement('label');
+        groupLabel.textContent = 'Select Group:';
+
+        let groupContainer = document.createElement('div');
+        groupContainer.appendChild(groupLabel);
+        groupContainer.appendChild(select);
+        this.controlsContainer.appendChild(groupContainer);
     }
 
     internalClickSuccessHandler: undefined | ((event: MapMouseEvent) => void) = undefined;
@@ -137,18 +155,22 @@ export class EditorController {
             groups.textContent = 'N/A';
             // Add action buttons (edit, delete, etc.)
             let locateButton = document.createElement('button');
-            locateButton.textContent = 'Locate';
+            let updatePositionButton = document.createElement('button');
+            let editIconBtn = document.createElement('button');
+
+           // cellActions.appendChild(locateButton);
+            cellActions.appendChild(updatePositionButton);
+            cellActions.appendChild(editIconBtn);
+
+
             locateButton.onclick = () => {
                 this.map.flyTo({
                     center: [item.longitude, item.latitude],
                     zoom: 18,
                     essential: true // This ensures the animation is not interrupted
-                })
+                });
             };
-            cellActions.appendChild(locateButton);
 
-            let updatePositionButton = document.createElement('button');
-            updatePositionButton.textContent = 'Set Position';
             updatePositionButton.onclick = () => {
                 if (this.internalClickAbortHandler) {
                     this.internalClickAbortHandler(); // Abort any previous click handler
@@ -172,15 +194,33 @@ export class EditorController {
                     this.internalClickAbortHandler = undefined;
                 }
             }
-            cellActions.appendChild(updatePositionButton);
 
-            let editIconBtn = document.createElement('button');
-            editIconBtn.textContent = 'Edit';
+
             editIconBtn.onclick = () => {
+                if (this.internalClickAbortHandler) {
+                    this.internalClickAbortHandler(); // Abort any previous click handler
+                }
+                row.style.backgroundColor = "lightblue"; // Highlight the row
                 this.editorEditBox.setItem(item);
+
+                this.internalClickAbortHandler = () => {
+                    row.style.backgroundColor = ""; // Reset the row background
+                    this.internalClickSuccessHandler = undefined
+                    this.internalClickAbortHandler = undefined;
+                }
             };
-            cellActions.appendChild(editIconBtn);
+
+            editIconBtn.innerHTML = icon(faPenToSquare).html[0];
+            locateButton.innerHTML = icon(faMap).html[0];
+            updatePositionButton.innerHTML = icon(faMapPin).html[0];
+
+            editIconBtn.classList.add( 'mx-2', 'hover:cursor-pointer');
+            locateButton.classList.add( 'mx-2', 'hover:cursor-pointer');
+            updatePositionButton.classList.add( 'mx-2', 'hover:cursor-pointer');
         }
+
+
+
     }
 
     public createNewItem(position: {lng: number, lat: number}): void {

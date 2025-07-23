@@ -47,6 +47,8 @@ export class EditorEditBox {
     saveButton = document.createElement('button');
     groupSelect = document.createElement('select');
 
+    private listeners: Map<string, ((event: any) => void)[]> = new Map();
+
     constructor(dataProvider: DataProvider) {
         this.dataProvider = dataProvider;
 
@@ -311,6 +313,7 @@ export class EditorEditBox {
         this.cancelButton.textContent = 'Cancel';
         this.cancelButton.onclick = () => {
             this.setItem(null); // Clear the item
+            this.notifyListeners('cancel'); // Notify listeners about the cancel action
         }
         this.container.appendChild(this.cancelButton);
         this.container.classList.add('p-4')
@@ -407,4 +410,18 @@ export class EditorEditBox {
     }
 
 
+    addEventListener(event: string, callback: () => void) {
+        if (!this.listeners.has(event)) {
+            this.listeners.set(event, []);
+        }
+        this.listeners.get(event)?.push(callback);
+    }
+
+    private notifyListeners(event: string) {
+        if (this.listeners.has(event)) {
+            for (const callback of this.listeners.get(event) || []) {
+                callback(event);
+            }
+        }
+    }
 }

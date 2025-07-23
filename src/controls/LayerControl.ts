@@ -1,6 +1,9 @@
 import {Evented, type IControl, Map as MapLibreMap} from "maplibre-gl";
 import type {LayerInfo} from "../types/LayerInfo.ts";
 import {type DataProvider, type DataProviderEvent, DataProviderEventType} from "../dataProviders/DataProvider.ts";
+import {icon} from "@fortawesome/fontawesome-svg-core";
+import {faMap} from "@fortawesome/free-solid-svg-icons/faMap";
+import {faXmark} from "@fortawesome/free-solid-svg-icons/faXmark";
 
 
 export type LayersControlOptions = {
@@ -22,6 +25,11 @@ export class LayersControl extends Evented implements IControl {
      */
     private container: HTMLElement;
 
+    private layersContainer: HTMLElement;
+
+    private isOpen: boolean = false; // Flag to track if the control is open or closed
+
+    private spanIcon = document.createElement("span");
     /**
      * Array of checkbox input elements for each layer
      */
@@ -56,9 +64,20 @@ export class LayersControl extends Evented implements IControl {
         this.container = document.createElement("div");
         this.container.classList.add(
             "maplibregl-ctrl",        // Standard MapLibre control class
-            "maplibregl-ctrl-group"  // Groups the control visually
-            , "grid"
+            "maplibregl-ctrl-group",  // Groups the control visually
+            "grid"
         );
+
+
+
+        this.spanIcon.classList.add("p-[5px]");
+        this.spanIcon.innerHTML = icon(faMap).html[0];
+
+        this.layersContainer = document.createElement("div")
+        this.layersContainer.classList.add('hidden', 'grid')
+
+        this.container.appendChild(this.layersContainer);
+        this.container.appendChild(this.spanIcon);
 
         // Create a map of layer IDs to LayerInfo objects for quick lookup
         this.dataProvider = options.dataProvider;
@@ -78,6 +97,22 @@ export class LayersControl extends Evented implements IControl {
                 this.activeOverlays.set(overlayId, true);
             }
         }
+
+        this.spanIcon.addEventListener("click", () => {
+            this.setOpen(!this.isOpen);
+        });
+    }
+
+    private setOpen(open: boolean): void {
+        this.isOpen = open;
+        if (open) {
+            this.layersContainer.classList.remove("hidden");
+            //this.spanIcon.classList.add("hidden");
+            this.spanIcon.innerHTML = icon(faXmark).html[0];
+        }else {
+            this.layersContainer.classList.add("hidden");
+            this.spanIcon.innerHTML = icon(faMap).html[0];
+        }
     }
 
     /**
@@ -89,7 +124,7 @@ export class LayersControl extends Evented implements IControl {
     private setLayers(overlays: Map<string, LayerInfo>): void {
         // Clear existing inputs and container
         this.inputs = [];
-        this.container.innerHTML = "";
+        this.layersContainer.innerHTML = "";
 
         // Update the layers map
         this.layers.clear();
@@ -100,9 +135,8 @@ export class LayersControl extends Evented implements IControl {
         // Create a checkbox for each new layer and add it to the container
         for (const layer of overlays.values()) {
             let labeled_checkbox = this.createLabeledCheckbox(layer);
-            this.container.appendChild(labeled_checkbox);
+            this.layersContainer.appendChild(labeled_checkbox);
         }
-        console.log(this.container)
     }
 
     private addLayer(layer: LayerInfo): void {
@@ -150,7 +184,7 @@ export class LayersControl extends Evented implements IControl {
         this.layers.set(layer.id, layer);
         let labeled_checkbox = this.createLabeledCheckbox(layer);
 
-        this.container.appendChild(labeled_checkbox);
+        this.layersContainer.appendChild(labeled_checkbox);
     }
 
     /**
@@ -172,7 +206,7 @@ export class LayersControl extends Evented implements IControl {
         let input = document.createElement("input");
         cLabel.appendChild(input);
         input.type = "checkbox";
-        input.id = "cb-"+layer.id; // Set the ID to the layer ID for easy reference
+        input.id = "cb-" + layer.id; // Set the ID to the layer ID for easy reference
         input.classList.add("peer", "h-5", "w-5", "cursor-pointer", "transition-all", "appearance-none", "rounded", "shadow", "hover:shadow-md", "border", "border-slate-300", "checked:bg-slate-800", "checked:border-slate-800")
 
         let span = document.createElement("span");

@@ -134,6 +134,7 @@ export class SearchControl extends Evented implements IControl {
                 essential: true // This ensures the animation is not interrupted
             });
             UrlDataHandler.setSelectedMarker(entity.id);
+            this.setOpen(false); // Close the search control after selecting an entity
         }
         return button;
     }
@@ -163,6 +164,18 @@ export class SearchControl extends Evented implements IControl {
 
         for (const entity of entries) {
             let row = this.searchResultsBody.insertRow()
+
+            row.onclick = () => {
+                this.showSingleEntity(entity);
+                this.map?.flyTo({
+                    center: [entity.longitude, entity.latitude],
+                    zoom: entity.zoomLevel || 15, // Adjust zoom level as needed
+                    essential: true // This ensures the animation is not interrupted
+                });
+                UrlDataHandler.setSelectedMarker(entity.id);
+                this.setOpen(false); // Close the search control after selecting an entity
+            }
+
             let actionCell = row.insertCell();
             actionCell.classList.add("px-2");
             actionCell.appendChild(this.showMarkerButton(entity));
@@ -237,7 +250,7 @@ export class SearchControl extends Evented implements IControl {
      * @private
      */
     private createSearchContainer(): void {
-
+        this.container.classList.add("max-w-[90%]");
         this.searchIconContainer = document.createElement("div");
 
         let spanIcon = document.createElement("span");
