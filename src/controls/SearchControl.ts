@@ -133,7 +133,7 @@ export class SearchControl extends Evented implements IControl {
                 zoom: entity.zoomLevel || 15, // Adjust zoom level as needed
                 essential: true // This ensures the animation is not interrupted
             });
-            UrlDataHandler.setSelectedMarker(entity.id);
+            //UrlDataHandler.setSelectedMarker(entity.id);
             this.setOpen(false); // Close the search control after selecting an entity
         }
         return button;
@@ -152,7 +152,7 @@ export class SearchControl extends Evented implements IControl {
 
         this.searchResultsBody.innerHTML = ""; // Clear previous results
 
-        UrlDataHandler.setQueryString(query);
+        //UrlDataHandler.setQueryString(query);
         if (query.length === 0) {
             return;
         }
@@ -172,7 +172,7 @@ export class SearchControl extends Evented implements IControl {
                     zoom: entity.zoomLevel || 15, // Adjust zoom level as needed
                     essential: true // This ensures the animation is not interrupted
                 });
-                UrlDataHandler.setSelectedMarker(entity.id);
+                //UrlDataHandler.setSelectedMarker(entity.id);
                 this.setOpen(false); // Close the search control after selecting an entity
             }
 
