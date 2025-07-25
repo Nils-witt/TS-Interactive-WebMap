@@ -5,6 +5,7 @@ import type {NamedGeoReferencedObject} from "../enitites/NamedGeoReferencedObjec
 import {icon} from "@fortawesome/fontawesome-svg-core";
 import {faMagnifyingGlass} from "@fortawesome/free-solid-svg-icons/faMagnifyingGlass";
 import {faMapLocationDot} from "@fortawesome/free-solid-svg-icons/faMapLocationDot";
+import {faXmark} from "@fortawesome/free-solid-svg-icons/faXmark";
 
 /**
  * A control for MapLibre GL JS that allows users to toggle the visibility of map layers.
@@ -242,10 +243,6 @@ export class SearchControl extends Evented implements IControl {
         this.searchIconContainer.appendChild(spanIcon);
         spanIcon.classList.add("p-[5px]");
         spanIcon.innerHTML = icon(faMagnifyingGlass).html[0];
-        let closeIcon = document.createElement("span");
-        this.searchIconContainer.appendChild(closeIcon);
-        closeIcon.classList.add("p-[5px]");
-        closeIcon.innerHTML = icon(faMagnifyingGlass).html[0];
 
 
         let container = document.createElement("div");
@@ -272,6 +269,16 @@ export class SearchControl extends Evented implements IControl {
 
         //TODO insert Filter
 
+        let closeIconContainer = document.createElement("div");
+        closeIconContainer.classList.add("relative","m-[2px]","mb-3","float-right","sm:block");
+        let closeIcon = document.createElement("span");
+        closeIcon.classList.add("p-[5px]");
+        closeIcon.innerHTML = icon(faXmark).html[0];
+        closeIconContainer.appendChild(closeIcon);
+        container.appendChild(closeIconContainer);
+        closeIconContainer.onclick = () => {
+            this.setOpen(false); // Close the search control
+        }
 
         let table = document.createElement("table");
         container.appendChild(table);
