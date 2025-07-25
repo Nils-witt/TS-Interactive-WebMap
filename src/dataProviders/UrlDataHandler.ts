@@ -2,12 +2,15 @@ export default class UrlDataHandler {
 
 
     public static getUrlParams(): Map<string, string> {
-        const params = new URLSearchParams(window.location.search);
         const result = new Map<string, string>();
+        /*
+        const params = new URLSearchParams(window.location.search);
 
         for (const [key, value] of params.entries()) {
             result.set(key, value);
         }
+
+         */
 
         return result;
     }

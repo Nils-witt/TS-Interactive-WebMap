@@ -2,7 +2,7 @@
  * Main entry point for the MapLibre WebMap application.
  * This file initializes the map, loads available layers, and sets up the UI controls.
  */
-
+/// <reference lib="dom" />
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {GeolocateControl, Map as MapLibreMap, NavigationControl} from 'maplibre-gl';
 import {LayersControl} from "./controls/LayerControl.ts";
@@ -16,7 +16,33 @@ import {SearchControl} from "./controls/SearchControl.ts";
 import {MapEditContextMenu} from "./controls/MapEditContextMenu.ts";
 import './style.css'
 import {LoginController} from "./controls/LoginController.ts";
+import { registerSW } from 'virtual:pwa-register'
 
+
+const intervalMS = 60 * 60 * 1000
+
+registerSW({
+    onRegisteredSW(swUrl, r) {
+        r && setInterval(async () => {
+            if (r.installing || !navigator)
+                return
+
+            if (('connection' in navigator) && !navigator.onLine)
+                return
+
+            const resp = await fetch(swUrl, {
+                cache: 'no-store',
+                headers: {
+                    'cache': 'no-store',
+                    'cache-control': 'no-cache',
+                },
+            })
+
+            if (resp?.status === 200)
+                await r.update()
+        }, intervalMS)
+    }
+})
 
 const debugMode = false; // Set to true for debugging purposes, will log additional information
 
