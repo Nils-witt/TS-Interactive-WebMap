@@ -31,9 +31,9 @@ export default {
             registerType: 'autoUpdate',
             workbox: {
                 importScripts: ['./sw-custom.js'],
-                globIgnores: ['**'],
+            //    globIgnores: ['**'],
             },
-            includeAssets: ['favicon.ico', 'robots.txt', 'icons/192.png', 'icons/512.png'],
+            includeAssets: ['icons/192.png', 'icons/512.png'],
             devOptions: {
                 enabled: true
             },

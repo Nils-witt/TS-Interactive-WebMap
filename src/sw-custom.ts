@@ -6,10 +6,11 @@ const sw = self as unknown as ServiceWorkerGlobalScope & typeof globalThis;
 sw.addEventListener('install', (event) => {
     console.log('Service Worker installed');
     console.log('Service Worker:', event);
-})
-
-let cacheName = `cache-v${2}`;
-
+});
+sw.addEventListener('activate', (event) => {
+    console.log('Service Worker activated');
+    console.log('Service Worker:', event);
+});
 
 function getURLType(url) {
     if (url.startsWith('https://map.nils-witt.de/')) {
@@ -31,34 +32,36 @@ function getURLType(url) {
 }
 
 
-function getCacheName(url: string): [string, boolean] {
+function getCacheName(url: string): [string, boolean, boolean] {
     let reqType = getURLType(url);
 
 
     if (reqType === 'api') {
-        return ['api-cache', true];
+        return ['api-cache', true, true];
     }
     if (reqType.startsWith('overlay-')) {
-        return [reqType, false];
+        return [reqType, false, true];
     }
-    return [cacheName, false];
+    return ['never', true, false];
 
 }
 
 sw.addEventListener("fetch", (event) => {
     let url = event.request.url;
 
-    let [useCacheName, networkFirst] = getCacheName(url);
+    let [useCacheName, networkFirst, useCache] = getCacheName(url);
 
     if (networkFirst) {
         event.respondWith(
             fetch(event.request)
                 .then(response => {
-                    let responseToCache = response.clone();
+                    if (useCache) {
+                        let responseToCache = response.clone();
 
-                    caches.open(useCacheName).then((cache) => {
-                        cache.put(event.request, responseToCache); // Cache the new response
-                    });
+                        caches.open(useCacheName).then((cache) => {
+                            cache.put(event.request, responseToCache); // Cache the new response
+                        });
+                    }
                     return response; // Clone the response to use it in the cache
                 }).catch(() => {
                 return caches.match(event.request)
@@ -69,10 +72,24 @@ sw.addEventListener("fetch", (event) => {
         event.respondWith(
             caches.match(event.request)
                 .then((response) => {
+
+
                     if (response) {
+                        fetch(event.request).then((response) => {
+                            if (!response || response.status !== 200) {
+                                return response; // Return the response if it's not cacheable
+                            }
+
+                            let responseToCache = response.clone();
+
+                            caches.open(useCacheName).then((cache) => {
+                                cache.put(event.request, responseToCache); // Cache the new response
+                            });
+                        }).catch(() => {
+                            return null;
+                        })
                         return response; // Return cached response if found
                     }
-
                     return fetch(event.request).then((response) => {
                         if (!response || response.status !== 200) {
                             return response; // Return the response if it's not cacheable
@@ -83,12 +100,14 @@ sw.addEventListener("fetch", (event) => {
                         caches.open(useCacheName).then((cache) => {
                             cache.put(event.request, responseToCache); // Cache the new response
                         });
-
-
                         return response; // Return the fetched response
-                    })
+                    }).catch(() => {
+                        return null;
+                    });
+
                 })
         );
         return;
     }
+
 });
