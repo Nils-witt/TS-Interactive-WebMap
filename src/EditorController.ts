@@ -1,5 +1,5 @@
 import {type Map as MapLibreMap, MapMouseEvent} from "maplibre-gl";
-import {type DataProvider, DataProviderEventType} from "./dataProviders/DataProvider.ts";
+import {DataProvider, DataProviderEventType} from "./dataProviders/DataProvider.ts";
 import {ApiProvider} from "./dataProviders/ApiProvider.ts";
 import {EditorEditBox} from "./controls/EditorEditBox.ts";
 import {NamedGeoReferencedObject} from "./enitites/NamedGeoReferencedObject.ts";
@@ -10,11 +10,10 @@ import {faPenToSquare} from "@fortawesome/free-solid-svg-icons/faPenToSquare";
 
 
 export class EditorController {
-    controlsContainer: HTMLDivElement;
-    map: MapLibreMap;
-    itemTableBody: HTMLTableSectionElement;
+    private controlsContainer: HTMLDivElement;
+    private map: MapLibreMap;
+    private itemTableBody: HTMLTableSectionElement;
 
-    dataProvider: DataProvider;
 
     private selectedGroupId: string | undefined = undefined;
 
@@ -22,12 +21,11 @@ export class EditorController {
 
     private editorEditBox: EditorEditBox;
 
-    public constructor(controlsContainer: HTMLDivElement, map: MapLibreMap, dataProvider: DataProvider) {
+    public constructor(controlsContainer: HTMLDivElement, map: MapLibreMap) {
         this.controlsContainer = controlsContainer;
         this.map = map;
-        this.dataProvider = dataProvider;
 
-        this.editorEditBox = new EditorEditBox(dataProvider);
+        this.editorEditBox = new EditorEditBox();
         this.controlsContainer.append(this.editorEditBox.getContainer());
         this.editorEditBox.setup();
 
@@ -42,7 +40,7 @@ export class EditorController {
         });
 
 
-        this.setupGroupSelect(this.mapGroupSelect, dataProvider);
+        this.setupGroupSelect(this.mapGroupSelect);
 
         let tableContainer = document.createElement('div');
         let table = document.createElement('table');
@@ -57,7 +55,7 @@ export class EditorController {
 
         map.on('click', this.mapClickHandler);
 
-        dataProvider.on(DataProviderEventType.MAP_LOCATIONS_UPDATED, () => {
+        DataProvider.getInstance().on(DataProviderEventType.MAP_LOCATIONS_UPDATED, () => {
             this.fullUpdateItemTable();
         });
 
@@ -65,7 +63,7 @@ export class EditorController {
 
     }
 
-    setupGroupSelect(select: HTMLSelectElement, dataProvider: DataProvider): void {
+    setupGroupSelect(select: HTMLSelectElement): void {
         select.classList.add('group-select');
         select.onchange = () => {
             this.selectedGroupId = select.value;
@@ -74,7 +72,7 @@ export class EditorController {
 
 
         // Populate the select with existing groups
-        for (const [id, group] of dataProvider.getMapGroups()) {
+        for (const [id, group] of DataProvider.getInstance().getMapGroups()) {
             let option = document.createElement('option');
             option.value = id;
             option.textContent = group.name || 'Unnamed Group';
@@ -82,10 +80,10 @@ export class EditorController {
         }
 
         // Add a listener to update the select when groups are added
-        dataProvider.on(DataProviderEventType.MAP_GROUPS_UPDATED, () => {
+        DataProvider.getInstance().on(DataProviderEventType.MAP_GROUPS_UPDATED, () => {
             select.replaceChildren(); // Clear existing options
             select.appendChild(document.createElement('option')); // Add empty option
-            for (const [id, group] of dataProvider.getMapGroups()) {
+            for (const [id, group] of DataProvider.getInstance().getMapGroups()) {
                 let option = document.createElement('option');
                 option.value = id;
                 option.textContent = group.name || 'Unnamed Group';
@@ -125,7 +123,7 @@ export class EditorController {
         this.itemTableBody.replaceChildren(); // Clear existing rows
 
 
-        let entries = Array.from(this.dataProvider.getMapLocations().values());
+        let entries = Array.from(DataProvider.getInstance().getMapLocations().values());
         entries.sort((a, b) => {
             if (a.name && b.name) {
                 return a.name.localeCompare(b.name);
@@ -181,7 +179,7 @@ export class EditorController {
                     console.log("Editor: Set position for item", item.id, event.lngLat);
                     item.longitude = event.lngLat.lng;
                     item.latitude = event.lngLat.lat;
-                    this.dataProvider.addMapLocation(item.id, item);
+                    DataProvider.getInstance().addMapLocation(item.id, item);
                     row.style.backgroundColor = ""; // Reset the row background
 
                     ApiProvider.getInstance().saveMapItem(item);

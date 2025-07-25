@@ -21,7 +21,7 @@ import {LoginController} from "./controls/LoginController.ts";
 const debugMode = false; // Set to true for debugging purposes, will log additional information
 
 const config = new Config();
-const dataProvider = new DataProvider();
+const dataProvider = DataProvider.getInstance();
 ApiProvider.getInstance();
 
 const mapContainer = document.createElement('div');
@@ -44,7 +44,7 @@ if (config.editMode) {
     document.body.appendChild(mapContainer);
 }
 
-const drawingController = new DrawingController(dataProvider);
+const drawingController = new DrawingController();
 
 LoginController.getInstance();
 /**
@@ -54,6 +54,7 @@ const map = new MapLibreMap({
     container: 'map',                                           // HTML element ID where the map will be rendered
     center: config.mapCenter,                                     // Initial center of the map
     zoom: config.mapZoom,                                         // Initial zoom level
+    attributionControl: false
 });
 
 const geolocate = new GeolocateControl({
@@ -65,13 +66,13 @@ const geolocate = new GeolocateControl({
     showUserLocation: true,  // Show user's location on the map
 });
 let navControl = new NavigationControl({
-    showCompass: true,      // Show compass for rotation
-    visualizePitch: true,   // Show pitch control
+    showCompass: false,      // Show compass for rotation
+    visualizePitch: false,   // Show pitch control
     showZoom: true          // Show zoom controls
 });
 
-const searchControl = new SearchControl({dataProvider: dataProvider});
-const layersControl = new LayersControl({dataProvider: dataProvider});
+const searchControl = new SearchControl();
+const layersControl = new LayersControl();
 
 map.addControl(navControl, 'top-right');  // Position in the bottom-left corner
 map.addControl(layersControl, 'bottom-left');  // Position in the top-left corner of the
@@ -85,7 +86,7 @@ drawingController.addTo(map); // Set the map for the drawing controller
 
 
 if (config.editMode) {
-    const editorController = new EditorController(editorControls, map, dataProvider);
+    const editorController = new EditorController(editorControls, map);
     new MapEditContextMenu({
         map: map,
         editor: editorController
@@ -107,10 +108,10 @@ map.on('moveend', () => {
 });
 
 ApiProvider.getInstance().on(ApiProviderEventTypes.LOGIN_SUCCESS, () => {
-    ApiProvider.getInstance().loadAllData(dataProvider);
+    ApiProvider.getInstance().loadAllData();
 });
 
-ApiProvider.getInstance().loadAllData(dataProvider);
+ApiProvider.getInstance().loadAllData();
 /*
 (async () => {
     const ws = new WebSocket('wss://map.nils-witt.de/traccar/');

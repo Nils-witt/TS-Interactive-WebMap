@@ -1,15 +1,10 @@
 import {Evented, type IControl, Map as MapLibreMap, Marker} from "maplibre-gl";
 import UrlDataHandler from "../dataProviders/UrlDataHandler.ts";
-import {type DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
+import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
 import type {NamedGeoReferencedObject} from "../enitites/NamedGeoReferencedObject.ts";
 import {icon} from "@fortawesome/fontawesome-svg-core";
 import {faMagnifyingGlass} from "@fortawesome/free-solid-svg-icons/faMagnifyingGlass";
 import {faMapLocationDot} from "@fortawesome/free-solid-svg-icons/faMapLocationDot";
-
-
-type SearchControlOptions = {
-    dataProvider: DataProvider;
-}
 
 /**
  * A control for MapLibre GL JS that allows users to toggle the visibility of map layers.
@@ -22,16 +17,9 @@ export class SearchControl extends Evented implements IControl {
     private map: MapLibreMap | undefined;
 
     /**
-     * Array of layer information objects passed to the constructor
-     */
-    public readonly options: SearchControlOptions;
-
-    /**
      * The HTML container element that holds the control UI
      */
     private container: HTMLElement;
-
-    private dataProvider: DataProvider;
 
     private searchInput: HTMLInputElement | undefined;
     private searchResultsBody: HTMLTableSectionElement | undefined;
@@ -60,7 +48,7 @@ export class SearchControl extends Evented implements IControl {
      *
      * @param options - Array of LayerInfo objects representing available layers
      */
-    public constructor(options: SearchControlOptions) {
+    public constructor() {
         super();
 
         this.map = undefined;
@@ -72,13 +60,10 @@ export class SearchControl extends Evented implements IControl {
             "maplibregl-ctrl-group",  // Groups the control visually
             "search-control",         // Custom class for styling
         );
-        this.options = options;
-
-        this.dataProvider = options.dataProvider;
 
         this.createSearchContainer();
 
-        this.dataProvider.on(DataProviderEventType.MAP_LOCATIONS_UPDATED, () => {
+        DataProvider.getInstance().on(DataProviderEventType.MAP_LOCATIONS_UPDATED, () => {
             if (this.searchInput && this.searchInput.value.trim().length > 0) {
                 this.onSearchBoxUpdate(this.searchInput.value);
             }
@@ -159,7 +144,7 @@ export class SearchControl extends Evented implements IControl {
 
         let resultCount = 0;
 
-        let entries = Array.from(this.dataProvider.getMapLocations().values()).filter(entity => entity.name.toLowerCase().includes(query.toLowerCase()));
+        let entries = Array.from(DataProvider.getInstance().getMapLocations().values()).filter(entity => entity.name.toLowerCase().includes(query.toLowerCase()));
         entries = entries.sort((a, b) => a.name.localeCompare(b.name)); // Sort results by name
 
         for (const entity of entries) {
@@ -257,6 +242,10 @@ export class SearchControl extends Evented implements IControl {
         this.searchIconContainer.appendChild(spanIcon);
         spanIcon.classList.add("p-[5px]");
         spanIcon.innerHTML = icon(faMagnifyingGlass).html[0];
+        let closeIcon = document.createElement("span");
+        this.searchIconContainer.appendChild(closeIcon);
+        closeIcon.classList.add("p-[5px]");
+        closeIcon.innerHTML = icon(faMagnifyingGlass).html[0];
 
 
         let container = document.createElement("div");

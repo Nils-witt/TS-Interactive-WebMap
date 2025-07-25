@@ -1,6 +1,6 @@
 import type {LayerInfo} from "../types/LayerInfo.ts";
 import {NamedGeoReferencedObject} from "../enitites/NamedGeoReferencedObject.ts";
-import type {DataProvider} from "./DataProvider.ts";
+import {DataProvider} from "./DataProvider.ts";
 import {IMapGroup} from "../types/MapEntity.ts";
 
 
@@ -32,25 +32,25 @@ export class ApiProvider {
         return ApiProvider.instance;
     }
 
-    public async loadAllData(dataProvider: DataProvider): Promise<void> {
+    public async loadAllData(): Promise<void> {
         this.getMapStyles().then(styles => {
             if (styles.length > 0) {
-                dataProvider.setMapStyle(styles[0]);
+                DataProvider.getInstance().setMapStyle(styles[0]);
             }
         });
         this.getOverlayLayers().then(overlays => {
             for (const overlay of overlays) {
-                dataProvider.addOverlay(overlay.id, overlay);
+                DataProvider.getInstance().addOverlay(overlay.id, overlay);
             }
         });
         this.getMapItems().then(items => {
             for (const item of items) {
-                dataProvider.addMapLocation(item.id, item);
+                DataProvider.getInstance().addMapLocation(item.id, item);
             }
         });
         this.getMapGroups().then(items => {
             for (const item of items) {
-                dataProvider.addMapGroup(item.id, item);
+                DataProvider.getInstance().addMapGroup(item.id, item);
             }
         });
     }

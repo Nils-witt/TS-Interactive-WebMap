@@ -1,14 +1,9 @@
 import {Evented, type IControl, Map as MapLibreMap} from "maplibre-gl";
 import type {LayerInfo} from "../types/LayerInfo.ts";
-import {type DataProvider, type DataProviderEvent, DataProviderEventType} from "../dataProviders/DataProvider.ts";
+import {DataProvider, type DataProviderEvent, DataProviderEventType} from "../dataProviders/DataProvider.ts";
 import {icon} from "@fortawesome/fontawesome-svg-core";
 import {faMap} from "@fortawesome/free-solid-svg-icons/faMap";
 import {faXmark} from "@fortawesome/free-solid-svg-icons/faXmark";
-
-
-export type LayersControlOptions = {
-    dataProvider: DataProvider; // Optional data provider to fetch layer information
-}
 
 /**
  * A control for MapLibre GL JS that allows users to toggle the visibility of map layers.
@@ -47,15 +42,12 @@ export class LayersControl extends Evented implements IControl {
      */
     private activeOverlays: Map<string, boolean> = new Map();
 
-
-    dataProvider: DataProvider;
-
     /**
      * Creates a new LayersControl instance
      *
      * @param options - Array of LayerInfo objects representing available layers
      */
-    constructor(options: LayersControlOptions) {
+    constructor() {
         super();
 
         this.map = undefined;
@@ -80,13 +72,12 @@ export class LayersControl extends Evented implements IControl {
         this.container.appendChild(this.spanIcon);
 
         // Create a map of layer IDs to LayerInfo objects for quick lookup
-        this.dataProvider = options.dataProvider;
-        this.dataProvider.on(DataProviderEventType.OVERLAY_ADDED, (event: DataProviderEvent) => {
+        DataProvider.getInstance().on(DataProviderEventType.OVERLAY_ADDED, (event: DataProviderEvent) => {
             let data = event.data as LayerInfo;
             console.log("LayersControl: Overlay added", data);
             this.addLayer(data);
         });
-        this.setLayers(this.dataProvider.getOverlays());
+        this.setLayers(DataProvider.getInstance().getOverlays());
         this.inputs = [];
 
         let previouslyActiveOverlays = localStorage.getItem("activeOverlays");

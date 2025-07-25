@@ -29,7 +29,9 @@ export class DataProvider {
     //TODO: Implement BroadcastChannel communication
   //  private dataChannel: BroadcastChannel = new BroadcastChannel('dataProviderChannel');
 
-    public constructor() {
+    private static instance: DataProvider;
+
+    private constructor() {
         //TODO: Implement BroadcastChannel communication
         /*
                 this.dataChannel.onmessage = (event) => {
@@ -42,6 +44,13 @@ export class DataProvider {
                     });
                 }
           */
+    }
+
+    public static getInstance(): DataProvider {
+        if (!DataProvider.instance) {
+            DataProvider.instance = new DataProvider();
+        }
+        return DataProvider.instance;
     }
 
     private triggerEvent(eventType: string, data: any): void {

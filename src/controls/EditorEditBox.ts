@@ -38,7 +38,6 @@ export class EditorEditBox {
     selectOrgName = document.createElement('input');
     iconDisplay = document.createElement('img');
 
-    private dataProvider: DataProvider;
     symbolEditDiv = document.createElement('div');
 
     itemNameInput = document.createElement('input');
@@ -49,10 +48,9 @@ export class EditorEditBox {
 
     private listeners: Map<string, ((event: any) => void)[]> = new Map();
 
-    constructor(dataProvider: DataProvider) {
-        this.dataProvider = dataProvider;
+    constructor() {
 
-        dataProvider.on(DataProviderEventType.MAP_GROUPS_UPDATED, (event) => {
+        DataProvider.getInstance().on(DataProviderEventType.MAP_GROUPS_UPDATED, (event) => {
             const group = event.data;
             const option = document.createElement('option');
             option.value = group.id;
@@ -62,7 +60,7 @@ export class EditorEditBox {
 
         this.groupSelect.replaceChildren()
         this.groupSelect.appendChild(new Option('Select Group', ''));
-        dataProvider.getMapGroups().forEach((group, id) => {
+        DataProvider.getInstance().getMapGroups().forEach((group, id) => {
             const option = document.createElement('option');
             option.value = id;
             option.textContent = group.name || 'Unnamed Group';
@@ -305,7 +303,7 @@ export class EditorEditBox {
         this.saveButton.onclick = () => {
             ApiProvider.getInstance().saveMapItem(this.item).then((item) => {
                 console.log("Item saved:", item);
-                this.dataProvider.addMapLocation(item.id, item);
+                DataProvider.getInstance().addMapLocation(item.id, item);
             });
         }
         this.container.appendChild(this.saveButton);
