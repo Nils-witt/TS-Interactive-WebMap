@@ -236,7 +236,7 @@ export class SearchControl extends Evented implements IControl {
      * @private
      */
     private createSearchContainer(): void {
-        this.container.classList.add("max-w-[90%]");
+        this.container.classList.add("max-w-[85%]");
         this.searchIconContainer = document.createElement("div");
 
         let spanIcon = document.createElement("span");

@@ -5,7 +5,6 @@
 /// <reference lib="dom" />
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {GeolocateControl, Map as MapLibreMap, NavigationControl} from 'maplibre-gl';
-import {LayersControl} from "./controls/LayerControl.ts";
 import type {LayerInfo} from "./types/LayerInfo.ts";
 import {ApiProvider, ApiProviderEventTypes} from "./dataProviders/ApiProvider.ts";
 import {DrawingController} from "./controls/DrawingController.ts";
@@ -17,6 +16,7 @@ import {MapEditContextMenu} from "./controls/MapEditContextMenu.ts";
 import './style.css'
 import {LoginController} from "./controls/LoginController.ts";
 import { registerSW } from 'virtual:pwa-register'
+import {LayersControl} from "./controls/LayerControl.ts";
 
 
 const intervalMS = 60 * 60 * 1000
