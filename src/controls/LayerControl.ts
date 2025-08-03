@@ -226,6 +226,9 @@ export class LayersControl extends Evented implements IControl {
                     }
                 }
                 resolve(missingFiles);
+            }).catch(error => {
+                console.error("Failed to fetch index.json:", error);
+                resolve([]);
             });
 
         });
@@ -290,6 +293,10 @@ export class LayersControl extends Evented implements IControl {
                             span2.classList.remove("bg-green-200");
                             span2.classList.add("bg-red-200");
                         }
+                    }).catch((error) => {
+                        console.error("Error getting missing cache files:", error);
+                        span2.classList.remove("bg-yellow-200");
+                        span2.classList.add("bg-red-200");
                     });
                 }
             });
