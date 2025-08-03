@@ -42,6 +42,7 @@ export default {
                 short_name: 'TacMap',
                 description: 'TacMap',
                 theme_color: '#ffffff',
+                start_url: '/index.html',
                 icons: [
                     {
                         "src": "icons/192.png",

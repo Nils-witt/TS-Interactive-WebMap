@@ -19,6 +19,10 @@ import { registerSW } from 'virtual:pwa-register'
 import {LayersControl} from "./controls/LayerControl.ts";
 
 
+if (window.location.pathname === '/') {
+    window.location.pathname = '/index.html';
+}
+
 const intervalMS = 60 * 60 * 1000
 
 registerSW({
@@ -80,7 +84,8 @@ const map = new MapLibreMap({
     container: 'map',                                           // HTML element ID where the map will be rendered
     center: config.mapCenter,                                     // Initial center of the map
     zoom: config.mapZoom,                                         // Initial zoom level
-    attributionControl: false
+    attributionControl: false,
+    rollEnabled: true,
 });
 
 const geolocate = new GeolocateControl({

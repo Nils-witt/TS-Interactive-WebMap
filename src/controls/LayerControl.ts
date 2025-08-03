@@ -4,6 +4,7 @@ import {DataProvider, type DataProviderEvent, DataProviderEventType} from "../da
 import {icon} from "@fortawesome/fontawesome-svg-core";
 import {faMap} from "@fortawesome/free-solid-svg-icons/faMap";
 import {faXmark} from "@fortawesome/free-solid-svg-icons/faXmark";
+import {faDownload} from "@fortawesome/free-solid-svg-icons/faDownload";
 
 /**
  * A control for MapLibre GL JS that allows users to toggle the visibility of map layers.
@@ -61,7 +62,6 @@ export class LayersControl extends Evented implements IControl {
         );
 
 
-
         this.spanIcon.classList.add("p-[5px]");
         this.spanIcon.innerHTML = icon(faMap).html[0];
 
@@ -100,7 +100,7 @@ export class LayersControl extends Evented implements IControl {
             this.layersContainer.classList.remove("hidden");
             //this.spanIcon.classList.add("hidden");
             this.spanIcon.innerHTML = icon(faXmark).html[0];
-        }else {
+        } else {
             this.layersContainer.classList.add("hidden");
             this.spanIcon.innerHTML = icon(faMap).html[0];
         }
@@ -178,6 +178,90 @@ export class LayersControl extends Evented implements IControl {
         this.layersContainer.appendChild(labeled_checkbox);
     }
 
+    private getMissingCacheFiles(layer: LayerInfo): Promise<string[]> {
+        return new Promise((resolve) => {
+            let url: URL | undefined;
+            if (layer.url.startsWith('http')) {
+                url = new URL(layer.url.substring(0, layer.url.search("{z}"))); // Ensure the URL is absolute
+            } else {
+                url = new URL(layer.url.substring(0, layer.url.search("{z}")), window.location.origin); // Ensure the URL is absolute
+            }
+
+
+            let path = url.pathname.replace('/overlays/', '');
+            let parts = path.split('/');
+            const cacheName = 'overlay-' + parts[0]; // Use the first part of the path as the cache name
+
+            fetch(url.href + "/index.json").then(async response => {
+                if (!response.ok) {
+                    return;
+                }
+                const data = await response.json()
+                const cache = await caches.open(cacheName);
+                console.log("Opened cache:", cacheName);
+                let filelist = []
+
+                const zVals = Object.keys(data);
+                for (let i = 0; i < zVals.length; i++) {
+                    const z = zVals[i];
+                    const xVals = Object.keys(data[z]);
+                    for (let j = 0; j < xVals.length; j++) {
+                        const x = xVals[j];
+                        const yVals = Object.keys(data[z][x]);
+
+                        for (let k = 0; k < yVals.length; k++) {
+                            const y = data[z][x][k];
+                            const tileUrl = `${url.href}${z}/${x}/${y}`;
+                            filelist.push(tileUrl);
+                        }
+                    }
+
+                }
+                let missingFiles = [];
+                for (let i = 0; i < filelist.length; i++) {
+                    let fileUrl = new URL(filelist[i]);
+                    let response = await cache.match(fileUrl);
+                    if (!response) {
+                        missingFiles.push(fileUrl.href);
+                    }
+                }
+                resolve(missingFiles);
+            });
+
+        });
+
+    }
+
+    private downloadLayerToCache(layer: LayerInfo) {
+
+
+        return new Promise<boolean>(async (resolve, reject) => {
+            let url: URL | undefined;
+            if (layer.url.startsWith('http')) {
+                url = new URL(layer.url.substring(0, layer.url.search("{z}"))); // Ensure the URL is absolute
+            } else {
+                url = new URL(layer.url.substring(0, layer.url.search("{z}")), window.location.origin); // Ensure the URL is absolute
+            }
+
+
+            let path = url.pathname.replace('/overlays/', '');
+            let parts = path.split('/');
+            const cacheName = 'overlay-' + parts[0]; // Use the first part of the path as the cache name
+
+            let missingFiles = await this.getMissingCacheFiles(layer);
+            caches.open(cacheName).then(async (cache) => {
+
+                cache.addAll(missingFiles).then(() => {
+                    console.log("Layer downloaded and cached successfully:", cacheName);
+                    resolve(true);
+                }).catch(error => {
+                    console.error("Failed to cache layer files:", error);
+                    reject(false);
+                });
+            });
+        });
+    }
+
     /**
      * Creates a labeled checkbox for a layer
      *
@@ -189,6 +273,36 @@ export class LayersControl extends Evented implements IControl {
         container.classList.add("m-1")
         container.classList.add("inline-flex", "items-center");
 
+
+        let span2 = document.createElement("span");
+        span2.innerHTML = icon(faDownload).html[0];
+        span2.classList.add("mr-2");
+        span2.addEventListener("click", () => {
+            span2.classList.remove("bg-red-200","bg-green-200");
+            span2.classList.add("bg-yellow-200");
+            this.downloadLayerToCache(layer).then((success) => {
+                if (success) {
+                    span2.classList.remove("bg-red-200");
+                    span2.classList.add("bg-green-200");
+                } else {
+                    this.getMissingCacheFiles(layer).then((missingFiles) => {
+                        if (missingFiles.length > 0) {
+                            span2.classList.remove("bg-green-200");
+                            span2.classList.add("bg-red-200");
+                        }
+                    });
+                }
+            });
+        });
+        container.appendChild(span2);
+
+        this.getMissingCacheFiles(layer).then((missingFiles) => {
+            if (missingFiles.length > 0) {
+                span2.classList.add("bg-red-200");
+            } else {
+                span2.classList.add("bg-green-200");
+            }
+        })
 
         let cLabel = document.createElement("label");
         container.appendChild(cLabel);

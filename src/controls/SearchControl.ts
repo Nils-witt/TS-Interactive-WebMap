@@ -26,6 +26,7 @@ export class SearchControl extends Evented implements IControl {
     private searchResultsBody: HTMLTableSectionElement | undefined;
     private searchIconContainer: HTMLDivElement | undefined;
     private searchContentContainer: HTMLDivElement | undefined;
+    private resultsContainer: HTMLTableElement | undefined;
     /**
      * The maximum number of search results to display
      * @private
@@ -140,14 +141,18 @@ export class SearchControl extends Evented implements IControl {
 
         //UrlDataHandler.setQueryString(query);
         if (query.length === 0) {
+            this.resultsContainer.classList.add("hidden");
             return;
         }
-
+        this.resultsContainer.classList.remove("hidden");
         let resultCount = 0;
 
         let entries = Array.from(DataProvider.getInstance().getMapLocations().values()).filter(entity => entity.name.toLowerCase().includes(query.toLowerCase()));
         entries = entries.sort((a, b) => a.name.localeCompare(b.name)); // Sort results by name
-
+        if (entries.length === 0) {
+            this.resultsContainer.classList.add("hidden");
+            return; // No results found, exit early
+        }
         for (const entity of entries) {
             let row = this.searchResultsBody.insertRow()
 
@@ -236,8 +241,10 @@ export class SearchControl extends Evented implements IControl {
      * @private
      */
     private createSearchContainer(): void {
-        this.container.classList.add("max-w-[85%]");
+        this.container.classList.add("max-w-[85vw]");
         this.searchIconContainer = document.createElement("div");
+
+
 
         let spanIcon = document.createElement("span");
         this.searchIconContainer.appendChild(spanIcon);
@@ -281,6 +288,7 @@ export class SearchControl extends Evented implements IControl {
         }
 
         let table = document.createElement("table");
+        this.resultsContainer = table;
         container.appendChild(table);
         table.classList.add("min-w-full", "text-left", "text-xs", "whitespace-nowrap");
 

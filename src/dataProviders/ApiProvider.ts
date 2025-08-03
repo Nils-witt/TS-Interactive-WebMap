@@ -13,7 +13,7 @@ export enum ApiProviderEventTypes {
 
 export class ApiProvider {
 
-    private static readonly BASE_URL = 'https://map.nils-witt.de/api'
+    private static readonly BASE_URL = 'https://map.local.nilswitt.dev/api'
 
     private static instance: ApiProvider;
     private token: string | undefined = undefined;
