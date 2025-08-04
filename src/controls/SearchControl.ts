@@ -330,6 +330,7 @@ export class SearchControl extends Evented implements IControl {
 
         this.searchIconContainer.classList.add("cursor-pointer")
 
+        this.resultsContainer.classList.add("hidden");
         this.setOpen(false); // Initialize the control as closed
 
     }

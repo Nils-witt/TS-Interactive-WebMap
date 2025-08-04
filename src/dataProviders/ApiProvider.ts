@@ -2,6 +2,7 @@ import type {LayerInfo} from "../types/LayerInfo.ts";
 import {NamedGeoReferencedObject} from "../enitites/NamedGeoReferencedObject.ts";
 import {DataProvider} from "./DataProvider.ts";
 import {IMapGroup} from "../types/MapEntity.ts";
+import {Config} from "../Config.ts";
 
 
 export enum ApiProviderEventTypes {
@@ -12,8 +13,6 @@ export enum ApiProviderEventTypes {
 
 
 export class ApiProvider {
-
-    private static readonly BASE_URL = 'https://map.local.nilswitt.dev/api'
 
     private static instance: ApiProvider;
     private token: string | undefined = undefined;
@@ -56,7 +55,7 @@ export class ApiProvider {
     }
 
     public async testLogin(): Promise<void> {
-        const url = ApiProvider.BASE_URL + '/token/verify/';
+        const url = Config.getInstance().apiUrl + '/token/verify/';
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
 
@@ -80,7 +79,7 @@ export class ApiProvider {
 
 
     public async login(username: string, password: string): Promise<void> {
-        const url = ApiProvider.BASE_URL + '/token/';
+        const url = Config.getInstance().apiUrl + '/token/';
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
 
@@ -149,7 +148,7 @@ export class ApiProvider {
         let overlays: LayerInfo[] = [];
 
         try {
-            const url = ApiProvider.BASE_URL + '/overlays/'
+            const url = Config.getInstance().apiUrl + '/overlays/'
             return await this.fetchData(url);
         } catch (error) {
             console.error("Error fetching overlay layers:", error);
@@ -161,7 +160,7 @@ export class ApiProvider {
         let overlays: LayerInfo[] = [];
 
         try {
-            const url = ApiProvider.BASE_URL + '/styles/'
+            const url = Config.getInstance().apiUrl + '/styles/'
             return await this.fetchData(url);
         } catch (error) {
             console.error("Error fetching overlay layers:", error);
@@ -172,7 +171,7 @@ export class ApiProvider {
     public async getMapItems(): Promise<NamedGeoReferencedObject[]> {
 
         try {
-            const url = ApiProvider.BASE_URL + '/items/'
+            const url = Config.getInstance().apiUrl + '/items/'
             let data = await this.fetchData(url);
             return data.map((item: any) => {
                 return new NamedGeoReferencedObject({
@@ -197,7 +196,7 @@ export class ApiProvider {
         :
         Promise<IMapGroup[]> {
         try {
-            const url = ApiProvider.BASE_URL + '/map_groups/'
+            const url = Config.getInstance().apiUrl + '/map_groups/'
             return await this.fetchData(url);
         } catch (error) {
             console.error("Error fetching overlay layers:", error);
@@ -208,17 +207,17 @@ export class ApiProvider {
     public async saveMapItem(item: NamedGeoReferencedObject): Promise<NamedGeoReferencedObject | null> {
 
 
-        let url = ApiProvider.BASE_URL + `/items/${item.id}/`;
+        let url = Config.getInstance().apiUrl + `/items/${item.id}/`;
         let method = "PUT";
 
         if (!item.id) {
-            url = ApiProvider.BASE_URL + '/items/';
+            url = Config.getInstance().apiUrl + '/items/';
             method = "POST"; // Use POST for creating new items
         }
 
         const data = {
             ...item,
-            group: item.groupId ? ApiProvider.BASE_URL + '/map_groups/' + item.groupId + '/' : null,
+            group: item.groupId ? Config.getInstance().apiUrl + '/map_groups/' + item.groupId + '/' : null,
         }
 
         try {

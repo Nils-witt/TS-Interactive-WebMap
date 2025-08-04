@@ -35,7 +35,7 @@ export default {
             },
             includeAssets: ['icons/192.png', 'icons/512.png'],
             devOptions: {
-                enabled: true
+                enabled: false
             },
             manifest: {
                 name: 'TacMap',

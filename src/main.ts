@@ -50,7 +50,7 @@ registerSW({
 
 const debugMode = false; // Set to true for debugging purposes, will log additional information
 
-const config = new Config();
+const config = Config.getInstance()
 const dataProvider = DataProvider.getInstance();
 ApiProvider.getInstance();
 
@@ -126,6 +126,7 @@ if (config.editMode) {
 
 dataProvider.on(DataProviderEventType.MAP_STYLE_UPDATED, (event) => {
     const style = event.data as LayerInfo;
+    console.log("Setting map style to:", style);
     map.setStyle(style.url);
 });
 
@@ -143,47 +144,5 @@ ApiProvider.getInstance().on(ApiProviderEventTypes.LOGIN_SUCCESS, () => {
 });
 
 ApiProvider.getInstance().loadAllData();
-/*
-(async () => {
-    const ws = new WebSocket('wss://map.nils-witt.de/traccar/');
-    if (debugMode) {
-        ws.onopen = () => {
-            // console.log('WebSocket connection established');
-        };
-    }
-    ws.onmessage = (event) => {
-        try {
-            const message: { positions: TraccarPosition[] } = JSON.parse(event.data);
-            if (message.positions) {
-                console.log('Received positions:', message.positions);
-                for (const position of message.positions) {
-                    if (data.devices.has(position.deviceId)) {
-                        // Update existing marker
-                        const marker = data.devices.get(position.deviceId);
-                        if (marker) {
-                            marker.setLngLat([position.longitude, position.latitude]);
-                        }
-                    } else {
-                        // Create a new marker for the device
-                        const marker = new Marker()
-                            .setLngLat([position.longitude, position.latitude])
-                            .setPopup(new Popup().setText(`Device ID: ${position.deviceId}`))
-                            .addTo(map);
-                        data.devices.set(position.deviceId, marker);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
-        }
-    };
-    ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-    };
-    if (debugMode) {
-        ws.onclose = () => {
-            // console.log('WebSocket connection closed');
-        };
-    }
-})();
-*/
+
+console.log("MapLibre WebMap initialized");

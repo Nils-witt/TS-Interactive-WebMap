@@ -32,15 +32,26 @@ function getURLType(url: URL) {
     if (url.pathname.startsWith('/vector/')) {
         return 'vector'; // Return overlay type
     }
+    if (url.pathname.startsWith('/admin/')) {
+        return 'admin'; // Return overlay type
+    }
+
 
     return 'default'; // Default type
 }
 
-
+/**
+ *
+ * @param url
+ * @return A tuple containing the cache name, whether to use network first, and whether to use cache.
+ */
 function getCacheName(url: URL): [string, boolean, boolean] {
     let reqType = getURLType(url);
 
 
+    if (reqType === 'admin') {
+        return ['never', true, false];
+    }
     if (reqType === 'api') {
         return ['api-cache', true, true];
     }
@@ -61,35 +72,36 @@ sw.addEventListener("fetch", (event) => {
     let url = new URL(event.request.url);
     let [useCacheName, networkFirst, useCache] = getCacheName(url);
     console.log('Fetch event for:', url.href, 'Cache name:', useCacheName, 'Network first:', networkFirst, 'Use cache:', useCache);
-    if (networkFirst) {
-        event.respondWith(
-            fetch(event.request)
-                .then(response => {
-                    if (useCache) {
-                        let responseToCache = response.clone();
 
-                        caches.open(useCacheName).then((cache) => {
-                            cache.put(event.request, responseToCache); // Cache the new response
-                        });
-                    }
-                    return response; // Clone the response to use it in the cache
-                }).catch(() => {
-                return caches.match(event.request)
-            })
-        );
-        return;
-    } else {
-        let url = new URL(event.request.url);
-        if (url.pathname.startsWith('/index.html')) {
-            url.pathname = '/index.html'
-        }
-        event.respondWith(
-            caches.match(url)
-                .then((response) => {
-                    if (response) {
+
+    if (useCache) {
+        if (networkFirst) {
+            event.respondWith(
+                fetch(event.request)
+                    .then(response => {
+                        if (useCache) {
+                            let responseToCache = response.clone();
+
+                            caches.open(useCacheName).then((cache) => {
+                                cache.put(event.request, responseToCache); // Cache the new response
+                            });
+                        }
+                        return response; // Clone the response to use it in the cache
+                    }).catch(() => {
+                    return caches.match(event.request)
+                })
+            );
+        } else {
+            event.respondWith(
+                caches.match(event.request)
+                    .then((response) => {
+                        console.log('Cache match for:', event.request.url, 'Response:', response);
+                        if (response) {
+                            return response; // Return cached response if found
+                        }
                         fetch(event.request).then((response) => {
                             if (!response || response.status !== 200) {
-                                return response; // Return the response if it's not cacheable
+                                return response;
                             }
 
                             let responseToCache = response.clone();
@@ -97,28 +109,12 @@ sw.addEventListener("fetch", (event) => {
                             caches.open(useCacheName).then((cache) => {
                                 cache.put(event.request, responseToCache); // Cache the new response
                             });
+                            return response; // Return the fetched response
                         }).catch(() => {
                             return new Response('Error fetching the resource', {status: 400});
-                        })
-                        return response; // Return cached response if found
-                    }
-                    return fetch(event.request).then((response) => {
-                        if (!response || response.status !== 200) {
-                            return response; // Return the response if it's not cacheable
-                        }
-
-                        let responseToCache = response.clone();
-
-                        caches.open(useCacheName).then((cache) => {
-                            cache.put(event.request, responseToCache); // Cache the new response
                         });
-                        return response; // Return the fetched response
-                    }).catch(() => {
-                        return new Response('Error fetching the resource', {status: 400});
-                    });
-
-                })
-        );
+                    })
+            )
+        }
     }
-
 });
