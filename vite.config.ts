@@ -26,11 +26,13 @@ const CompileTsServiceWorker = () => ({
 export default {
     plugins: [
         tailwindcss(),
-        CompileTsServiceWorker(),
-        VitePWA({
+        CompileTsServiceWorker()
+    /*    VitePWA({
             registerType: 'autoUpdate',
             workbox: {
                 importScripts: ['./sw-custom.js'],
+                navigateFallbackDenylist: [/^\/(api|admin|vector|overlays)/]
+
             //    globIgnores: ['**'],
             },
             includeAssets: ['icons/192.png', 'icons/512.png'],
@@ -42,7 +44,7 @@ export default {
                 short_name: 'TacMap',
                 description: 'TacMap',
                 theme_color: '#ffffff',
-                start_url: '/index.html',
+             //   start_url: '/index.html',
                 icons: [
                     {
                         "src": "icons/192.png",
@@ -56,6 +58,6 @@ export default {
                     }
                 ]
             }
-        })
+        })*/
     ]
 }

@@ -48,9 +48,8 @@ function getURLType(url: URL) {
 function getCacheName(url: URL): [string, boolean, boolean] {
     let reqType = getURLType(url);
 
-
     if (reqType === 'admin') {
-        return ['never', true, false];
+        return ['admin', true, false];
     }
     if (reqType === 'api') {
         return ['api-cache', true, true];
@@ -62,7 +61,7 @@ function getCacheName(url: URL): [string, boolean, boolean] {
         return ['vector-cache', false, true];
     }
     if (url.origin == sw.registration.scope) {
-        return [reqType, false, true];
+        return [reqType, false, false];
     }
     return ['never', true, false];
 

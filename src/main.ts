@@ -15,14 +15,13 @@ import {SearchControl} from "./controls/SearchControl.ts";
 import {MapEditContextMenu} from "./controls/MapEditContextMenu.ts";
 import './style.css'
 import {LoginController} from "./controls/LoginController.ts";
-import { registerSW } from 'virtual:pwa-register'
 import {LayersControl} from "./controls/LayerControl.ts";
 
 
 if (window.location.pathname === '/') {
     window.location.pathname = '/index.html';
 }
-
+/*
 const intervalMS = 60 * 60 * 1000
 
 registerSW({
@@ -47,7 +46,7 @@ registerSW({
         }, intervalMS)
     }
 })
-
+*/
 const debugMode = false; // Set to true for debugging purposes, will log additional information
 
 const config = Config.getInstance()
@@ -86,6 +85,16 @@ const map = new MapLibreMap({
     zoom: config.mapZoom,                                         // Initial zoom level
     attributionControl: false,
     rollEnabled: true,
+    transformRequest: (url, resourceType) => {
+            console.log("Transforming request for URL:", url, "Resource type:", resourceType);
+
+        if (resourceType === 'Tile' && url.startsWith('https://overlays.node01.nilswitt.dev')) {
+            return {
+                url: url,
+                headers: { 'Authorization': 'Bearer ' + ApiProvider.getInstance().getToken() }
+            }
+        }
+    }
 });
 
 const geolocate = new GeolocateControl({

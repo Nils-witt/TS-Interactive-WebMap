@@ -31,6 +31,10 @@ export class ApiProvider {
         return ApiProvider.instance;
     }
 
+    public getToken(): string | undefined {
+        return this.token;
+    }
+
     public async loadAllData(): Promise<void> {
         this.getMapStyles().then(styles => {
             if (styles.length > 0) {
