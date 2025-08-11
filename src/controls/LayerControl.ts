@@ -4,7 +4,8 @@ import {DataProvider, type DataProviderEvent, DataProviderEventType} from "../da
 import {icon} from "@fortawesome/fontawesome-svg-core";
 import {faMap} from "@fortawesome/free-solid-svg-icons/faMap";
 import {faXmark} from "@fortawesome/free-solid-svg-icons/faXmark";
-import {faDownload} from "@fortawesome/free-solid-svg-icons/faDownload";
+import {faGear} from "@fortawesome/free-solid-svg-icons/faGear";
+import {ApiProvider} from "../dataProviders/ApiProvider.ts";
 
 /**
  * A control for MapLibre GL JS that allows users to toggle the visibility of map layers.
@@ -139,7 +140,7 @@ export class LayersControl extends Evented implements IControl {
             // Add the layer source
             this.map.addSource(layer.id, {
                 type: "raster",           // Use raster tiles
-                tiles: [layer.url],       // URL template for the tiles
+                tiles: [layer.url + "?accesstoken=" + ApiProvider.getInstance().getToken()],       // URL template for the tiles
                 tileSize: 256             // Standard tile size
             });
 
@@ -157,7 +158,7 @@ export class LayersControl extends Evented implements IControl {
                 // Add the layer source
                 this.map?.addSource(layer.id, {
                     type: "raster",           // Use raster tiles
-                    tiles: [layer.url],       // URL template for the tiles
+                    tiles: [layer.url+ "?accesstoken=" + ApiProvider.getInstance().getToken()],       // URL template for the tiles
                     tileSize: 256             // Standard tile size
                 });
 
@@ -265,6 +266,91 @@ export class LayersControl extends Evented implements IControl {
         });
     }
 
+
+    private openLayerSettings(layer: LayerInfo) {
+        const container = document.createElement("div");
+        container.classList.add("absolute", "top-0", "left-0", "w-full", "h-full", "z-50", "flex", "flex-col", "items-center", "justify-center");
+
+        const contentContainer = document.createElement("div");
+
+        contentContainer.classList.add("bg-white", "p-4", "rounded", "w-11/12", "max-w-md");
+        const opacityContainer = document.createElement("div");
+        opacityContainer.classList.add("mb-4");
+        const opacityLabel = document.createElement("label");
+        opacityLabel.classList.add();
+        opacityLabel.setAttribute("for", "opacity-range");
+        opacityLabel.textContent = "Opacity: 100%";
+        const opacityInput = document.createElement("input");
+        opacityInput.setAttribute("type", "range");
+        opacityInput.setAttribute("id", "opacity-range");
+        opacityInput.setAttribute("min", "0");
+        opacityInput.setAttribute("max", "100");
+        opacityInput.setAttribute("value", "100");
+        opacityInput.classList.add("w-full", "h-2", "bg-gray-200", "rounded-lg", "appearance-none", "cursor-pointer", "dark:bg-gray-700");
+        opacityInput.addEventListener("input", () => {
+            const opacity = parseFloat(opacityInput.value) / 100;
+            opacityLabel.textContent = `Opacity: ${opacityInput.value}%`;
+            if (this.map) {
+                this.map.setPaintProperty(layer.id + "-layer", "raster-opacity", opacity);
+            }
+        });
+        opacityContainer.appendChild(opacityLabel);
+        opacityContainer.appendChild(opacityInput);
+        contentContainer.appendChild(opacityContainer);
+
+
+        const downloadContainer = document.createElement("div");
+        downloadContainer.classList.add("mb-4");
+        const downloadButton = document.createElement("button");
+        downloadButton.classList.add("bg-blue-500", "text-white", "px-4", "py-2", "rounded", "hover:bg-blue-600");
+        downloadButton.textContent = "Download Layer";
+        downloadButton.addEventListener("click", () => {
+            this.downloadLayerToCache(layer).then((success) => {
+                if (success) {
+                    downloadButton.classList.remove("bg-red-500");
+                    downloadButton.classList.add("bg-green-500");
+                    downloadButton.textContent = "Layer Downloaded";
+                } else {
+                    downloadButton.classList.remove("bg-green-500");
+                    downloadButton.classList.add("bg-red-500");
+                    downloadButton.textContent = "Download Failed";
+                }
+            }).catch((error) => {
+                console.error("Error downloading layer:", error);
+                downloadButton.classList.remove("bg-green-500");
+                downloadButton.classList.add("bg-red-500");
+                downloadButton.textContent = "Download Failed";
+            });
+        });
+
+
+        if (window.location.protocol != "https:") {
+            downloadButton.classList.add("bg-red-500");
+            downloadButton.textContent = "Download not available in HTTP mode";
+            downloadButton.disabled = true; // Disable the button if not in HTTPS mode
+        }
+
+        downloadContainer.appendChild(downloadButton);
+        contentContainer.appendChild(downloadContainer);
+
+
+        container.appendChild(contentContainer);
+
+        document.body.appendChild(container);
+
+
+        container.addEventListener("click", (event) => {
+            console.log("Clicked:", event.target);
+            if (event.target === container ) {
+                // Close the settings when clicking outside the content area
+                container.remove();
+            }
+
+        });
+
+
+    }
+
     /**
      * Creates a labeled checkbox for a layer
      *
@@ -278,11 +364,13 @@ export class LayersControl extends Evented implements IControl {
 
 
         let span2 = document.createElement("span");
-        span2.innerHTML = icon(faDownload).html[0];
+        span2.innerHTML = icon(faGear).html[0];
         span2.classList.add("mr-2");
         span2.addEventListener("click", () => {
-            span2.classList.remove("bg-red-200","bg-green-200");
-            span2.classList.add("bg-yellow-200");
+            this.setOpen(false); // Close the control when settings are opened
+            this.openLayerSettings(layer);
+
+            /*
             this.downloadLayerToCache(layer).then((success) => {
                 if (success) {
                     span2.classList.remove("bg-red-200");
@@ -300,16 +388,20 @@ export class LayersControl extends Evented implements IControl {
                     });
                 }
             });
+
+             */
         });
         container.appendChild(span2);
-
+/*
         this.getMissingCacheFiles(layer).then((missingFiles) => {
             if (missingFiles.length > 0) {
                 span2.classList.add("bg-red-200");
             } else {
                 span2.classList.add("bg-green-200");
             }
-        })
+        });
+
+ */
 
         let cLabel = document.createElement("label");
         container.appendChild(cLabel);

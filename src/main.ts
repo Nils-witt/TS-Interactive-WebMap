@@ -85,16 +85,6 @@ const map = new MapLibreMap({
     zoom: config.mapZoom,                                         // Initial zoom level
     attributionControl: false,
     rollEnabled: true,
-    transformRequest: (url, resourceType) => {
-            console.log("Transforming request for URL:", url, "Resource type:", resourceType);
-
-        if (resourceType === 'Tile' && url.startsWith('https://overlays.node01.nilswitt.dev')) {
-            return {
-                url: url,
-                headers: { 'Authorization': 'Bearer ' + ApiProvider.getInstance().getToken() }
-            }
-        }
-    }
 });
 
 const geolocate = new GeolocateControl({
