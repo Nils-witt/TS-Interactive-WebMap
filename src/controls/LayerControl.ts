@@ -371,7 +371,7 @@ export class LayersControl extends Evented implements IControl {
         downloadContainer.classList.add("mb-4");
         const downloadButton = document.createElement("button");
         downloadButton.classList.add("bg-blue-500", "text-white", "px-4", "py-2", "rounded", "hover:bg-blue-600");
-        downloadButton.textContent = "Download Layer";
+        downloadButton.textContent = "Loading...";
         downloadButton.addEventListener("click", () => {
             this.downloadLayerToCache(layer).then((success) => {
                 if (success) {
@@ -401,14 +401,15 @@ export class LayersControl extends Evented implements IControl {
                     downloadButton.classList.add("bg-red-500");
                     downloadButton.textContent = "No tiles available for download";
                     downloadButton.disabled = true; // Disable the button if no tiles are available
-                } else if (cacheTiles.length === 0) {
+                } else if (cacheTiles.length === remoteTiles.length) {
                     downloadButton.classList.remove("bg-red-500");
-                    downloadButton.classList.add("bg-yellow-500");
-                    downloadButton.textContent = "Download Layer to Cache";
+                    downloadButton.classList.add("bg-green-500");
+                    downloadButton.textContent = "Already downloaded to cache";
+                    downloadButton.disabled = true; // Disable the button if all tiles are already cached
                 } else {
                     downloadButton.classList.remove("bg-red-500", "bg-yellow-500");
                     downloadButton.classList.add("bg-blue-500");
-                    downloadButton.textContent = "Download Layer";
+                    downloadButton.textContent = `Download Layer ${cacheTiles.length}/${remoteTiles.length} tiles`;
                 }
             } catch (error) {
                 console.error("Error fetching layer tiles:", error);
