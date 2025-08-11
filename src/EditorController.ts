@@ -32,7 +32,7 @@ export class EditorController {
         this.controlsContainer.classList.add('h-100%');
 
         this.editorEditBox.addEventListener('cancel', () => {
-            if (this.internalClickAbortHandler){
+            if (this.internalClickAbortHandler) {
                 this.internalClickAbortHandler(); // Abort any previous click handler
                 this.internalClickSuccessHandler = undefined;
                 this.internalClickAbortHandler = undefined;
@@ -156,7 +156,7 @@ export class EditorController {
             let updatePositionButton = document.createElement('button');
             let editIconBtn = document.createElement('button');
 
-           // cellActions.appendChild(locateButton);
+            // cellActions.appendChild(locateButton);
             cellActions.appendChild(updatePositionButton);
             cellActions.appendChild(editIconBtn);
 
@@ -212,16 +212,15 @@ export class EditorController {
             locateButton.innerHTML = icon(faMap).html[0];
             updatePositionButton.innerHTML = icon(faMapPin).html[0];
 
-            editIconBtn.classList.add( 'mx-2', 'hover:cursor-pointer');
-            locateButton.classList.add( 'mx-2', 'hover:cursor-pointer');
-            updatePositionButton.classList.add( 'mx-2', 'hover:cursor-pointer');
+            editIconBtn.classList.add('mx-2', 'hover:cursor-pointer');
+            locateButton.classList.add('mx-2', 'hover:cursor-pointer');
+            updatePositionButton.classList.add('mx-2', 'hover:cursor-pointer');
         }
-
 
 
     }
 
-    public createNewItem(position: {lng: number, lat: number}): void {
+    public createNewItem(position: { lng: number, lat: number }): void {
         let item = new NamedGeoReferencedObject({
             id: null,
             name: '',
@@ -229,7 +228,7 @@ export class EditorController {
             latitude: position.lat,
             groupId: this.selectedGroupId
         });
-        this.editorEditBox.setItem(item,true);
+        this.editorEditBox.setItem(item, true);
 
     }
 }

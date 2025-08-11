@@ -245,7 +245,6 @@ export class SearchControl extends Evented implements IControl {
         this.searchIconContainer = document.createElement("div");
 
 
-
         let spanIcon = document.createElement("span");
         this.searchIconContainer.appendChild(spanIcon);
         spanIcon.classList.add("p-[5px]");
@@ -277,7 +276,7 @@ export class SearchControl extends Evented implements IControl {
         //TODO insert Filter
 
         let closeIconContainer = document.createElement("div");
-        closeIconContainer.classList.add("relative","m-[2px]","mb-3","float-right","sm:block");
+        closeIconContainer.classList.add("relative", "m-[2px]", "mb-3", "float-right", "sm:block");
         let closeIcon = document.createElement("span");
         closeIcon.classList.add("p-[5px]");
         closeIcon.innerHTML = icon(faXmark).html[0];

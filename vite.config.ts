@@ -1,9 +1,9 @@
 import tailwindcss from '@tailwindcss/vite'
 import {VitePWA} from "vite-plugin-pwa";
-import { rollup, InputOptions, OutputOptions } from 'rollup'
+import {InputOptions, OutputOptions, rollup} from 'rollup'
 
 import rollupPluginTypescript from '@rollup/plugin-typescript'
-import { nodeResolve } from '@rollup/plugin-node-resolve'
+import {nodeResolve} from '@rollup/plugin-node-resolve'
 
 
 const CompileTsServiceWorker = () => ({
@@ -32,8 +32,6 @@ export default {
             workbox: {
                 importScripts: ['./sw-custom.js'],
                 navigateFallbackDenylist: [/^\/(api|admin|vector|overlays)/]
-
-            //    globIgnores: ['**'],
             },
             includeAssets: ['icons/192.png', 'icons/512.png'],
             devOptions: {
@@ -44,7 +42,7 @@ export default {
                 short_name: 'TacMap',
                 description: 'TacMap',
                 theme_color: '#ffffff',
-             //   start_url: '/index.html',
+                // start_url: '/index.html',
                 icons: [
                     {
                         "src": "icons/192.png",

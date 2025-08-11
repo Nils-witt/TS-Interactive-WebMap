@@ -27,7 +27,7 @@ export class LoginController {
     private setUpDiv(): void {
         this.container.classList.add('hidden')
         this.container.classList.add('absolute', 'top-0', 'left-0', 'w-full', 'h-full', 'bg-white', 'z-1001');
-        this.container.classList.add("grid","place-items-center")
+        this.container.classList.add("grid", "place-items-center")
         document.body.appendChild(this.container);
 
         let container = document.createElement('div');
