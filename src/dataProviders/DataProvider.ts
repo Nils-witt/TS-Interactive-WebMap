@@ -37,10 +37,10 @@ export enum DataProviderEventType {
     MAP_GROUPS_UPDATED = 'mapGroups-updated',
     /** Triggered when a new overlay is added to the map */
     OVERLAY_ADDED = 'overlay-added',
-    /** Triggered when a user successfully logs in */
-    LOGIN_SUCCESS = 'login-success',
-    /** Triggered when a login attempt fails */
-    LOGIN_FAILURE = 'login-failure'
+    /** Triggered when an existing overlay is updated */
+    OVERLAY_UPDATED = 'overlay-updated',
+    /** Triggered when an overlay is removed **/
+    OVERLAY_DELETED = 'overlay-deleted',
 }
 
 /**
@@ -64,10 +64,6 @@ export class DataProvider {
 
     /** Collection of map groups for organizing map elements */
     private mapGroups: Map<string, IMapGroup> = new Map();
-
-    //TODO: Implement BroadcastChannel communication
-    //  private dataChannel: BroadcastChannel = new BroadcastChannel('dataProviderChannel');
-
     /** Singleton instance reference */
     private static instance: DataProvider;
 
@@ -76,18 +72,6 @@ export class DataProvider {
      * Part of the Singleton pattern implementation.
      */
     private constructor() {
-        //TODO: Implement BroadcastChannel communication
-        /*
-                this.dataChannel.onmessage = (event) => {
-                    console.log("DataProvider: Received message from BroadcastChannel", event);
-
-                    let recData: { event: DataProviderEventType, data: any } = event.data;
-
-                    this.eventListeners.get(recData.event)?.forEach(callback => {
-                        callback({type: recData.event, data: recData.data});
-                    });
-                }
-          */
     }
 
     /**
@@ -113,15 +97,6 @@ export class DataProvider {
         this.eventListeners.get(eventType)?.forEach(callback => {
             callback({type: eventType, data});
         });
-
-        //TODO: Implement BroadcastChannel communication
-        /*
-        this.dataChannel.postMessage({
-            'event': eventType,
-            'data': data
-        });
-
-         */
     }
 
     /**
@@ -192,6 +167,25 @@ export class DataProvider {
     addOverlay(id: string, overlay: LayerInfo): void {
         this.overlays.set(id, overlay);
         this.triggerEvent(DataProviderEventType.OVERLAY_ADDED, overlay);
+    }
+
+    updateOverlay(id: string, overlay: LayerInfo): void {
+        if (this.overlays.has(id)) {
+            this.overlays.set(id, overlay);
+            this.triggerEvent(DataProviderEventType.OVERLAY_UPDATED, overlay);
+        } else {
+            console.warn(`Overlay with ID ${id} does not exist.`);
+        }
+    }
+
+    removeOverlay(id: string): void {
+        if (this.overlays.has(id)) {
+            const overlay = this.overlays.get(id);
+            this.overlays.delete(id);
+            this.triggerEvent(DataProviderEventType.OVERLAY_DELETED, overlay);
+        } else {
+            console.warn(`Overlay with ID ${id} does not exist.`);
+        }
     }
 
     /**

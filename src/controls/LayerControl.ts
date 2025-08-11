@@ -158,7 +158,7 @@ export class LayersControl extends Evented implements IControl {
                 // Add the layer source
                 this.map?.addSource(layer.id, {
                     type: "raster",           // Use raster tiles
-                    tiles: [layer.url+ "?accesstoken=" + ApiProvider.getInstance().getToken()],       // URL template for the tiles
+                    tiles: [layer.url + "?accesstoken=" + ApiProvider.getInstance().getToken()],       // URL template for the tiles
                     tileSize: 256             // Standard tile size
                 });
 
@@ -179,7 +179,12 @@ export class LayersControl extends Evented implements IControl {
         this.layersContainer.appendChild(labeled_checkbox);
     }
 
-    private getMissingCacheFiles(layer: LayerInfo): Promise<string[]> {
+    /**
+     * Fetches all tiles for a remote layer by retrieving the index.json file
+     * @param layer
+     * @private
+     */
+    private getRemoteLayerTiles(layer: LayerInfo): Promise<string[]> {
         return new Promise((resolve) => {
             let url: URL | undefined;
             if (layer.url.startsWith('http')) {
@@ -188,19 +193,13 @@ export class LayersControl extends Evented implements IControl {
                 url = new URL(layer.url.substring(0, layer.url.search("{z}")), window.location.origin); // Ensure the URL is absolute
             }
 
-
-            let path = url.pathname.replace('/overlays/', '');
-            let parts = path.split('/');
-            const cacheName = 'overlay-' + parts[0]; // Use the first part of the path as the cache name
-
-            fetch(url.href + "/index.json").then(async response => {
+            fetch(url.href + "/index.json?accesstoken=" + ApiProvider.getInstance().getToken()).then(async response => {
                 if (!response.ok) {
                     return;
                 }
-                const data = await response.json()
-                const cache = await caches.open(cacheName);
-                console.log("Opened cache:", cacheName);
+
                 let filelist = []
+                const data = await response.json()
 
                 const zVals = Object.keys(data);
                 for (let i = 0; i < zVals.length; i++) {
@@ -218,28 +217,73 @@ export class LayersControl extends Evented implements IControl {
                     }
 
                 }
-                let missingFiles = [];
-                for (let i = 0; i < filelist.length; i++) {
-                    let fileUrl = new URL(filelist[i]);
-                    let response = await cache.match(fileUrl);
-                    if (!response) {
-                        missingFiles.push(fileUrl.href);
-                    }
-                }
-                resolve(missingFiles);
+                resolve(filelist);
             }).catch(error => {
                 console.error("Failed to fetch index.json:", error);
                 resolve([]);
             });
+        });
+    }
+
+    private getCacheLayerTiles(layer: LayerInfo): Promise<string[]> {
+        return new Promise(async (resolve) => {
+            let url: URL | undefined;
+            if (layer.url.startsWith('http')) {
+                url = new URL(layer.url.substring(0, layer.url.search("{z}"))); // Ensure the URL is absolute
+            } else {
+                url = new URL(layer.url.substring(0, layer.url.search("{z}")), window.location.origin); // Ensure the URL is absolute
+            }
+
+
+            let path = url.pathname.replace('/overlays/', '');
+            let parts = path.split('/');
+            const cacheName = 'overlay-' + parts[0]; // Use the first part of the path as the cache name
+
+            const cache = await caches.open(cacheName);
+            cache.keys().then((keys) => {
+                console.log("Cache keys for", cacheName, ":", keys);
+                resolve(keys.map(key => key.url));
+            }).catch(error => {
+                console.error("Failed to get cache keys:", error);
+            });
 
         });
+    }
 
+    private getMissingCacheFiles(layer: LayerInfo): Promise<string[]> {
+        return new Promise((resolve) => {
+            const missingFiles: string[] = [];
+
+            this.getRemoteLayerTiles(layer).then((remoteFiles) => {
+                this.getCacheLayerTiles(layer).then((cacheFiles) => {
+                    console.log("Remote files:", remoteFiles);
+                    console.log("Cache files:", cacheFiles);
+
+                    // Check for missing files
+                    remoteFiles.forEach((file) => {
+                        if (!cacheFiles.includes(file)) {
+                            missingFiles.push(file);
+                        }
+                    });
+
+                    console.log("Missing files:", missingFiles);
+                    resolve(missingFiles);
+                }).catch(error => {
+                    console.error("Error getting cache layer tiles:", error);
+                    resolve([]); // Return empty array on error
+                });
+            }).catch(error => {
+                console.error("Error getting remote layer tiles:", error);
+                resolve([]); // Return empty array on error
+            });
+
+        });
     }
 
     private downloadLayerToCache(layer: LayerInfo) {
 
 
-        return new Promise<boolean>(async (resolve, reject) => {
+        return new Promise<boolean>(async (resolve) => {
             let url: URL | undefined;
             if (layer.url.startsWith('http')) {
                 url = new URL(layer.url.substring(0, layer.url.search("{z}"))); // Ensure the URL is absolute
@@ -253,21 +297,43 @@ export class LayersControl extends Evented implements IControl {
             const cacheName = 'overlay-' + parts[0]; // Use the first part of the path as the cache name
 
             let missingFiles = await this.getMissingCacheFiles(layer);
-            caches.open(cacheName).then(async (cache) => {
 
-                cache.addAll(missingFiles).then(() => {
-                    console.log("Layer downloaded and cached successfully:", cacheName);
-                    resolve(true);
-                }).catch(error => {
-                    console.error("Failed to cache layer files:", error);
-                    reject(false);
-                });
+            caches.open(cacheName).then(async (cache) => {
+                for (let i = 0; i < missingFiles.length; i++) {
+                    await new Promise<void>((resolve, reject) => {
+
+                        fetch(missingFiles[i] + "?accesstoken=" + ApiProvider.getInstance().getToken()).then(response => {
+                            if (!response.ok) {
+                                console.error("Failed to fetch layer file:", missingFiles[i], "Status:", response.status);
+                                reject(false);
+                                return;
+                            }
+                            cache.put(missingFiles[i], response.clone()).then(() => {
+                                resolve();
+                            }).catch(error => {
+                                console.error("Failed to cache layer file:", missingFiles[i], error);
+                                reject(false);
+                                return;
+                            });
+
+                        }).catch(error => {
+                            console.error("Error fetching layer file:", missingFiles[i], error);
+                            reject(false);
+                            return;
+                        });
+                    });
+                    await new Promise(resolve => setTimeout(resolve, 50)); // Add a delay to avoid overwhelming the cache
+                }
+                resolve(true);
             });
         });
     }
 
 
     private openLayerSettings(layer: LayerInfo) {
+
+        let current_opacity = layer.opacity || 1.0; // Default to 1.0 if opacity is not set
+
         const container = document.createElement("div");
         container.classList.add("absolute", "top-0", "left-0", "w-full", "h-full", "z-50", "flex", "flex-col", "items-center", "justify-center");
 
@@ -279,13 +345,13 @@ export class LayersControl extends Evented implements IControl {
         const opacityLabel = document.createElement("label");
         opacityLabel.classList.add();
         opacityLabel.setAttribute("for", "opacity-range");
-        opacityLabel.textContent = "Opacity: 100%";
+        opacityLabel.textContent = `Opacity: ${current_opacity * 100}%`;
         const opacityInput = document.createElement("input");
         opacityInput.setAttribute("type", "range");
         opacityInput.setAttribute("id", "opacity-range");
         opacityInput.setAttribute("min", "0");
         opacityInput.setAttribute("max", "100");
-        opacityInput.setAttribute("value", "100");
+        opacityInput.setAttribute("value", current_opacity * 100 + "");
         opacityInput.classList.add("w-full", "h-2", "bg-gray-200", "rounded-lg", "appearance-none", "cursor-pointer", "dark:bg-gray-700");
         opacityInput.addEventListener("input", () => {
             const opacity = parseFloat(opacityInput.value) / 100;
@@ -293,6 +359,8 @@ export class LayersControl extends Evented implements IControl {
             if (this.map) {
                 this.map.setPaintProperty(layer.id + "-layer", "raster-opacity", opacity);
             }
+            layer.opacity = opacity;
+            DataProvider.getInstance().updateOverlay(layer.id, layer);
         });
         opacityContainer.appendChild(opacityLabel);
         opacityContainer.appendChild(opacityInput);
@@ -322,6 +390,33 @@ export class LayersControl extends Evented implements IControl {
                 downloadButton.textContent = "Download Failed";
             });
         });
+        (async () => {
+            try {
+                const remoteTiles = await this.getRemoteLayerTiles(layer);
+                const cacheTiles = await this.getCacheLayerTiles(layer);
+                console.log("Remote Tiles:", remoteTiles);
+                console.log("Cache Tiles:", cacheTiles);
+
+                if (remoteTiles.length === 0) {
+                    downloadButton.classList.add("bg-red-500");
+                    downloadButton.textContent = "No tiles available for download";
+                    downloadButton.disabled = true; // Disable the button if no tiles are available
+                } else if (cacheTiles.length === 0) {
+                    downloadButton.classList.remove("bg-red-500");
+                    downloadButton.classList.add("bg-yellow-500");
+                    downloadButton.textContent = "Download Layer to Cache";
+                } else {
+                    downloadButton.classList.remove("bg-red-500", "bg-yellow-500");
+                    downloadButton.classList.add("bg-blue-500");
+                    downloadButton.textContent = "Download Layer";
+                }
+            } catch (error) {
+                console.error("Error fetching layer tiles:", error);
+                downloadButton.classList.add("bg-red-500");
+                downloadButton.textContent = "Error fetching tiles";
+                downloadButton.disabled = true; // Disable the button if an error occurs
+            }
+        })();
 
 
         if (window.location.protocol != "https:") {
@@ -341,7 +436,7 @@ export class LayersControl extends Evented implements IControl {
 
         container.addEventListener("click", (event) => {
             console.log("Clicked:", event.target);
-            if (event.target === container ) {
+            if (event.target === container) {
                 // Close the settings when clicking outside the content area
                 container.remove();
             }
@@ -392,16 +487,16 @@ export class LayersControl extends Evented implements IControl {
              */
         });
         container.appendChild(span2);
-/*
-        this.getMissingCacheFiles(layer).then((missingFiles) => {
-            if (missingFiles.length > 0) {
-                span2.classList.add("bg-red-200");
-            } else {
-                span2.classList.add("bg-green-200");
-            }
-        });
+        /*
+                this.getMissingCacheFiles(layer).then((missingFiles) => {
+                    if (missingFiles.length > 0) {
+                        span2.classList.add("bg-red-200");
+                    } else {
+                        span2.classList.add("bg-green-200");
+                    }
+                });
 
- */
+         */
 
         let cLabel = document.createElement("label");
         container.appendChild(cLabel);

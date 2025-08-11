@@ -22,4 +22,6 @@ export type LayerInfo = {
      * URL to the tile source for this layer
      */
     url: string;
+
+    opacity?: number; // Optional opacity for the layer, default is 1.0
 };
