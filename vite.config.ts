@@ -26,8 +26,8 @@ const CompileTsServiceWorker = () => ({
 export default {
     plugins: [
         tailwindcss(),
-        CompileTsServiceWorker()
-    /*    VitePWA({
+        CompileTsServiceWorker(),
+        VitePWA({
             registerType: 'autoUpdate',
             workbox: {
                 importScripts: ['./sw-custom.js'],
@@ -58,6 +58,6 @@ export default {
                     }
                 ]
             }
-        })*/
+        })
     ]
 }
