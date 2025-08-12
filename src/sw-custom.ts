@@ -5,18 +5,29 @@ const sw = self as unknown as ServiceWorkerGlobalScope & typeof globalThis;
 
 sw.addEventListener('install', (event) => {
     console.log('Service Worker installed');
-    console.log('Service Worker:', event);
-    event.waitUntil(
-        caches.open('tacmap-cache').then((cache) => {
-            cache.addAll([
+    event.waitUntil(new Promise(async (resolve) => {
+
+            await caches.delete('tacmap-cache')
+
+            const cache = await caches.open('tacmap-cache');
+            await cache.addAll([
                 '/index.html',
             ]);
+            resolve(true);
         })
     )
 });
-sw.addEventListener('activate', (event) => {
+sw.addEventListener('activate', () => {
     console.log('Service Worker activated');
-    console.log('Service Worker:', event);
+    sw.clients.matchAll({
+        includeUncontrolled: true
+    })
+        .then((clients) => {
+            clients.forEach(function(client) {
+                console.log('Sending message to client:', client);
+                client.postMessage({cmd: "reload"})
+            })
+        })
 });
 
 function getURLType(url: URL) {
@@ -55,7 +66,7 @@ function getCacheName(url: URL): [string, boolean, boolean] {
         return ['api-cache', true, true];
     }
     if (reqType.startsWith('overlay-')) {
-        return [reqType, false, true];
+        return [reqType, true, false];
     }
     if (reqType === 'vector') {
         return ['vector-cache', false, true];
@@ -66,6 +77,7 @@ function getCacheName(url: URL): [string, boolean, boolean] {
     return ['never', true, false];
 
 }
+
 
 sw.addEventListener("fetch", (event) => {
     let url = new URL(event.request.url);
@@ -91,29 +103,15 @@ sw.addEventListener("fetch", (event) => {
                 })
             );
         } else {
-            event.respondWith(
-                caches.match(event.request)
-                    .then((response) => {
-                        console.log('Cache match for:', event.request.url, 'Response:', response);
-                        if (response) {
-                            return response; // Return cached response if found
-                        }
-                        fetch(event.request).then((response) => {
-                            if (!response || response.status !== 200) {
-                                return response;
-                            }
+            event.respondWith(caches.open(useCacheName).then((cache) => {
+                return cache.match(event.request).then((cachedResponse) => {
+                    return cachedResponse || fetch(event.request.url).then((fetchedResponse) => {
+                        cache.put(event.request, fetchedResponse.clone());
 
-                            let responseToCache = response.clone();
-
-                            caches.open(useCacheName).then((cache) => {
-                                cache.put(event.request, responseToCache); // Cache the new response
-                            });
-                            return response; // Return the fetched response
-                        }).catch(() => {
-                            return new Response('Error fetching the resource', {status: 400});
-                        });
-                    })
-            )
+                        return fetchedResponse;
+                    });
+                });
+            }));
         }
     }
 });

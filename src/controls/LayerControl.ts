@@ -397,11 +397,18 @@ export class LayersControl extends Evented implements IControl {
                 console.log("Remote Tiles:", remoteTiles);
                 console.log("Cache Tiles:", cacheTiles);
 
+                let neededTiles = [];
+                for (const tile of remoteTiles) {
+                    if (!cacheTiles.includes(tile)) {
+                        neededTiles.push(tile);
+                    }
+                }
+
                 if (remoteTiles.length === 0) {
                     downloadButton.classList.add("bg-red-500");
                     downloadButton.textContent = "No tiles available for download";
                     downloadButton.disabled = true; // Disable the button if no tiles are available
-                } else if (cacheTiles.length === remoteTiles.length) {
+                } else if (neededTiles.length === 0) {
                     downloadButton.classList.remove("bg-red-500");
                     downloadButton.classList.add("bg-green-500");
                     downloadButton.textContent = "Already downloaded to cache";
@@ -409,7 +416,7 @@ export class LayersControl extends Evented implements IControl {
                 } else {
                     downloadButton.classList.remove("bg-red-500", "bg-yellow-500");
                     downloadButton.classList.add("bg-blue-500");
-                    downloadButton.textContent = `Download Layer ${cacheTiles.length}/${remoteTiles.length} tiles`;
+                    downloadButton.textContent = `Download Layer ${neededTiles.length}/${remoteTiles.length} tiles`;
                 }
             } catch (error) {
                 console.error("Error fetching layer tiles:", error);
@@ -427,7 +434,36 @@ export class LayersControl extends Evented implements IControl {
         }
 
         downloadContainer.appendChild(downloadButton);
+
+
+        let resetContainer = document.createElement("div");
+        resetContainer.classList.add("mb-4");
+        let resetButton = document.createElement("button");
+        resetButton.classList.add("bg-red-500", "text-white", "px-4", "py-2", "rounded", "hover:bg-red-600");
+        resetButton.textContent = "Reset Application";
+        resetButton.addEventListener("click", () => {
+            if (confirm("Are you sure you want to reset the application? This will clear all cached data.")) {
+                caches.keys().then((cacheNames) => {
+                    cacheNames.forEach((cacheName) => {
+                        caches.delete(cacheName);
+                    });
+                }).then(() => {
+                    localStorage.clear();
+                    navigator.serviceWorker.getRegistrations().then((registrations) => {
+                        registrations.forEach((registration) => {
+                            registration.unregister();
+                        });
+                        location.reload(); // Reload the page to apply changes
+                    });
+                }).catch((error) => {
+                    console.error("Error clearing caches:", error);
+                });
+            }
+        });
+
+
         contentContainer.appendChild(downloadContainer);
+        contentContainer.appendChild(resetContainer);
 
 
         container.appendChild(contentContainer);

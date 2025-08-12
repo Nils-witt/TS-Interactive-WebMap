@@ -16,12 +16,21 @@ import {MapEditContextMenu} from "./controls/MapEditContextMenu.ts";
 import './style.css'
 import {LoginController} from "./controls/LoginController.ts";
 import {LayersControl} from "./controls/LayerControl.ts";
+import {registerSW} from "virtual:pwa-register";
 
 
 if (window.location.pathname === '/') {
     window.location.pathname = '/index.html';
 }
-/*
+
+navigator.serviceWorker.addEventListener("message", (event) => {
+    console.log(event.data.cmd);
+    if (event.data.cmd === "reload") {
+        console.log("Reloading page due to service worker update");
+        window.location.reload();
+    }
+});
+
 const intervalMS = 60 * 60 * 1000
 
 registerSW({
@@ -46,7 +55,7 @@ registerSW({
         }, intervalMS)
     }
 })
-*/
+
 const debugMode = false; // Set to true for debugging purposes, will log additional information
 
 const config = Config.getInstance()
