@@ -17,6 +17,7 @@ import './style.css'
 import {LoginController} from "./controls/LoginController.ts";
 import {LayersControl} from "./controls/LayerControl.ts";
 import {registerSW} from "virtual:pwa-register";
+import {NotificationController} from "./controls/NotificationController.ts";
 
 
 if (window.location.pathname === '/') {
@@ -57,6 +58,7 @@ registerSW({
 })
 
 const debugMode = false; // Set to true for debugging purposes, will log additional information
+const notificationController = NotificationController.getInstance();
 
 const config = Config.getInstance()
 const dataProvider = DataProvider.getInstance();
