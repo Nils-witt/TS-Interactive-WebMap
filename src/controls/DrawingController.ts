@@ -10,32 +10,32 @@ export class DrawingController {
 
     public constructor() {
 
-        DataProvider.getInstance().on(DataProviderEventType.MAP_LOCATIONS_UPDATED, (event) => {
-            let data = event.data as NamedGeoReferencedObject[];
-            for (const item of data) {
-                if (this.markers.has(item.id)) {
-                    let marker = this.markers.get(item.id)!;
+        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, (event) => {
+            let item = event.data as NamedGeoReferencedObject;
 
-                    if (item.symbol) {
-                        DisplayHelper.updateTacMarker(marker.getElement()!, item.symbol);
-                    }
-                    marker.setLngLat([item.longitude, item.latitude]);
+            if (this.markers.has(item.id)) {
+                let marker = this.markers.get(item.id)!;
 
+                if (item.symbol) {
+                    DisplayHelper.updateTacMarker(marker.getElement()!, item.symbol);
+                }
+                marker.setLngLat([item.longitude, item.latitude]);
+
+            } else {
+                let newMarker: Marker;
+                if (item.symbol) {
+                    newMarker = new Marker({element: DisplayHelper.createTacMarker(item.symbol)});
                 } else {
-                    let newMarker: Marker;
-                    if (item.symbol) {
-                        newMarker = new Marker({element: DisplayHelper.createTacMarker(item.symbol)});
-                    } else {
-                        newMarker = new Marker()
-                    }
-                    newMarker.setLngLat([item.longitude, item.latitude]);
+                    newMarker = new Marker()
+                }
+                newMarker.setLngLat([item.longitude, item.latitude]);
 
-                    this.markers.set(item.id, newMarker);
-                    if (this.map && item.showOnMap !== false) {
-                        newMarker.addTo(this.map);
-                    }
+                this.markers.set(item.id, newMarker);
+                if (this.map && item.showOnMap !== false) {
+                    newMarker.addTo(this.map);
                 }
             }
+
         });
     }
 

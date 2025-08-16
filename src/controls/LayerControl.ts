@@ -360,7 +360,7 @@ export class LayersControl extends Evented implements IControl {
                 this.map.setPaintProperty(layer.id + "-layer", "raster-opacity", opacity);
             }
             layer.opacity = opacity;
-            DataProvider.getInstance().updateOverlay(layer.id, layer);
+            DataProvider.getInstance().addOverlay(layer.id, layer);
         });
         opacityContainer.appendChild(opacityLabel);
         opacityContainer.appendChild(opacityInput);

@@ -29,12 +29,18 @@ export interface DataProviderEvent {
  * Used to standardize event type strings and prevent typos.
  */
 export enum DataProviderEventType {
-    /** Triggered when map locations are added or updated */
-    MAP_LOCATIONS_UPDATED = 'mapLocations-updated',
+    /** Triggered when a map location is created */
+    MAP_ITEM_CREATED = 'mapLocations-created',
+    /** Triggered when a map location is updated */
+    MAP_ITEM_UPDATED = 'mapLocations-updated',
+    /** Triggered when a map location is deleted */
+    MAP_ITEM_DELETED = 'mapLocation-deleted',
     /** Triggered when the base map style is changed */
     MAP_STYLE_UPDATED = 'mapStyle-updated',
     /** Triggered when map groups are added or updated */
     MAP_GROUPS_UPDATED = 'mapGroups-updated',
+    MAP_GROUPS_CREATED = 'mapGroups-created',
+    MAP_GROUPS_DELETED = 'mapGroups-deleted',
     /** Triggered when a new overlay is added to the map */
     OVERLAY_ADDED = 'overlay-added',
     /** Triggered when an existing overlay is updated */
@@ -105,9 +111,14 @@ export class DataProvider {
      * @param id - Unique identifier for the location
      * @param item - The location object to store
      */
-    addMapLocation(id: string, item: NamedGeoReferencedObject): void {
-        this.mapLocations.set(id, item);
-        this.triggerEvent(DataProviderEventType.MAP_LOCATIONS_UPDATED, [item]);
+    addMapItem(id: string, item: NamedGeoReferencedObject): void {
+        if (this.mapLocations.has(id)) {
+            this.mapLocations.set(id, item);
+            this.triggerEvent(DataProviderEventType.MAP_ITEM_UPDATED, item);
+        } else {
+            this.mapLocations.set(id, item);
+            this.triggerEvent(DataProviderEventType.MAP_ITEM_CREATED, item);
+        }
     }
 
     /**
@@ -119,6 +130,17 @@ export class DataProvider {
         return this.mapLocations;
     }
 
+
+    deleteMapLocation(id: string): void {
+        if (this.mapLocations.has(id)) {
+            const item = this.mapLocations.get(id);
+            this.mapLocations.delete(id);
+            this.triggerEvent(DataProviderEventType.MAP_ITEM_DELETED, [item]);
+        } else {
+            console.warn(`Map location with ID ${id} does not exist.`);
+        }
+    }
+
     /**
      * Adds a new map group to the data store and notifies subscribers.
      *
@@ -126,8 +148,13 @@ export class DataProvider {
      * @param group - The map group object to store
      */
     addMapGroup(id: string, group: IMapGroup): void {
-        this.mapGroups.set(id, group);
-        this.triggerEvent(DataProviderEventType.MAP_GROUPS_UPDATED, group);
+        if (this.mapGroups.has(id)) {
+            this.mapGroups.set(id, group);
+            this.triggerEvent(DataProviderEventType.MAP_GROUPS_UPDATED, group);
+        } else {
+            this.mapGroups.set(id, group);
+            this.triggerEvent(DataProviderEventType.MAP_GROUPS_CREATED, group);
+        }
     }
 
     /**
@@ -165,16 +192,12 @@ export class DataProvider {
      * @param overlay - The overlay configuration to store
      */
     addOverlay(id: string, overlay: LayerInfo): void {
-        this.overlays.set(id, overlay);
-        this.triggerEvent(DataProviderEventType.OVERLAY_ADDED, overlay);
-    }
-
-    updateOverlay(id: string, overlay: LayerInfo): void {
         if (this.overlays.has(id)) {
             this.overlays.set(id, overlay);
             this.triggerEvent(DataProviderEventType.OVERLAY_UPDATED, overlay);
         } else {
-            console.warn(`Overlay with ID ${id} does not exist.`);
+            this.overlays.set(id, overlay);
+            this.triggerEvent(DataProviderEventType.OVERLAY_ADDED, overlay);
         }
     }
 

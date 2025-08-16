@@ -10,14 +10,13 @@ import {ApiProvider, ApiProviderEventTypes} from "./dataProviders/ApiProvider.ts
 import {DrawingController} from "./controls/DrawingController.ts";
 import {Config} from "./Config.ts";
 import {DataProvider, DataProviderEventType} from "./dataProviders/DataProvider.ts";
-import {EditorController} from "./EditorController.ts";
+import {EditorController} from "./controls/EditorController.ts";
 import {SearchControl} from "./controls/SearchControl.ts";
 import {MapEditContextMenu} from "./controls/MapEditContextMenu.ts";
 import './style.css'
 import {LoginController} from "./controls/LoginController.ts";
 import {LayersControl} from "./controls/LayerControl.ts";
 import {registerSW} from "virtual:pwa-register";
-import {NotificationController} from "./controls/NotificationController.ts";
 
 
 if (window.location.pathname === '/') {
@@ -58,7 +57,6 @@ registerSW({
 })
 
 const debugMode = false; // Set to true for debugging purposes, will log additional information
-const notificationController = NotificationController.getInstance();
 
 const config = Config.getInstance()
 const dataProvider = DataProvider.getInstance();

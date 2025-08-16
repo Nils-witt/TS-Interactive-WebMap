@@ -48,7 +48,7 @@ export class ApiProvider {
         });
         this.getMapItems().then(items => {
             for (const item of items) {
-                DataProvider.getInstance().addMapLocation(item.id, item);
+                DataProvider.getInstance().addMapItem(item.id, item);
             }
         });
         this.getMapGroups().then(items => {
@@ -141,7 +141,11 @@ export class ApiProvider {
             }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        return response.json();
+        try {
+            return await response.json();
+        } catch (e) {
+            return null;
+        }
     }
 
     public async fetchData(url: string): Promise<any> {
@@ -208,9 +212,7 @@ export class ApiProvider {
         }
     }
 
-    public async saveMapItem(item: NamedGeoReferencedObject): Promise<NamedGeoReferencedObject | null> {
-
-
+    public async saveMapItem(item: NamedGeoReferencedObject, updateDataProvider: boolean = true): Promise<NamedGeoReferencedObject | null> {
         let url = Config.getInstance().apiUrl + `/items/${item.id}/`;
         let method = "PUT";
 
@@ -226,7 +228,7 @@ export class ApiProvider {
 
         try {
             let resData = await this.callApi(url, method, new Headers(), data);
-            return new NamedGeoReferencedObject({
+            let item = new NamedGeoReferencedObject({
                 id: resData.id,
                 name: resData.name,
                 latitude: resData.latitude,
@@ -236,10 +238,28 @@ export class ApiProvider {
                 showOnMap: resData.show_on_map,
                 groupId: resData.group_id
             });
+            if (updateDataProvider) {
+                DataProvider.getInstance().addMapItem(item.id, item);
+            }
+            return item;
         } catch (e) {
             console.error("Error preparing request options:", e);
         }
         return null;
+    }
+
+    public async deleteMapItem(itemId: string): Promise<boolean> {
+        let url = Config.getInstance().apiUrl + `/items/${itemId}/`;
+        let method = "DELETE";
+
+        try {
+            let resData = await this.callApi(url, method, new Headers());
+            console.log("Delete response:", resData);
+            return true;
+        } catch (e) {
+            console.error("Error preparing request options:", e);
+            return false;
+        }
     }
 
     private notifyListeners(event: string, data: { message: string }) {

@@ -65,7 +65,7 @@ export class SearchControl extends Evented implements IControl {
 
         this.createSearchContainer();
 
-        DataProvider.getInstance().on(DataProviderEventType.MAP_LOCATIONS_UPDATED, () => {
+        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, () => {
             if (this.searchInput && this.searchInput.value.trim().length > 0) {
                 this.onSearchBoxUpdate(this.searchInput.value);
             }

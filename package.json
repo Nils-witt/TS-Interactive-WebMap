@@ -22,6 +22,7 @@
     "@fortawesome/free-solid-svg-icons": "^7.0.0",
     "@rollup/plugin-typescript": "^12.1.4",
     "@tailwindcss/vite": "^4.1.11",
+    "jose": "^6.0.12",
     "maplibre-gl": "^5.6.1",
     "maplibre-gl-opacity": "^1.8.0",
     "tailwindcss": "^4.1.11",

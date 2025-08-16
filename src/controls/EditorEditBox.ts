@@ -18,6 +18,8 @@ import {verwaltungsstufen} from "taktische-zeichen-core/src/verwaltungsstufen.ts
 import type {GrundzeichenId} from "taktische-zeichen-core/src/grundzeichen.ts";
 import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
 import {ApiProvider} from "../dataProviders/ApiProvider.ts";
+import {NotificationController} from "./NotificationController.ts";
+import {Map as MapLibreMap} from "maplibre-gl";
 
 
 export class EditorEditBox {
@@ -44,13 +46,16 @@ export class EditorEditBox {
     headerLabel = document.createElement('h4');
     cancelButton = document.createElement('button');
     saveButton = document.createElement('button');
+    deleteButton = document.createElement('button');
+    createButton = document.createElement('button');
     groupSelect = document.createElement('select');
 
     private listeners: Map<string, ((event: any) => void)[]> = new Map();
 
-    constructor() {
-
-        DataProvider.getInstance().on(DataProviderEventType.MAP_GROUPS_UPDATED, (event) => {
+    private map: MapLibreMap;
+    constructor(map: MapLibreMap) {
+        this.map = map;
+        DataProvider.getInstance().on(DataProviderEventType.MAP_GROUPS_CREATED, (event) => {
             const group = event.data;
             const option = document.createElement('option');
             option.value = group.id;
@@ -298,12 +303,24 @@ export class EditorEditBox {
             this.updateIconDisplay();
         }
 
+        this.createButton.textContent = 'Clear & Create new';
+        this.createButton.onclick = () => {
+
+            let newItem: NamedGeoReferencedObject = {
+                id: null,
+                latitude: this.map.getCenter().lat,
+                longitude: this.map.getCenter().lng,
+                name: ''
+            }
+            this.setItem(newItem, true);
+        }
+        this.container.appendChild(this.createButton);
 
         this.saveButton.textContent = 'Save';
         this.saveButton.onclick = () => {
             ApiProvider.getInstance().saveMapItem(this.item).then((item) => {
                 console.log("Item saved:", item);
-                DataProvider.getInstance().addMapLocation(item.id, item);
+                NotificationController.getInstance().showNotification("Saved Item: " + item.id + "")
             });
         }
         this.container.appendChild(this.saveButton);
@@ -314,8 +331,22 @@ export class EditorEditBox {
             this.notifyListeners('cancel'); // Notify listeners about the cancel action
         }
         this.container.appendChild(this.cancelButton);
+
+        this.deleteButton = document.createElement('button');
+        this.deleteButton.textContent = 'Delete';
+        this.deleteButton.onclick = () => {
+            ApiProvider.getInstance().deleteMapItem(this.item?.id).then(() => {
+                console.log("Item deleted:", this.item?.id);
+                DataProvider.getInstance().deleteMapLocation(this.item?.id);
+            });
+        }
+        this.container.appendChild(this.deleteButton);
+
+
         this.container.classList.add('p-4')
 
+        this.createButton.classList.add('bg-white', 'hover:bg-gray-400', 'text-black', 'font-bold', 'py-2', 'px-4', 'border', 'border-black', 'rounded', 'm-2');
+        this.deleteButton.classList.add('bg-white', 'hover:bg-gray-400', 'text-black', 'font-bold', 'py-2', 'px-4', 'border', 'border-black', 'rounded', 'm-2');
         this.saveButton.classList.add('bg-white', 'hover:bg-gray-400', 'text-black', 'font-bold', 'py-2', 'px-4', 'border', 'border-black', 'rounded', 'm-2');
         this.cancelButton.classList.add('bg-white', 'hover:bg-gray-400', 'text-black', 'font-bold', 'py-2', 'px-4', 'border', 'border-black', 'rounded', 'm-2');
 

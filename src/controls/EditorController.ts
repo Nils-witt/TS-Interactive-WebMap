@@ -1,8 +1,8 @@
-import {type Map as MapLibreMap, MapMouseEvent} from "maplibre-gl";
-import {DataProvider, DataProviderEventType} from "./dataProviders/DataProvider.ts";
-import {ApiProvider} from "./dataProviders/ApiProvider.ts";
-import {EditorEditBox} from "./controls/EditorEditBox.ts";
-import {NamedGeoReferencedObject} from "./enitites/NamedGeoReferencedObject.ts";
+import {type Map as MapLibreMap, MapMouseEvent, Marker} from "maplibre-gl";
+import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
+import {ApiProvider} from "../dataProviders/ApiProvider.ts";
+import {EditorEditBox} from "./EditorEditBox.ts";
+import {NamedGeoReferencedObject} from "../enitites/NamedGeoReferencedObject.ts";
 import {icon} from "@fortawesome/fontawesome-svg-core";
 import {faMap} from "@fortawesome/free-solid-svg-icons/faMap";
 import {faMapPin} from "@fortawesome/free-solid-svg-icons/faMapPin";
@@ -25,7 +25,7 @@ export class EditorController {
         this.controlsContainer = controlsContainer;
         this.map = map;
 
-        this.editorEditBox = new EditorEditBox();
+        this.editorEditBox = new EditorEditBox(map);
         this.controlsContainer.append(this.editorEditBox.getContainer());
         this.editorEditBox.setup();
 
@@ -55,7 +55,10 @@ export class EditorController {
 
         map.on('click', this.mapClickHandler);
 
-        DataProvider.getInstance().on(DataProviderEventType.MAP_LOCATIONS_UPDATED, () => {
+        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_CREATED, () => {
+            this.fullUpdateItemTable();
+        });
+        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, () => {
             this.fullUpdateItemTable();
         });
 
@@ -92,6 +95,18 @@ export class EditorController {
 
             this.fullUpdateItemTable();
         });
+        DataProvider.getInstance().on(DataProviderEventType.MAP_GROUPS_CREATED, () => {
+            select.replaceChildren(); // Clear existing options
+            select.appendChild(document.createElement('option')); // Add empty option
+            for (const [id, group] of DataProvider.getInstance().getMapGroups()) {
+                let option = document.createElement('option');
+                option.value = id;
+                option.textContent = group.name || 'Unnamed Group';
+                select.appendChild(option);
+            }
+
+            this.fullUpdateItemTable();
+        });
 
         let groupLabel = document.createElement('label');
         groupLabel.textContent = 'Select Group:';
@@ -112,11 +127,11 @@ export class EditorController {
     }
 
     private setUpTable(table: HTMLTableElement): void {
-        table.classList.add('item-table'); // Add a class for styling
+        table.classList.add('w-full', 'table-auto');
         let head = table.createTHead();
         let headerRow = head.insertRow();
         headerRow.insertCell().textContent = 'Name';
-        headerRow.insertCell().textContent = 'Groups';
+        headerRow.insertCell().textContent = 'Group';
     }
 
     private fullUpdateItemTable(): void {
@@ -129,7 +144,7 @@ export class EditorController {
                 return a.name.localeCompare(b.name);
             }
 
-            return 0; // both are undefined or empty, keep original order
+            return 0;
         });
         for (const item of entries) {
 
@@ -150,7 +165,13 @@ export class EditorController {
             cellName.textContent = item.name || 'Unnamed Item';
 
             //groups.textContent = item.groups ? item.groups.join(', ') : 'No Groups';
-            groups.textContent = 'N/A';
+
+            if (item.groupId && DataProvider.getInstance().getMapGroups().get(item.groupId)) {
+                let group = DataProvider.getInstance().getMapGroups().get(item.groupId);
+                groups.textContent = group?.name || 'No Group';
+            }else {
+                groups.textContent = 'No Group';
+            }
             // Add action buttons (edit, delete, etc.)
             let locateButton = document.createElement('button');
             let updatePositionButton = document.createElement('button');
@@ -174,12 +195,14 @@ export class EditorController {
                     this.internalClickAbortHandler(); // Abort any previous click handler
                 }
 
+                console.log("Editor: Set position for item", item.id);
+
                 row.style.backgroundColor = "lightblue"; // Highlight the row
                 this.internalClickSuccessHandler = (event: MapMouseEvent) => {
                     console.log("Editor: Set position for item", item.id, event.lngLat);
                     item.longitude = event.lngLat.lng;
                     item.latitude = event.lngLat.lat;
-                    DataProvider.getInstance().addMapLocation(item.id, item);
+                    DataProvider.getInstance().addMapItem(item.id, item);
                     row.style.backgroundColor = ""; // Reset the row background
 
                     ApiProvider.getInstance().saveMapItem(item);
@@ -198,14 +221,26 @@ export class EditorController {
                 if (this.internalClickAbortHandler) {
                     this.internalClickAbortHandler(); // Abort any previous click handler
                 }
+                console.log("Editor: Edit item", item.id);
                 row.style.backgroundColor = "lightblue"; // Highlight the row
                 this.editorEditBox.setItem(item);
+                let marker = new Marker();
+                marker.setLngLat([item.longitude, item.latitude]);
+                marker.addTo(this.map);
 
                 this.internalClickAbortHandler = () => {
                     row.style.backgroundColor = ""; // Reset the row background
+                    marker.remove();
                     this.internalClickSuccessHandler = undefined
                     this.internalClickAbortHandler = undefined;
                 }
+
+
+                this.map.flyTo({
+                    center: [item.longitude, item.latitude],
+                    zoom: 18,
+                    essential: true // This ensures the animation is not interrupted
+                });
             };
 
             editIconBtn.innerHTML = icon(faPenToSquare).html[0];
