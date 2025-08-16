@@ -82,8 +82,6 @@ function getCacheName(url: URL): [string, boolean, boolean] {
 sw.addEventListener("fetch", (event) => {
     let url = new URL(event.request.url);
     let [useCacheName, networkFirst, useCache] = getCacheName(url);
-    console.log('Fetch event for:', url.href, 'Cache name:', useCacheName, 'Network first:', networkFirst, 'Use cache:', useCache);
-
 
     if (useCache) {
         if (networkFirst) {
