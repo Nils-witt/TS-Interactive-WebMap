@@ -61,6 +61,9 @@ export class EditorController {
         DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, () => {
             this.fullUpdateItemTable();
         });
+        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_DELETED, () => {
+            this.fullUpdateItemTable();
+        });
 
         ApiProvider.getInstance().testLogin();
 
