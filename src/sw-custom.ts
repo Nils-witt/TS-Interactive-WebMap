@@ -81,6 +81,9 @@ function getCacheName(url: URL): [string, boolean, boolean] {
 
 sw.addEventListener("fetch", (event) => {
     let url = new URL(event.request.url);
+    if (event.request.method !== 'GET') {
+        return;
+    }
     let [useCacheName, networkFirst, useCache] = getCacheName(url);
 
     if (useCache) {
