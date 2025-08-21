@@ -5,19 +5,19 @@
 /// <reference lib="dom" />
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {GeolocateControl, Map as MapLibreMap, NavigationControl} from 'maplibre-gl';
-import type {LayerInfo} from "./common_components/types/LayerInfo.ts";
-import {ApiProvider, ApiProviderEventTypes} from "./common_components/ApiProvider.ts";
-import {DrawingController} from "./controls/DrawingController.ts";
-import {Config} from "./Config.ts";
-import {DataProviderEvent, DataProviderEventType} from "./common_components/DataProvider.ts";
-import {EditorController} from "./controls/EditorController.ts";
-import {SearchControl} from "./common_components/controls/SearchControl.ts";
-import {MapEditContextMenu} from "./controls/MapEditContextMenu.ts";
+import type {LayerInfo} from "./common_components/types/LayerInfo";
+import {ApiProvider, ApiProviderEventTypes} from "./common_components/ApiProvider";
+import {DrawingController} from "./controls/DrawingController";
+import {DataProvider, DataProviderEvent, DataProviderEventType, ViewMode} from "./common_components/DataProvider";
+import {EditorController} from "./controls/EditorController";
+import {SearchControl} from "./common_components/controls/SearchControl";
+import {MapEditContextMenu} from "./controls/MapEditContextMenu";
 import './style.css'
-import {LoginController} from "./controls/LoginController.ts";
-import {LayersControl} from "./common_components/controls/LayerControl.ts";
+import {LoginController} from "./common_components/controls/LoginController";
+import {LayersControl} from "./common_components/controls/LayerControl";
 import {registerSW} from "virtual:pwa-register";
-import {GlobalEventHandler} from "./common_components/GlobalEventHandler.ts";
+import {GlobalEventHandler} from "./common_components/GlobalEventHandler";
+import {loadBrowserConfig} from "./BrowserHelper";
 
 
 if (window.location.pathname === '/') {
@@ -57,10 +57,8 @@ registerSW({
     }
 })
 
-const debugMode = false; // Set to true for debugging purposes, will log additional information
-
-const config = Config.getInstance()
-ApiProvider.getInstance();
+loadBrowserConfig()
+console.log("Loading browser config");
 
 const mapContainer = document.createElement('div');
 const editorLayout = document.createElement('div');
@@ -71,7 +69,10 @@ mapContainer.innerText = 'Error loading the map';
 mapContainer.classList.add('w-full'); // Add a class for styling
 mapContainer.classList.add('h-full'); // Add a class for styling
 
-if (config.editMode) {
+
+
+
+if (DataProvider.getInstance().getMode() == ViewMode.EDIT) {
     document.body.appendChild(editorLayout);
     editorLayout.appendChild(mapContainer);
     editorLayout.appendChild(editorControls);
@@ -90,8 +91,8 @@ LoginController.getInstance();
  */
 const map = new MapLibreMap({
     container: 'map',                                           // HTML element ID where the map will be rendered
-    center: config.mapCenter,                                     // Initial center of the map
-    zoom: config.mapZoom,                                         // Initial zoom level
+    center: DataProvider.getInstance().getMapCenter(),                                     // Initial center of the map
+    zoom: DataProvider.getInstance().getMapZoom(),                                         // Initial zoom level
     attributionControl: false,
     rollEnabled: true,
 });
@@ -116,7 +117,7 @@ const layersControl = new LayersControl();
 map.addControl(navControl, 'top-right');  // Position in the bottom-left corner
 map.addControl(layersControl, 'bottom-left');  // Position in the top-left corner of the
 
-if (!config.editMode) {
+if (DataProvider.getInstance().getMode() != ViewMode.EDIT) {
     map.addControl(geolocate, 'top-right'); // Add geolocation control to the map
     map.addControl(searchControl, 'top-left');
 }
@@ -124,7 +125,7 @@ if (!config.editMode) {
 drawingController.addTo(map); // Set the map for the drawing controller
 
 
-if (config.editMode) {
+if (DataProvider.getInstance().getMode() == ViewMode.EDIT) {
     const editorController = new EditorController(editorControls, map);
     new MapEditContextMenu({
         map: map,
@@ -140,10 +141,7 @@ GlobalEventHandler.getInstance().on(DataProviderEventType.MAP_STYLE_UPDATED, (ev
 });
 
 map.on('moveend', () => {
-    if (debugMode) {
-        // Log the map center and zoom level after moving the map
-        console.log("Map moved to:", map.getCenter().toArray(), "Zoom level:", map.getZoom());
-    }
+    //TODO Replace
     localStorage.setItem('mapCenter', JSON.stringify(map.getCenter().toArray()));
     localStorage.setItem('mapZoom', map.getZoom().toString());
 });

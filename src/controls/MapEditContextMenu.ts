@@ -1,4 +1,4 @@
-import {EditorController} from "./EditorController.ts";
+import {EditorController} from "./EditorController";
 import {Map as MapLibreMap, MapMouseEvent} from "maplibre-gl";
 
 export type MapEditContextMenuOptions = {
