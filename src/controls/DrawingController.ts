@@ -1,6 +1,6 @@
 import {Map as MapLibreMap, Marker} from 'maplibre-gl';
 import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
-import type {NamedGeoReferencedObject} from "../enitites/NamedGeoReferencedObject.ts";
+import type {NamedGeoReferencedObject} from "../common_components/enitites/NamedGeoReferencedObject.ts";
 import {DisplayHelper} from "../DisplayHelper.ts";
 
 export class DrawingController {

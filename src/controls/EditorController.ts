@@ -2,7 +2,7 @@ import {type Map as MapLibreMap, MapMouseEvent, Marker} from "maplibre-gl";
 import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
 import {ApiProvider} from "../dataProviders/ApiProvider.ts";
 import {EditorEditBox} from "./EditorEditBox.ts";
-import {NamedGeoReferencedObject} from "../enitites/NamedGeoReferencedObject.ts";
+import {NamedGeoReferencedObject} from "../common_components/enitites/NamedGeoReferencedObject.ts";
 import {icon} from "@fortawesome/fontawesome-svg-core";
 import {faMap} from "@fortawesome/free-solid-svg-icons/faMap";
 import {faMapPin} from "@fortawesome/free-solid-svg-icons/faMapPin";

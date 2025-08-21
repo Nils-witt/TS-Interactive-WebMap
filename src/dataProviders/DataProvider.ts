@@ -9,7 +9,7 @@
  * Future implementation will include BroadcastChannel communication for cross-tab synchronization.
  */
 
-import type {NamedGeoReferencedObject} from "../enitites/NamedGeoReferencedObject.ts";
+import type {NamedGeoReferencedObject} from "../common_components/enitites/NamedGeoReferencedObject.ts";
 import type {LayerInfo} from "../types/LayerInfo.ts";
 import {IMapGroup} from "../types/MapEntity.ts";
 

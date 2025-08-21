@@ -1,4 +1,4 @@
-import {NamedGeoReferencedObject} from "../enitites/NamedGeoReferencedObject.ts";
+import {NamedGeoReferencedObject} from "../common_components/enitites/NamedGeoReferencedObject.ts";
 import {
     einheiten,
     type EinheitId,
@@ -18,7 +18,7 @@ import {verwaltungsstufen} from "taktische-zeichen-core/src/verwaltungsstufen.ts
 import type {GrundzeichenId} from "taktische-zeichen-core/src/grundzeichen.ts";
 import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
 import {ApiProvider} from "../dataProviders/ApiProvider.ts";
-import {NotificationController} from "./NotificationController.ts";
+import {NotificationController} from "../common_components/controls/NotificationController.ts";
 import {Map as MapLibreMap} from "maplibre-gl";
 
 

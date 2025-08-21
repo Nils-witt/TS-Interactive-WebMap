@@ -1,5 +1,5 @@
 import type {LayerInfo} from "../types/LayerInfo.ts";
-import {NamedGeoReferencedObject} from "../enitites/NamedGeoReferencedObject.ts";
+import {NamedGeoReferencedObject} from "../common_components/enitites/NamedGeoReferencedObject.ts";
 import {DataProvider} from "./DataProvider.ts";
 import {IMapGroup} from "../types/MapEntity.ts";
 import {Config} from "../Config.ts";

@@ -11,11 +11,11 @@ import {DrawingController} from "./controls/DrawingController.ts";
 import {Config} from "./Config.ts";
 import {DataProvider, DataProviderEventType} from "./dataProviders/DataProvider.ts";
 import {EditorController} from "./controls/EditorController.ts";
-import {SearchControl} from "./controls/SearchControl.ts";
+import {SearchControl} from "./common_components/controls/SearchControl.ts";
 import {MapEditContextMenu} from "./controls/MapEditContextMenu.ts";
 import './style.css'
 import {LoginController} from "./controls/LoginController.ts";
-import {LayersControl} from "./controls/LayerControl.ts";
+import {LayersControl} from "./common_components/controls/LayerControl.ts";
 import {registerSW} from "virtual:pwa-register";
 
 

@@ -30,7 +30,7 @@ export class LoginController {
         this.container.classList.add("grid", "place-items-center")
         document.body.appendChild(this.container);
 
-        let container = document.createElement('div');
+        let container = document.createElement('form');
         container.classList.add('grid')
         this.container.appendChild(container);
 
@@ -74,6 +74,11 @@ export class LoginController {
                 alert("Login failed. Please check your credentials.");
             }
         };
+
+        container.onsubmit = (e) => {
+            e.preventDefault();
+            button.click();
+        }
         container.appendChild(usernameDiv);
         container.appendChild(passwordDiv);
 
