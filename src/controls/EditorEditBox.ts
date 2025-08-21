@@ -16,10 +16,11 @@ import {
 } from "taktische-zeichen-core";
 import {verwaltungsstufen} from "taktische-zeichen-core/src/verwaltungsstufen.ts";
 import type {GrundzeichenId} from "taktische-zeichen-core/src/grundzeichen.ts";
-import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
-import {ApiProvider} from "../dataProviders/ApiProvider.ts";
+import {DataProvider, DataProviderEvent, DataProviderEventType} from "../common_components/DataProvider.ts";
+import {ApiProvider} from "../common_components/ApiProvider.ts";
 import {NotificationController} from "../common_components/controls/NotificationController.ts";
 import {Map as MapLibreMap} from "maplibre-gl";
+import {GlobalEventHandler} from "../common_components/GlobalEventHandler.ts";
 
 
 export class EditorEditBox {
@@ -53,9 +54,11 @@ export class EditorEditBox {
     private listeners: Map<string, ((event: any) => void)[]> = new Map();
 
     private map: MapLibreMap;
+
     constructor(map: MapLibreMap) {
         this.map = map;
-        DataProvider.getInstance().on(DataProviderEventType.MAP_GROUPS_CREATED, (event) => {
+        GlobalEventHandler.getInstance().on(DataProviderEventType.MAP_GROUPS_CREATED, (e) => {
+            const event = e as DataProviderEvent;
             const group = event.data;
             const option = document.createElement('option');
             option.value = group.id;

@@ -1,7 +1,8 @@
 import {Map as MapLibreMap, Marker} from 'maplibre-gl';
-import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
+import {DataProviderEvent, DataProviderEventType} from "../common_components/DataProvider.ts";
 import type {NamedGeoReferencedObject} from "../common_components/enitites/NamedGeoReferencedObject.ts";
 import {DisplayHelper} from "../DisplayHelper.ts";
+import {GlobalEventHandler} from "../common_components/GlobalEventHandler.ts";
 
 export class DrawingController {
 
@@ -10,7 +11,8 @@ export class DrawingController {
 
     public constructor() {
 
-        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, (event) => {
+        GlobalEventHandler.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, (e) => {
+            const event = e as DataProviderEvent;
             let item = event.data as NamedGeoReferencedObject;
 
             if (this.markers.has(item.id)) {

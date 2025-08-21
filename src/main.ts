@@ -5,11 +5,11 @@
 /// <reference lib="dom" />
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {GeolocateControl, Map as MapLibreMap, NavigationControl} from 'maplibre-gl';
-import type {LayerInfo} from "./types/LayerInfo.ts";
-import {ApiProvider, ApiProviderEventTypes} from "./dataProviders/ApiProvider.ts";
+import type {LayerInfo} from "./common_components/types/LayerInfo.ts";
+import {ApiProvider, ApiProviderEventTypes} from "./common_components/ApiProvider.ts";
 import {DrawingController} from "./controls/DrawingController.ts";
 import {Config} from "./Config.ts";
-import {DataProvider, DataProviderEventType} from "./dataProviders/DataProvider.ts";
+import {DataProviderEvent, DataProviderEventType} from "./common_components/DataProvider.ts";
 import {EditorController} from "./controls/EditorController.ts";
 import {SearchControl} from "./common_components/controls/SearchControl.ts";
 import {MapEditContextMenu} from "./controls/MapEditContextMenu.ts";
@@ -17,6 +17,7 @@ import './style.css'
 import {LoginController} from "./controls/LoginController.ts";
 import {LayersControl} from "./common_components/controls/LayerControl.ts";
 import {registerSW} from "virtual:pwa-register";
+import {GlobalEventHandler} from "./common_components/GlobalEventHandler.ts";
 
 
 if (window.location.pathname === '/') {
@@ -59,7 +60,6 @@ registerSW({
 const debugMode = false; // Set to true for debugging purposes, will log additional information
 
 const config = Config.getInstance()
-const dataProvider = DataProvider.getInstance();
 ApiProvider.getInstance();
 
 const mapContainer = document.createElement('div');
@@ -132,8 +132,9 @@ if (config.editMode) {
     });
 }
 
-dataProvider.on(DataProviderEventType.MAP_STYLE_UPDATED, (event) => {
-    const style = event.data as LayerInfo;
+GlobalEventHandler.getInstance().on(DataProviderEventType.MAP_STYLE_UPDATED, (event) => {
+    const e: DataProviderEvent = event as DataProviderEvent;
+    const style = e.data as LayerInfo;
     console.log("Setting map style to:", style);
     map.setStyle(style.url);
 });
@@ -147,7 +148,7 @@ map.on('moveend', () => {
     localStorage.setItem('mapZoom', map.getZoom().toString());
 });
 
-ApiProvider.getInstance().on(ApiProviderEventTypes.LOGIN_SUCCESS, () => {
+GlobalEventHandler.getInstance().on(ApiProviderEventTypes.LOGIN_SUCCESS, () => {
     ApiProvider.getInstance().loadAllData();
 });
 

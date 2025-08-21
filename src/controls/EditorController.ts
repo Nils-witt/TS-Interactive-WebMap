@@ -1,12 +1,13 @@
 import {type Map as MapLibreMap, MapMouseEvent, Marker} from "maplibre-gl";
-import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
-import {ApiProvider} from "../dataProviders/ApiProvider.ts";
+import {DataProvider, DataProviderEventType} from "../common_components/DataProvider.ts";
+import {ApiProvider} from "../common_components/ApiProvider.ts";
 import {EditorEditBox} from "./EditorEditBox.ts";
 import {NamedGeoReferencedObject} from "../common_components/enitites/NamedGeoReferencedObject.ts";
 import {icon} from "@fortawesome/fontawesome-svg-core";
 import {faMap} from "@fortawesome/free-solid-svg-icons/faMap";
 import {faMapPin} from "@fortawesome/free-solid-svg-icons/faMapPin";
 import {faPenToSquare} from "@fortawesome/free-solid-svg-icons/faPenToSquare";
+import {GlobalEventHandler} from "../common_components/GlobalEventHandler.ts";
 
 
 export class EditorController {
@@ -55,13 +56,13 @@ export class EditorController {
 
         map.on('click', this.mapClickHandler);
 
-        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_CREATED, () => {
+        GlobalEventHandler.getInstance().on(DataProviderEventType.MAP_ITEM_CREATED, () => {
             this.fullUpdateItemTable();
         });
-        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, () => {
+        GlobalEventHandler.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, () => {
             this.fullUpdateItemTable();
         });
-        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_DELETED, () => {
+        GlobalEventHandler.getInstance().on(DataProviderEventType.MAP_ITEM_DELETED, () => {
             this.fullUpdateItemTable();
         });
 
@@ -86,7 +87,7 @@ export class EditorController {
         }
 
         // Add a listener to update the select when groups are added
-        DataProvider.getInstance().on(DataProviderEventType.MAP_GROUPS_UPDATED, () => {
+        GlobalEventHandler.getInstance().on(DataProviderEventType.MAP_GROUPS_UPDATED, () => {
             select.replaceChildren(); // Clear existing options
             select.appendChild(document.createElement('option')); // Add empty option
             for (const [id, group] of DataProvider.getInstance().getMapGroups()) {
@@ -98,7 +99,7 @@ export class EditorController {
 
             this.fullUpdateItemTable();
         });
-        DataProvider.getInstance().on(DataProviderEventType.MAP_GROUPS_CREATED, () => {
+        GlobalEventHandler.getInstance().on(DataProviderEventType.MAP_GROUPS_CREATED, () => {
             select.replaceChildren(); // Clear existing options
             select.appendChild(document.createElement('option')); // Add empty option
             for (const [id, group] of DataProvider.getInstance().getMapGroups()) {

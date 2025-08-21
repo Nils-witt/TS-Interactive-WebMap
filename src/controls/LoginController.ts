@@ -1,4 +1,5 @@
-import {ApiProvider, ApiProviderEventTypes} from "../dataProviders/ApiProvider.ts";
+import {ApiProvider, ApiProviderEventTypes} from "../common_components/ApiProvider.ts";
+import {GlobalEventHandler} from "../common_components/GlobalEventHandler.ts";
 
 
 export class LoginController {
@@ -10,7 +11,7 @@ export class LoginController {
 
         this.setUpDiv();
 
-        ApiProvider.getInstance().on(ApiProviderEventTypes.UNAUTHORIZED, () => {
+        GlobalEventHandler.getInstance().on(ApiProviderEventTypes.UNAUTHORIZED, () => {
             this.showLoginForm(true);
         });
         this.showLoginForm(false);
@@ -84,10 +85,10 @@ export class LoginController {
 
         container.appendChild(button);
 
-        ApiProvider.getInstance().on(ApiProviderEventTypes.LOGIN_SUCCESS, () => {
+        GlobalEventHandler.getInstance().on(ApiProviderEventTypes.LOGIN_SUCCESS, () => {
             this.container.classList.add('hidden')
         });
-        ApiProvider.getInstance().on(ApiProviderEventTypes.LOGIN_FAILURE, () => {
+        GlobalEventHandler.getInstance().on(ApiProviderEventTypes.LOGIN_FAILURE, () => {
             button.disabled = false; // Re-enable the button on failure
         });
     }
