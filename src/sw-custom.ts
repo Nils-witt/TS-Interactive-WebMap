@@ -23,7 +23,7 @@ sw.addEventListener('activate', () => {
         includeUncontrolled: true
     })
         .then((clients) => {
-            clients.forEach(function(client) {
+            clients.forEach(function (client) {
                 console.log('Sending message to client:', client);
                 client.postMessage({cmd: "reload"})
             })
@@ -66,7 +66,7 @@ function getCacheName(url: URL): [string, boolean, boolean] {
         return ['api-cache', true, true];
     }
     if (reqType.startsWith('overlay-')) {
-        return [reqType, true, false];
+        return [reqType, true, true];
     }
     if (reqType === 'vector') {
         return ['vector-cache', false, true];
@@ -85,29 +85,39 @@ sw.addEventListener("fetch", (event) => {
         return;
     }
     let [useCacheName, networkFirst, useCache] = getCacheName(url);
-
     if (useCache) {
         if (networkFirst) {
             event.respondWith(
                 fetch(event.request)
                     .then(response => {
-                        if (useCache) {
+                        if (response && response.ok) {
                             let responseToCache = response.clone();
 
                             caches.open(useCacheName).then((cache) => {
                                 cache.put(event.request, responseToCache); // Cache the new response
                             });
+                            return response; // Clone the response to use it in the cache
                         }
-                        return response; // Clone the response to use it in the cache
+                        if (response.status === 403) {
+                            return response;
+                        }
+                        return caches.match(event.request);
+
                     }).catch(() => {
                     return caches.match(event.request)
                 })
             );
         } else {
             event.respondWith(caches.open(useCacheName).then((cache) => {
+
                 return cache.match(event.request).then((cachedResponse) => {
-                    return cachedResponse || fetch(event.request.url).then((fetchedResponse) => {
-                        cache.put(event.request, fetchedResponse.clone());
+                    if (cachedResponse) {
+                        return cachedResponse;
+                    }
+                    return fetch(event.request.url).then((fetchedResponse) => {
+                        if (fetchedResponse && fetchedResponse.ok) {
+                            cache.put(event.request, fetchedResponse.clone());
+                        }
 
                         return fetchedResponse;
                     });
