@@ -51,30 +51,40 @@ function getURLType(url: URL) {
     return 'default'; // Default type
 }
 
+function transformCacheUrl(cacheName: string, url: string): URL {
+    let locURL = new URL(url);
+    if (cacheName.startsWith("overlay-")) {
+
+        console.log(`Transform ${new URL(locURL.origin + locURL.pathname)}`)
+        return new URL(locURL.origin + locURL.pathname);
+    }
+    return new URL(url)
+}
+
 /**
  *
  * @param url
  * @return A tuple containing the cache name, whether to use network first, and whether to use cache.
  */
-function getCacheName(url: URL): [string, boolean, boolean] {
+function getCacheName(url: URL): [string, boolean, boolean, boolean] {
     let reqType = getURLType(url);
 
     if (reqType === 'admin') {
-        return ['admin', true, false];
+        return ['admin', true, false, false];
     }
     if (reqType === 'api') {
-        return ['api-cache', true, true];
+        return ['api-cache', true, true, true];
     }
     if (reqType.startsWith('overlay-')) {
-        return [reqType, true, true];
+        return [reqType, false, true, false];
     }
     if (reqType === 'vector') {
-        return ['vector-cache', false, true];
+        return ['vector-cache', false, true, true];
     }
     if (url.origin == sw.registration.scope) {
-        return [reqType, false, false];
+        return [reqType, false, false, false];
     }
-    return ['never', true, false];
+    return ['never', true, false, false];
 
 }
 
@@ -84,7 +94,7 @@ sw.addEventListener("fetch", (event) => {
     if (event.request.method !== 'GET') {
         return;
     }
-    let [useCacheName, networkFirst, useCache] = getCacheName(url);
+    let [useCacheName, networkFirst, useCache, putMissingInCache] = getCacheName(url);
     if (useCache) {
         if (networkFirst) {
             event.respondWith(
@@ -103,24 +113,31 @@ sw.addEventListener("fetch", (event) => {
                         }
                         return caches.match(event.request);
 
-                    }).catch(() => {
-                    return caches.match(event.request)
-                })
+                    })
+                    .catch(() => {
+                        return caches.match(event.request).then((cachedResponse) => {
+                            if (cachedResponse) {
+                                return cachedResponse;
+                            } else {
+                                return new Response("Not found", {status: 404})
+                            }
+                        });
+                    })
             );
         } else {
             event.respondWith(caches.open(useCacheName).then((cache) => {
 
-                return cache.match(event.request).then((cachedResponse) => {
+                return cache.match(transformCacheUrl(useCacheName, event.request.url)).then((cachedResponse) => {
                     if (cachedResponse) {
                         return cachedResponse;
                     }
                     return fetch(event.request.url).then((fetchedResponse) => {
-                        if (fetchedResponse && fetchedResponse.ok) {
+                        if (fetchedResponse && fetchedResponse.ok && putMissingInCache) {
                             cache.put(event.request, fetchedResponse.clone());
                         }
-
                         return fetchedResponse;
                     });
+
                 });
             }));
         }
