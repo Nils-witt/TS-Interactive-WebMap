@@ -21,11 +21,11 @@ import {LngLat} from "maplibre-gl";
  */
 export class DataProviderEvent extends Event {
     /** Event type identifier, corresponds to DataProviderEventType values */
-    type: string; // Event type, e.g., 'mapLocationsUpdated'
+    type: string;
     /** Data payload associated with the event */
-    data: any; // Optional data associated with the event
+    data: number | object | string;
 
-    constructor(type: string, data: any) {
+    constructor(type: string, data: string | object | number) {
         super(type);
         this.type = type;
         this.data = data;
@@ -124,7 +124,7 @@ export class DataProvider {
      * @param eventType - The type of event to trigger
      * @param data - The data to include with the event
      */
-    private triggerEvent(eventType: string, data: any): void {
+    private triggerEvent(eventType: string, data: object | string | number): void {
         GlobalEventHandler.getInstance().emit(eventType, new DataProviderEvent(eventType, data));
     }
 
@@ -277,6 +277,7 @@ export class DataProvider {
         this.apiUrl = url;
         this.triggerEvent(DataProviderEventType.API_URL_UPDATED, url);
     }
+
     public getApiUrl(): string {
         return this.apiUrl;
     }

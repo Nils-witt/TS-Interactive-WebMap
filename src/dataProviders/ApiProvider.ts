@@ -3,13 +3,14 @@ import {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject";
 import {DataProvider} from "./DataProvider";
 import {IMapGroup} from "../types/MapEntity";
 import {GlobalEventHandler} from "./GlobalEventHandler";
+import {TaktischesZeichen} from "taktische-zeichen-core/dist/types/types";
 
 
 export class ApiProviderEvent extends Event {
     type: ApiProviderEventTypes;
-    data: any;
+    data: object;
 
-    constructor(type: ApiProviderEventTypes, data: any) {
+    constructor(type: ApiProviderEventTypes, data: object) {
         super(type);
         this.type = type;
         this.data = data;
@@ -45,7 +46,7 @@ export class ApiProvider {
                 DataProvider.getInstance().setMapStyle(styles[0]);
             }
         });
-        this.getOverlayLayers().then((overlays:LayerInfo[]) => {
+        this.getOverlayLayers().then((overlays: LayerInfo[]) => {
             for (const overlay of overlays) {
                 console.log("Adding overlay:", overlay);
                 DataProvider.getInstance().addOverlay(overlay.getId(), overlay);
@@ -68,7 +69,7 @@ export class ApiProvider {
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
 
-        let data = {
+        const data = {
             token: DataProvider.getInstance().getApiUrl()
         };
         const requestOptions = {
@@ -77,7 +78,7 @@ export class ApiProvider {
             body: JSON.stringify(data)
         };
         try {
-            let res = await fetch(url, requestOptions);
+            const res = await fetch(url, requestOptions);
             if (res.status == 401) {
                 this.notifyListeners(ApiProviderEventTypes.UNAUTHORIZED, {message: "Unauthorized access - check your token."});
             }
@@ -101,10 +102,10 @@ export class ApiProvider {
         };
 
         try {
-            let res = await fetch(url, requestOptions);
+            const res = await fetch(url, requestOptions);
             console.log("Login response:", res.status, res.statusText);
             if (res.ok) {
-                let data = await res.json();
+                const data = await res.json();
                 DataProvider.getInstance().setApiToken(data.access); // Store the token for future requests
                 localStorage.setItem('authToken', data.access); // Store token in local storage
                 this.notifyListeners(ApiProviderEventTypes.LOGIN_SUCCESS, {message: "Login successful"});
@@ -116,7 +117,7 @@ export class ApiProvider {
         }
     }
 
-    private async callApi(url: string, method: string, headers: Headers = new Headers(), body?: any): Promise<any> {
+    private async callApi(url: string, method: string, headers: Headers = new Headers(), body?: object): Promise<object> {
 
         if (DataProvider.getInstance().getApiToken()) {
             headers.append("Authorization", `Bearer ${DataProvider.getInstance().getApiToken()}`);
@@ -141,23 +142,29 @@ export class ApiProvider {
         try {
             return await response.json();
         } catch (e) {
+            console.error("Error parsing JSON:", e);
             return null;
         }
     }
 
-    public async fetchData(url: string): Promise<any> {
+    public async fetchData(url: string): Promise<object> {
         return this.callApi(url, 'GET');
     }
 
     public async getOverlayLayers(): Promise<LayerInfo[]> {
-        let overlays: LayerInfo[] = [];
+        const overlays: LayerInfo[] = [];
 
         try {
             const url = DataProvider.getInstance().getApiUrl() + '/overlays/'
             console.log("Fetching overlay layers from:", url);
             console.log("Using token:", DataProvider.getInstance().getApiToken());
 
-            for (const layer of (await this.fetchData(url))) {
+            for (const layer of (await this.fetchData(url)) as {
+                id: string,
+                name: string,
+                url: string,
+                description: string
+            }[]) {
                 overlays.push(new LayerInfo({
                     id: layer.id,
                     name: layer.name,
@@ -172,11 +179,16 @@ export class ApiProvider {
     }
 
     public async getMapStyles(): Promise<LayerInfo[]> {
-        let overlays: LayerInfo[] = [];
+        const overlays: LayerInfo[] = [];
 
         try {
             const url = DataProvider.getInstance().getApiUrl() + '/styles/'
-            for (const layer of (await this.fetchData(url))) {
+            for (const layer of (await this.fetchData(url)) as {
+                id: string,
+                name: string,
+                url: string,
+                description: string
+            }[]) {
                 overlays.push(new LayerInfo({
                     id: layer.id,
                     name: layer.id,
@@ -194,8 +206,17 @@ export class ApiProvider {
 
         try {
             const url = DataProvider.getInstance().getApiUrl() + '/items/'
-            let data = await this.fetchData(url);
-            return data.map((item: any) => {
+            const data = (await this.fetchData(url)) as {
+                id: string,
+                name: string,
+                latitude: number,
+                longitude: number,
+                zoom_level: number,
+                symbol: TaktischesZeichen,
+                show_on_map: boolean,
+                group_id: string | null
+            }[];
+            return data.map((item) => {
                 return new NamedGeoReferencedObject({
                     id: item.id,
                     name: item.name,
@@ -214,16 +235,22 @@ export class ApiProvider {
 
     }
 
-    public async getMapGroups()
-        :
-        Promise<IMapGroup[]> {
+    public async getMapGroups(): Promise<IMapGroup[]> {
+        const groups: IMapGroup[] = [];
         try {
             const url = DataProvider.getInstance().getApiUrl() + '/map_groups/'
-            return await this.fetchData(url);
+
+            for (const group of (await this.fetchData(url)) as { id: string, name: string, description: string }[]) {
+                groups.push({
+                    id: group.id,
+                    name: group.name,
+                    description: group.description
+                })
+            }
         } catch (error) {
             console.error("Error fetching overlay layers:", error);
-            return []; // Return empty array on error
         }
+        return groups;
     }
 
     public async saveMapItem(item: NamedGeoReferencedObject, updateDataProvider: boolean = true): Promise<NamedGeoReferencedObject | null> {
@@ -241,8 +268,17 @@ export class ApiProvider {
         }
 
         try {
-            let resData = await this.callApi(url, method, new Headers(), data);
-            let item = new NamedGeoReferencedObject({
+            const resData = await this.callApi(url, method, new Headers(), data) as {
+                id: string,
+                name: string,
+                latitude: number,
+                longitude: number,
+                zoom_level: number,
+                symbol: TaktischesZeichen,
+                show_on_map: boolean,
+                group_id: string | null
+            };
+            const item = new NamedGeoReferencedObject({
                 id: resData.id,
                 name: resData.name,
                 latitude: resData.latitude,
@@ -263,11 +299,11 @@ export class ApiProvider {
     }
 
     public async deleteMapItem(itemId: string): Promise<boolean> {
-        let url = DataProvider.getInstance().getApiUrl() + `/items/${itemId}/`;
-        let method = "DELETE";
+        const url = DataProvider.getInstance().getApiUrl() + `/items/${itemId}/`;
+        const method = "DELETE";
 
         try {
-            let resData = await this.callApi(url, method, new Headers());
+            const resData = await this.callApi(url, method, new Headers());
             console.log("Delete response:", resData);
             return true;
         } catch (e) {

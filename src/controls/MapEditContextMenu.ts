@@ -43,7 +43,7 @@ export class MapEditContextMenu {
         document.body.appendChild(this.contextMenu);
 
 
-        let btnCreate = document.createElement('button');
+        const btnCreate = document.createElement('button');
         btnCreate.innerText = 'Create Item';
         btnCreate.classList.add('bg-white', 'hover:bg-gray-400', 'text-black', 'font-bold', 'py-2', 'px-4');
         btnCreate.onclick = () => {

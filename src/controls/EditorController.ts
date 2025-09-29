@@ -43,8 +43,8 @@ export class EditorController {
 
         this.setupGroupSelect(this.mapGroupSelect);
 
-        let tableContainer = document.createElement('div');
-        let table = document.createElement('table');
+        const tableContainer = document.createElement('div');
+        const table = document.createElement('table');
         this.setUpTable(table);
         tableContainer.appendChild(table);
         this.controlsContainer.append(tableContainer);
@@ -80,7 +80,7 @@ export class EditorController {
 
         // Populate the select with existing groups
         for (const [id, group] of DataProvider.getInstance().getMapGroups()) {
-            let option = document.createElement('option');
+            const option = document.createElement('option');
             option.value = id;
             option.textContent = group.name || 'Unnamed Group';
             select.appendChild(option);
@@ -91,7 +91,7 @@ export class EditorController {
             select.replaceChildren(); // Clear existing options
             select.appendChild(document.createElement('option')); // Add empty option
             for (const [id, group] of DataProvider.getInstance().getMapGroups()) {
-                let option = document.createElement('option');
+                const option = document.createElement('option');
                 option.value = id;
                 option.textContent = group.name || 'Unnamed Group';
                 select.appendChild(option);
@@ -103,7 +103,7 @@ export class EditorController {
             select.replaceChildren(); // Clear existing options
             select.appendChild(document.createElement('option')); // Add empty option
             for (const [id, group] of DataProvider.getInstance().getMapGroups()) {
-                let option = document.createElement('option');
+                const option = document.createElement('option');
                 option.value = id;
                 option.textContent = group.name || 'Unnamed Group';
                 select.appendChild(option);
@@ -112,10 +112,10 @@ export class EditorController {
             this.fullUpdateItemTable();
         });
 
-        let groupLabel = document.createElement('label');
+        const groupLabel = document.createElement('label');
         groupLabel.textContent = 'Select Group:';
 
-        let groupContainer = document.createElement('div');
+        const groupContainer = document.createElement('div');
         groupContainer.appendChild(groupLabel);
         groupContainer.appendChild(select);
         this.controlsContainer.appendChild(groupContainer);
@@ -132,8 +132,8 @@ export class EditorController {
 
     private setUpTable(table: HTMLTableElement): void {
         table.classList.add('w-full', 'table-auto');
-        let head = table.createTHead();
-        let headerRow = head.insertRow();
+        const head = table.createTHead();
+        const headerRow = head.insertRow();
         headerRow.insertCell().textContent = 'Name';
         headerRow.insertCell().textContent = 'Group';
     }
@@ -142,7 +142,7 @@ export class EditorController {
         this.itemTableBody.replaceChildren(); // Clear existing rows
 
 
-        let entries = Array.from(DataProvider.getInstance().getMapLocations().values());
+        const entries = Array.from(DataProvider.getInstance().getMapLocations().values());
         entries.sort((a, b) => {
             if (a.getName() && b.getName()) {
                 return a.getName().localeCompare(b.getName());
@@ -161,25 +161,25 @@ export class EditorController {
                 }
             }
 
-            let row = this.itemTableBody.insertRow();
-            let cellName = row.insertCell();
-            let groups = row.insertCell();
-            let cellActions = row.insertCell();
+            const row = this.itemTableBody.insertRow();
+            const cellName = row.insertCell();
+            const groups = row.insertCell();
+            const cellActions = row.insertCell();
 
             cellName.textContent = item.getName() || 'Unnamed Item';
 
             //groups.textContent = item.groups ? item.groups.join(', ') : 'No Groups';
 
             if (item.getGroupId() && DataProvider.getInstance().getMapGroups().get(item.getGroupId())) {
-                let group = DataProvider.getInstance().getMapGroups().get(item.getGroupId());
+                const group = DataProvider.getInstance().getMapGroups().get(item.getGroupId());
                 groups.textContent = group?.name || 'No Group';
             }else {
                 groups.textContent = 'No Group';
             }
             // Add action buttons (edit, delete, etc.)
-            let locateButton = document.createElement('button');
-            let updatePositionButton = document.createElement('button');
-            let editIconBtn = document.createElement('button');
+            const locateButton = document.createElement('button');
+            const updatePositionButton = document.createElement('button');
+            const editIconBtn = document.createElement('button');
 
             // cellActions.appendChild(locateButton);
             cellActions.appendChild(updatePositionButton);
@@ -228,7 +228,7 @@ export class EditorController {
                 console.log("Editor: Edit item", item.getId());
                 row.style.backgroundColor = "lightblue"; // Highlight the row
                 this.editorEditBox.setItem(item);
-                let marker = new Marker();
+                const marker = new Marker();
                 marker.setLngLat([item.getLongitude(), item.getLatitude()]);
                 marker.addTo(this.map);
 
@@ -260,7 +260,7 @@ export class EditorController {
     }
 
     public createNewItem(position: { lng: number, lat: number }): void {
-        let item = new NamedGeoReferencedObject({
+        const item = new NamedGeoReferencedObject({
             id: null,
             name: '',
             longitude: position.lng,

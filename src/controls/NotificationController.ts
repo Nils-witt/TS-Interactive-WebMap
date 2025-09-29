@@ -28,7 +28,7 @@ export class NotificationController {
 
     public showNotification(message: string, priority: NotificationPriority = "info"): void {
 
-        let messageDiv = document.createElement('div');
+        const messageDiv = document.createElement('div');
         messageDiv.classList.add('text-white', 'px-4', 'py-2', 'rounded', 'mb-2');
 
         if (priority === 'info') {

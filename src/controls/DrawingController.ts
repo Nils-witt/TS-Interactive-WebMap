@@ -13,10 +13,10 @@ export class DrawingController {
 
         GlobalEventHandler.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, (e) => {
             const event = e as DataProviderEvent;
-            let item = event.data as NamedGeoReferencedObject;
+            const item = event.data as NamedGeoReferencedObject;
 
             if (this.markers.has(item.getId())) {
-                let marker = this.markers.get(item.getId())!;
+                const marker = this.markers.get(item.getId())!;
 
                 if (item.getSymbol()) {
                     DisplayHelper.updateTacMarker(marker.getElement()!, item.getSymbol());

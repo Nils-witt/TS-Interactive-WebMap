@@ -99,7 +99,7 @@ export class SearchControl extends Evented implements IControl {
 
         console.log("Showing entity:", entity.getName());
 
-        let marker = new Marker()
+        const marker = new Marker()
             .setLngLat([entity.getLongitude(), entity.getLatitude()])
             .addTo(this.map);
         this.shownMarkers.set(entity.getId(), marker);
@@ -127,7 +127,7 @@ export class SearchControl extends Evented implements IControl {
      * @param entity
      */
     private showMarkerButton(entity: NamedGeoReferencedObject): HTMLButtonElement {
-        let button = document.createElement("button");
+        const button = document.createElement("button");
 
         //button.textContent = "<>";
         button.innerHTML = icon(faMapLocationDot).html[0]
@@ -172,7 +172,7 @@ export class SearchControl extends Evented implements IControl {
             return; // No results found, exit early
         }
         for (const entity of entries) {
-            let row = this.searchResultsBody.insertRow()
+            const row = this.searchResultsBody.insertRow()
 
             row.onclick = () => {
                 this.showSingleEntity(entity);
@@ -185,11 +185,11 @@ export class SearchControl extends Evented implements IControl {
                 this.setOpen(false); // Close the search control after selecting an entity
             }
 
-            let actionCell = row.insertCell();
+            const actionCell = row.insertCell();
             actionCell.classList.add("px-2");
             actionCell.appendChild(this.showMarkerButton(entity));
 
-            let nameCell = row.insertCell();
+            const nameCell = row.insertCell();
             nameCell.classList.add("pl-6");
             nameCell.innerText = entity.getName();
             resultCount++;
@@ -266,29 +266,29 @@ export class SearchControl extends Evented implements IControl {
         this.searchIconContainer = document.createElement("div");
 
 
-        let spanIcon = document.createElement("span");
+        const spanIcon = document.createElement("span");
         this.searchIconContainer.appendChild(spanIcon);
         spanIcon.classList.add("p-[10px]");
         spanIcon.innerHTML = icon(faMagnifyingGlass).html[0];
 
 
-        let container = document.createElement("div");
+        const container = document.createElement("div");
         this.searchContentContainer = container;
         container.classList.add("overflow-x-auto", "bg-white");
 
-        let searchContainer = document.createElement("div");
+        const searchContainer = document.createElement("div");
         container.appendChild(searchContainer);
         searchContainer.classList.add("relative", "m-[2px]", "mb-3", "mr-5", "float-left");
-        let searchLabel = document.createElement("label");
+        const searchLabel = document.createElement("label");
         searchContainer.appendChild(searchLabel);
         searchLabel.classList.add("sr-only");
         searchLabel.textContent = "Search";
-        let searchInput = document.createElement("input");
+        const searchInput = document.createElement("input");
         searchContainer.appendChild(searchInput);
         this.searchInput = searchInput;
         searchInput.type = "text";
         searchInput.classList.add("block", "w-40", "rounded-lg", "border", "py-2", "pl-10", "pr-4", "text-sm", "focus:border-blue-400", "focus:outline-none", "focus:ring-1", "focus:ring-blue-400");
-        let spanIcon2 = document.createElement("span");
+        const spanIcon2 = document.createElement("span");
         searchContainer.appendChild(spanIcon2);
         spanIcon2.classList.add("pointer-events-none", "absolute", "left-3", "top-1/2", "-translate-y-1/2", "transform");
         spanIcon2.innerHTML = icon(faMagnifyingGlass).html[0];
@@ -296,9 +296,9 @@ export class SearchControl extends Evented implements IControl {
 
         //TODO insert Filter
 
-        let closeIconContainer = document.createElement("div");
+        const closeIconContainer = document.createElement("div");
         closeIconContainer.classList.add("relative", "m-[2px]", "mb-3", "float-right", "sm:block");
-        let closeIcon = document.createElement("span");
+        const closeIcon = document.createElement("span");
         closeIcon.classList.add("p-[10px]");
         closeIcon.innerHTML = icon(faXmark).html[0];
         closeIconContainer.appendChild(closeIcon);
@@ -307,30 +307,30 @@ export class SearchControl extends Evented implements IControl {
             this.setOpen(false); // Close the search control
         }
 
-        let table = document.createElement("table");
+        const table = document.createElement("table");
         this.resultsContainer = table;
         container.appendChild(table);
         table.classList.add("min-w-full", "text-left", "text-xs", "whitespace-nowrap");
 
-        let thead = table.createTHead();
-        let headerRow = thead.insertRow();
-        let cell1 = headerRow.insertCell();
+        const thead = table.createTHead();
+        const headerRow = thead.insertRow();
+        const cell1 = headerRow.insertCell();
         cell1.textContent = "Action";
         cell1.classList.add("px-2", "py-4");
-        let cell2 = headerRow.insertCell();
+        const cell2 = headerRow.insertCell();
         cell2.textContent = "Name"
         cell2.classList.add("px-6", "py-4");
 
-        let tBody = table.createTBody();
+        const tBody = table.createTBody();
         this.searchResultsBody = tBody;
-        let row = tBody.insertRow();
+        const row = tBody.insertRow();
         row.classList.add("border-b", "dark:border-neutral-600")
-        let cellAction = row.insertCell();
+        const cellAction = row.insertCell();
 
 
         cellAction.classList.add("py-4");
 
-        let cellName = row.insertCell();
+        const cellName = row.insertCell();
         cellName.classList.add("px-6", "py-4");
         cellName.textContent = "Search for a location";
 

@@ -30,7 +30,7 @@ export default class UrlDataHandler {
      * @param queryString - The query string value to set
      */
     public static setQueryString(queryString: string): void {
-        let params = this.getUrlParams();
+        const params = this.getUrlParams();
         params.set('queryString', queryString);
         this.replaceUrlParam(params);
     }
@@ -51,7 +51,7 @@ export default class UrlDataHandler {
      * @param markerId - The marker ID to set
      */
     public static setSelectedMarker(markerId: string): void {
-        let params = this.getUrlParams();
+        const params = this.getUrlParams();
         params.set('marker', markerId);
         this.replaceUrlParam(params);
     }
