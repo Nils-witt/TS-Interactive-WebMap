@@ -21,6 +21,7 @@ import {ApiProvider} from "../dataProviders/ApiProvider";
 import {NotificationController} from "./NotificationController";
 import {Map as MapLibreMap} from "maplibre-gl";
 import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
+import {IMapGroup} from "../types/MapEntity";
 
 
 export class EditorEditBox {
@@ -51,7 +52,7 @@ export class EditorEditBox {
     createButton = document.createElement('button');
     groupSelect = document.createElement('select');
 
-    private listeners: Map<string, ((event: any) => void)[]> = new Map();
+    private listeners: Map<string, ((event: string) => void)[]> = new Map();
 
     private map: MapLibreMap;
 
@@ -59,7 +60,7 @@ export class EditorEditBox {
         this.map = map;
         GlobalEventHandler.getInstance().on(DataProviderEventType.MAP_GROUPS_CREATED, (e) => {
             const event = e as DataProviderEvent;
-            const group = event.data;
+            const group = event.data as IMapGroup;
             const option = document.createElement('option');
             option.value = group.id;
             option.textContent = group.name;
@@ -91,7 +92,7 @@ export class EditorEditBox {
         this.headerLabel.textContent = '-/-';
         this.container.appendChild(this.headerLabel);
 
-        let itemNameLabel = document.createElement('label');
+        const itemNameLabel = document.createElement('label');
         itemNameLabel.textContent = 'Item Name:';
         this.itemNameInput.type = 'text';
         this.itemNameInput.placeholder = 'Enter item name';
@@ -100,14 +101,14 @@ export class EditorEditBox {
                 this.item.setName(this.itemNameInput.value);
             }
         };
-        let itemNameDiv = document.createElement('div');
+        const itemNameDiv = document.createElement('div');
         itemNameDiv.appendChild(itemNameLabel);
         itemNameDiv.appendChild(this.itemNameInput);
         this.container.appendChild(itemNameDiv)
 
-        let groupSelectDiv = document.createElement('div');
+        const groupSelectDiv = document.createElement('div');
 
-        let groupSelectLabel = document.createElement('label');
+        const groupSelectLabel = document.createElement('label');
         groupSelectLabel.textContent = 'Group:';
         groupSelectDiv.appendChild(groupSelectLabel);
         groupSelectDiv.appendChild(this.groupSelect);
@@ -126,18 +127,18 @@ export class EditorEditBox {
 
         this.iconDisplay.style.height = '50px';
 
-        let selectGrundzeichenLabel = document.createElement('label');
+        const selectGrundzeichenLabel = document.createElement('label');
         selectGrundzeichenLabel.textContent = 'Grundzeichen:';
         this.selectGrundzeichen.options.add(new Option("Keine", ""));
 
         for (const value of grundzeichen) {
             this.selectGrundzeichen.options.add(new Option(value.label, value.id));
         }
-        let grundzeichenDiv = document.createElement('div');
+        const grundzeichenDiv = document.createElement('div');
         grundzeichenDiv.appendChild(selectGrundzeichenLabel);
         grundzeichenDiv.appendChild(this.selectGrundzeichen);
 
-        let selectVerwaltungsstufeLabel = document.createElement('label');
+        const selectVerwaltungsstufeLabel = document.createElement('label');
         selectVerwaltungsstufeLabel.textContent = 'Verwaltungsstufe:';
 
         this.selectVerwaltungsstufe.options.add(new Option("Keine", ""));
@@ -145,11 +146,11 @@ export class EditorEditBox {
         for (const value of verwaltungsstufen) {
             this.selectVerwaltungsstufe.options.add(new Option(value.label, value.id));
         }
-        let verwaltungsstufeDiv = document.createElement('div');
+        const verwaltungsstufeDiv = document.createElement('div');
         verwaltungsstufeDiv.appendChild(selectVerwaltungsstufeLabel);
         verwaltungsstufeDiv.appendChild(this.selectVerwaltungsstufe);
 
-        let selectOrganisationLabel = document.createElement('label');
+        const selectOrganisationLabel = document.createElement('label');
         selectOrganisationLabel.textContent = 'Organisation:';
 
         this.selectOrganisation.options.add(new Option("Keine", ""));
@@ -157,11 +158,11 @@ export class EditorEditBox {
         for (const value of organisationen) {
             this.selectOrganisation.options.add(new Option(value.label, value.id));
         }
-        let selectOrganisationDiv = document.createElement('div');
+        const selectOrganisationDiv = document.createElement('div');
         selectOrganisationDiv.appendChild(selectOrganisationLabel);
         selectOrganisationDiv.appendChild(this.selectOrganisation);
 
-        let selectFachaufgabeLabel = document.createElement('label');
+        const selectFachaufgabeLabel = document.createElement('label');
         selectFachaufgabeLabel.textContent = 'Fachaufgabe:';
 
         this.selectFachaufgabe.options.add(new Option("Keine", ""));
@@ -170,11 +171,11 @@ export class EditorEditBox {
             this.selectFachaufgabe.options.add(new Option(value.label, value.id));
         }
 
-        let divFachaufgabe = document.createElement('div');
+        const divFachaufgabe = document.createElement('div');
         divFachaufgabe.appendChild(selectFachaufgabeLabel);
         divFachaufgabe.appendChild(this.selectFachaufgabe);
 
-        let selectEinheitLabel = document.createElement('label');
+        const selectEinheitLabel = document.createElement('label');
         selectEinheitLabel.textContent = 'Einheit:';
 
         this.selectEinheit.options.add(new Option("Keine", ""));
@@ -182,11 +183,11 @@ export class EditorEditBox {
         for (const value of einheiten) {
             this.selectEinheit.options.add(new Option(value.label, value.id));
         }
-        let divEinheit = document.createElement('div');
+        const divEinheit = document.createElement('div');
         divEinheit.appendChild(selectEinheitLabel);
         divEinheit.appendChild(this.selectEinheit);
 
-        let selectFunktionLabel = document.createElement('label');
+        const selectFunktionLabel = document.createElement('label');
         selectFunktionLabel.textContent = 'Funktion:';
 
         this.selectFunktion.options.add(new Option("Keine", ""));
@@ -194,51 +195,51 @@ export class EditorEditBox {
         for (const value of funktionen) {
             this.selectFunktion.options.add(new Option(value.label, value.id));
         }
-        let divFunktion = document.createElement('div');
+        const divFunktion = document.createElement('div');
         divFunktion.appendChild(selectFunktionLabel);
         divFunktion.appendChild(this.selectFunktion);
 
-        let selectSymbolLabel = document.createElement('label');
+        const selectSymbolLabel = document.createElement('label');
         selectSymbolLabel.textContent = 'Symbol:';
 
         this.selectSymbol.options.add(new Option("Keine", ""));
         for (const value of symbole) {
             this.selectSymbol.options.add(new Option(value.label, value.id));
         }
-        let divSymbol = document.createElement('div');
+        const divSymbol = document.createElement('div');
         divSymbol.appendChild(selectSymbolLabel);
         divSymbol.appendChild(this.selectSymbol);
 
-        let selectTextLabel = document.createElement('label');
+        const selectTextLabel = document.createElement('label');
         selectTextLabel.textContent = 'Text:';
 
         this.selectText.type = 'text';
-        let divText = document.createElement('div');
+        const divText = document.createElement('div');
         divText.appendChild(selectTextLabel);
         divText.appendChild(this.selectText);
 
-        let selectTypLabel = document.createElement('label');
+        const selectTypLabel = document.createElement('label');
         selectTypLabel.textContent = 'Type:';
 
         this.selectTyp.type = 'text';
-        let divTyp = document.createElement('div');
+        const divTyp = document.createElement('div');
         divTyp.appendChild(selectTypLabel);
         divTyp.appendChild(this.selectTyp);
 
-        let selectNameLabel = document.createElement('label');
+        const selectNameLabel = document.createElement('label');
         selectNameLabel.textContent = 'Name:';
 
         this.selectName.type = 'text';
-        let divName = document.createElement('div');
+        const divName = document.createElement('div');
         divName.appendChild(selectNameLabel);
         divName.appendChild(this.selectName);
 
 
-        let selectOrgNameLabel = document.createElement('label');
+        const selectOrgNameLabel = document.createElement('label');
         selectOrgNameLabel.textContent = 'Organisation Name:';
 
         this.selectOrgName.type = 'text';
-        let divOrgName = document.createElement('div');
+        const divOrgName = document.createElement('div');
         divOrgName.appendChild(selectOrgNameLabel);
         divOrgName.appendChild(this.selectOrgName);
 
@@ -309,7 +310,7 @@ export class EditorEditBox {
         this.createButton.textContent = 'Clear & Create new';
         this.createButton.onclick = () => {
 
-            let newItem = new NamedGeoReferencedObject({
+            const newItem = new NamedGeoReferencedObject({
                 id: null,
                 latitude: this.map.getCenter().lat,
                 longitude: this.map.getCenter().lng,

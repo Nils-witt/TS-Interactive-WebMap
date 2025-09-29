@@ -87,14 +87,14 @@ export class LayersControl extends Evented implements IControl {
 
         // Create a map of layer IDs to LayerInfo objects for quick lookup
         GlobalEventHandler.getInstance().on(DataProviderEventType.OVERLAY_ADDED, (event: DataProviderEvent) => {
-            let data = event.data as LayerInfo;
+            const data = event.data as LayerInfo;
             console.log("LayersControl: Overlay added", data);
             this.addLayer(data);
         });
         this.setLayers(DataProvider.getInstance().getOverlays());
         this.inputs = [];
 
-        let previouslyActiveOverlays = localStorage.getItem("activeOverlays");
+        const previouslyActiveOverlays = localStorage.getItem("activeOverlays");
         if (previouslyActiveOverlays) {
             // Parse the stored active overlays and set them in the map
             const activeOverlaysArray = JSON.parse(previouslyActiveOverlays) as string[];
@@ -139,12 +139,12 @@ export class LayersControl extends Evented implements IControl {
 
         // Create a checkbox for each new layer and add it to the container
         for (const layer of overlays.values()) {
-            let labeled_checkbox = this.createLabeledCheckbox(layer);
+            const labeled_checkbox = this.createLabeledCheckbox(layer);
             this.layersContainer.appendChild(labeled_checkbox);
         }
     }
 
-    private showLayerRecursive(id: string){
+    private showLayerRecursive(id: string) {
         const layer = this.layers.get(id);
         console.log("showing layer", id, layer)
         if (layer == undefined) {
@@ -152,7 +152,7 @@ export class LayersControl extends Evented implements IControl {
         }
         if (!this.map.getLayer(layer.getId() + '-layer')) {
             if (layer.getUnderlayingLayer() != null) {
-                console.log("above", layer.getName(),"UL", layer.getUnderlayingLayer())
+                console.log("above", layer.getName(), "UL", layer.getUnderlayingLayer())
                 this.showLayerRecursive(layer.getUnderlayingLayer())
             }
             this.map.addLayer({
@@ -163,7 +163,7 @@ export class LayersControl extends Evented implements IControl {
         }
     }
 
-    private updateShownlayers(){
+    private updateShownlayers() {
         console.log("updating shown layers")
         const layersToAdd: LayerInfo[] = Array.from(this.layers.values()).sort((a, b) => a.getName().localeCompare(b.getName()));
 
@@ -209,7 +209,7 @@ export class LayersControl extends Evented implements IControl {
             });
         }
         this.layers.set(layer.getId(), layer);
-        let labeled_checkbox = this.createLabeledCheckbox(layer);
+        const labeled_checkbox = this.createLabeledCheckbox(layer);
 
         this.layersContainer.appendChild(labeled_checkbox);
     }
@@ -233,7 +233,7 @@ export class LayersControl extends Evented implements IControl {
                     return;
                 }
 
-                let filelist = []
+                const filelist = []
                 const data = await response.json()
 
                 const zVals = Object.keys(data);
@@ -261,7 +261,7 @@ export class LayersControl extends Evented implements IControl {
     }
 
     private getCacheLayerTiles(layer: LayerInfo): Promise<string[]> {
-        return new Promise(async (resolve) => {
+        return new Promise((resolve) => {
             let url: URL | undefined;
             if (layer.getUrl().startsWith('http')) {
                 url = new URL(layer.getUrl().substring(0, layer.getUrl().search("{z}"))); // Ensure the URL is absolute
@@ -270,18 +270,18 @@ export class LayersControl extends Evented implements IControl {
             }
 
 
-            let path = url.pathname.replace('/overlays/', '');
-            let parts = path.split('/');
+            const path = url.pathname.replace('/overlays/', '');
+            const parts = path.split('/');
             const cacheName = 'overlay-' + parts[0]; // Use the first part of the path as the cache name
 
-            const cache = await caches.open(cacheName);
-            cache.keys().then((keys) => {
-                console.log("Cache keys for", cacheName, ":", keys);
-                resolve(keys.map(key => key.url));
-            }).catch(error => {
-                console.error("Failed to get cache keys:", error);
+            caches.open(cacheName).then((cache) => {
+                cache.keys().then((keys) => {
+                    console.log("Cache keys for", cacheName, ":", keys);
+                    resolve(keys.map(key => key.url));
+                }).catch(error => {
+                    console.error("Failed to get cache keys:", error);
+                });
             });
-
         });
     }
 
@@ -317,7 +317,7 @@ export class LayersControl extends Evented implements IControl {
 
     private downloadLayerToCache(layer: LayerInfo, button: HTMLButtonElement): Promise<boolean> {
 
-        return new Promise<boolean>(async (resolve) => {
+        return new Promise<boolean>((resolve) => {
             let url: URL | undefined;
             if (layer.getUrl().startsWith('http')) {
                 url = new URL(layer.getUrl().substring(0, layer.getUrl().search("{z}"))); // Ensure the URL is absolute
@@ -326,46 +326,49 @@ export class LayersControl extends Evented implements IControl {
             }
 
 
-            let path = url.pathname.replace('/overlays/', '');
-            let parts = path.split('/');
+            const path = url.pathname.replace('/overlays/', '');
+            const parts = path.split('/');
             const cacheName = 'overlay-' + parts[0]; // Use the first part of the path as the cache name
 
-            let missingFiles = await this.getMissingCacheFiles(layer);
-            let missingCount = missingFiles.length;
+            this.getMissingCacheFiles(layer).then((missingFiles) => {
 
-            let bntInterval = setInterval(() => {
-                button.innerText = `Downloading Layer ${missingCount}tiles`;
-            }, 1000);
 
-            caches.open(cacheName).then(async (cache) => {
-                for (let i = 0; i < missingFiles.length; i++) {
-                    await new Promise<void>((resolve, reject) => {
+                let missingCount = missingFiles.length;
 
-                        fetch(missingFiles[i] + "?accesstoken=" + DataProvider.getInstance().getApiToken()).then(response => {
-                            if (!response.ok) {
-                                console.error("Failed to fetch layer file:", missingFiles[i], "Status:", response.status);
-                                reject(false);
-                                return;
-                            }
-                            cache.put(missingFiles[i], response.clone()).then(() => {
-                                resolve();
+                const bntInterval = setInterval(() => {
+                    button.innerText = `Downloading Layer ${missingCount}tiles`;
+                }, 1000);
+
+                caches.open(cacheName).then(async (cache) => {
+                    for (let i = 0; i < missingFiles.length; i++) {
+                        await new Promise<void>((resolve, reject) => {
+
+                            fetch(missingFiles[i] + "?accesstoken=" + DataProvider.getInstance().getApiToken()).then(response => {
+                                if (!response.ok) {
+                                    console.error("Failed to fetch layer file:", missingFiles[i], "Status:", response.status);
+                                    reject(false);
+                                    return;
+                                }
+                                cache.put(missingFiles[i], response.clone()).then(() => {
+                                    resolve();
+                                }).catch(error => {
+                                    console.error("Failed to cache layer file:", missingFiles[i], error);
+                                    reject(false);
+                                    return;
+                                });
+
                             }).catch(error => {
-                                console.error("Failed to cache layer file:", missingFiles[i], error);
+                                console.error("Error fetching layer file:", missingFiles[i], error);
                                 reject(false);
                                 return;
                             });
-
-                        }).catch(error => {
-                            console.error("Error fetching layer file:", missingFiles[i], error);
-                            reject(false);
-                            return;
                         });
-                    });
-                    missingCount = missingFiles.length - i;
-                    await new Promise(resolve => setTimeout(resolve, 50)); // Add a delay to avoid overwhelming the cache
-                }
-                clearInterval(bntInterval);
-                resolve(true);
+                        missingCount = missingFiles.length - i;
+                        await new Promise(resolve => setTimeout(resolve, 50)); // Add a delay to avoid overwhelming the cache
+                    }
+                    clearInterval(bntInterval);
+                    resolve(true);
+                });
             });
         });
     }
@@ -440,7 +443,7 @@ export class LayersControl extends Evented implements IControl {
                     console.log("Remote Tiles:", remoteTiles);
                     console.log("Cache Tiles:", cacheTiles);
 
-                    let neededTiles = [];
+                    const neededTiles = [];
                     for (const tile of remoteTiles) {
                         if (!cacheTiles.includes(tile)) {
                             neededTiles.push(tile);
@@ -478,9 +481,9 @@ export class LayersControl extends Evented implements IControl {
 
             downloadContainer.appendChild(downloadButton);
 
-            let resetContainer = document.createElement("div");
+            const resetContainer = document.createElement("div");
             resetContainer.classList.add("mb-4");
-            let resetButton = document.createElement("button");
+            const resetButton = document.createElement("button");
             resetButton.classList.add("bg-red-500", "text-white", "px-4", "py-2", "rounded", "hover:bg-red-600");
             resetButton.textContent = "Reset Layer Cache";
             resetButton.addEventListener("click", () => {
@@ -493,13 +496,13 @@ export class LayersControl extends Evented implements IControl {
             });
             resetContainer.appendChild(resetButton);
 
-            let underlayingLayerContainer = document.createElement("div");
+            const underlayingLayerContainer = document.createElement("div");
             underlayingLayerContainer.classList.add("mb-4");
-            let selectLabel = document.createElement("label");
+            const selectLabel = document.createElement("label");
             selectLabel.classList.add("block", "text-sm", "font-medium", "text-gray-700");
             selectLabel.textContent = "Underlaying Layer";
             underlayingLayerContainer.appendChild(selectLabel);
-            let select = document.createElement("select");
+            const select = document.createElement("select");
             select.required = false;
             underlayingLayerContainer.appendChild(select);
             select.addEventListener("change", (event) => {
@@ -509,13 +512,13 @@ export class LayersControl extends Evented implements IControl {
                 this.layers.set(layer.getId(), layer);
                 this.updateShownlayers();
             });
-            let option = document.createElement("option");
+            const option = document.createElement("option");
             option.value = null;
             option.textContent = "None";
             select.appendChild(option);
             for (const l of this.layers.values()) {
                 if (l.getId() != layer.getId()) {
-                    let option = document.createElement("option");
+                    const option = document.createElement("option");
                     option.value = l.getId();
                     option.textContent = l.getName();
                     select.appendChild(option);
@@ -526,9 +529,9 @@ export class LayersControl extends Evented implements IControl {
             }
 
 
-            let logoutContainer = document.createElement("div");
+            const logoutContainer = document.createElement("div");
             logoutContainer.classList.add("mb-4");
-            let logoutButton = document.createElement("button");
+            const logoutButton = document.createElement("button");
             logoutButton.classList.add("bg-red-500", "text-white", "px-4", "py-2", "rounded", "hover:bg-red-600");
             logoutButton.textContent = "Logout";
             logoutButton.addEventListener("click", () => {
@@ -578,12 +581,12 @@ export class LayersControl extends Evented implements IControl {
      * @returns A label element containing a checkbox and the layer name
      */
     private createLabeledCheckbox(layer: LayerInfo): HTMLDivElement {
-        let container = document.createElement("div");
+        const container = document.createElement("div");
         container.classList.add("m-1")
         container.classList.add("inline-flex", "items-center");
 
 
-        let span2 = document.createElement("span");
+        const span2 = document.createElement("span");
         span2.innerHTML = icon(faGear).html[0];
         span2.classList.add("mr-2");
         span2.addEventListener("click", () => {
@@ -623,17 +626,17 @@ export class LayersControl extends Evented implements IControl {
 
          */
 
-        let cLabel = document.createElement("label");
+        const cLabel = document.createElement("label");
         container.appendChild(cLabel);
         cLabel.classList.add("flex", "items-center", "cursor-pointer", "relative");
 
-        let input = document.createElement("input");
+        const input = document.createElement("input");
         cLabel.appendChild(input);
         input.type = "checkbox";
         input.id = "cb-" + layer.getId(); // Set the ID to the layer ID for easy reference
         input.classList.add("peer", "h-5", "w-5", "cursor-pointer", "transition-all", "appearance-none", "rounded", "shadow", "hover:shadow-md", "border", "border-slate-300", "checked:bg-slate-800", "checked:border-slate-800")
 
-        let span = document.createElement("span");
+        const span = document.createElement("span");
         cLabel.appendChild(span);
         span.classList.add("absolute", "text-white", "opacity-0", "peer-checked:opacity-100", "top-1/2", "left-1/2", "transform", "-translate-x-1/2", "-translate-y-1/2");
         span.innerHTML = '      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"\n' +
@@ -642,7 +645,7 @@ export class LayersControl extends Evented implements IControl {
             '        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"\n' +
             '        clip-rule="evenodd"></path>\n' +
             '      </svg>'
-        let textLabel = document.createElement("label");
+        const textLabel = document.createElement("label");
         container.appendChild(textLabel);
         textLabel.classList.add("cursor-pointer", "ml-2", "text-slate-600", "text-sm");
         textLabel.textContent = layer.getName();
@@ -668,7 +671,7 @@ export class LayersControl extends Evented implements IControl {
         // Add event listener to toggle layer visibility when checkbox is clicked
         input.addEventListener("change", () => {
             // Set visibility based on checkbox state
-            let visibility = input.checked ? "visible" : "none";
+            const visibility = input.checked ? "visible" : "none";
             const layer = this.layers.get(input.id.substring(3));
             console.log("Checkbox changed for layer:", layer, "Checked:", input.checked);
 
@@ -699,7 +702,7 @@ export class LayersControl extends Evented implements IControl {
 
         // Initialize checkbox states based on layer visibility in the map
         for (const input of this.inputs) {
-            let layer = this.layers.get(input.id);
+            const layer = this.layers.get(input.id);
             if (layer) {
                 // Determine if the layer is currently visible
                 let is_visible = true;

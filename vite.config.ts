@@ -13,7 +13,7 @@ import {nodeResolve} from '@rollup/plugin-node-resolve'
  */
 const CompileTsServiceWorker = () => ({
     name: 'compile-typescript-service-worker',
-    async writeBundle(_options, _outputBundle) {
+    async writeBundle() {
         const inputOptions: InputOptions = {
             input: 'src/sw-custom.ts',
             plugins: [rollupPluginTypescript(), nodeResolve()],

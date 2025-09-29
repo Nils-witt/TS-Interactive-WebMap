@@ -37,7 +37,7 @@ const intervalMS = 60 * 60 * 1000
 
 registerSW({
     onRegisteredSW(swUrl, r) {
-        r && setInterval(async () => {
+        setInterval(async () => {
             if (r.installing || !navigator)
                 return
 
@@ -104,7 +104,7 @@ const geolocate = new GeolocateControl({
     showAccuracyCircle: true, // Show accuracy circle around user's location
     showUserLocation: true,  // Show user's location on the map
 });
-let navControl = new NavigationControl({
+const navControl = new NavigationControl({
     showCompass: false,      // Show compass for rotation
     visualizePitch: false,   // Show pitch control
     showZoom: true          // Show zoom controls
@@ -157,8 +157,8 @@ NotificationController.getInstance().setConnectionTest(5);
 
 
 (async () => {
-    let cache = await caches.open('tacmap-cache');
-    cache.addAll([
+    const cache = await caches.open('tacmap-cache');
+    await cache.addAll([
         "/index.html",
     ])
 })()

@@ -34,8 +34,8 @@ sw.addEventListener('activate', () => {
  */
 function getURLType(url: URL) {
     if (url.pathname.startsWith('/overlays/')) {
-        let path = url.pathname.replace('/overlays/', '');
-        let parts = path.split('/');
+        const path = url.pathname.replace('/overlays/', '');
+        const parts = path.split('/');
 
         return 'overlay-' + parts[0]; // Return overlay type
     }
@@ -57,7 +57,7 @@ function getURLType(url: URL) {
  * Some overlay caches use absolute URLs as keys. Normalize event.request.url accordingly.
  */
 function transformCacheUrl(cacheName: string, url: string): URL {
-    let locURL = new URL(url);
+    const locURL = new URL(url);
     if (cacheName.startsWith("overlay-")) {
 
         console.log(`Transform ${new URL(locURL.origin + locURL.pathname)}`)
@@ -76,7 +76,7 @@ function transformCacheUrl(cacheName: string, url: string): URL {
  * Returns tuple: [cacheName, networkFirst, useCache, putMissingInCache]
  */
 function getCacheName(url: URL): [string, boolean, boolean, boolean] {
-    let reqType = getURLType(url);
+    const reqType = getURLType(url);
 
     if (reqType === 'admin') {
         return ['admin', true, false, false];
@@ -109,7 +109,7 @@ sw.addEventListener("fetch", (event) => {
         url = new URL("https://karten.bereitschaften-drk-bonn.de/index.html")
     }
 
-    let [useCacheName, networkFirst, useCache, putMissingInCache] = getCacheName(url);
+    const [useCacheName, networkFirst, useCache, putMissingInCache] = getCacheName(url);
     if (useCache) {
         console.log(`Fetch ${url} useCache ${useCacheName}; netForst: ${networkFirst}; useCache ${useCache}`)
         if (networkFirst) {
@@ -117,7 +117,7 @@ sw.addEventListener("fetch", (event) => {
                 fetch(event.request,{ signal: AbortSignal.timeout(2000) })
                     .then(response => {
                         if (response && response.ok) {
-                            let responseToCache = response.clone();
+                            const responseToCache = response.clone();
 
                             caches.open(useCacheName).then((cache) => {
                                 cache.put(event.request, responseToCache); // Cache the new response
