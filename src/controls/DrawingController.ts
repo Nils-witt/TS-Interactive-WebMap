@@ -15,25 +15,25 @@ export class DrawingController {
             const event = e as DataProviderEvent;
             let item = event.data as NamedGeoReferencedObject;
 
-            if (this.markers.has(item.id)) {
-                let marker = this.markers.get(item.id)!;
+            if (this.markers.has(item.getId())) {
+                let marker = this.markers.get(item.getId())!;
 
-                if (item.symbol) {
-                    DisplayHelper.updateTacMarker(marker.getElement()!, item.symbol);
+                if (item.getSymbol()) {
+                    DisplayHelper.updateTacMarker(marker.getElement()!, item.getSymbol());
                 }
-                marker.setLngLat([item.longitude, item.latitude]);
+                marker.setLngLat([item.getLongitude(), item.getLatitude()]);
 
             } else {
                 let newMarker: Marker;
-                if (item.symbol) {
-                    newMarker = new Marker({element: DisplayHelper.createTacMarker(item.symbol)});
+                if (item.getSymbol()) {
+                    newMarker = new Marker({element: DisplayHelper.createTacMarker(item.getSymbol())});
                 } else {
                     newMarker = new Marker()
                 }
-                newMarker.setLngLat([item.longitude, item.latitude]);
+                newMarker.setLngLat([item.getLongitude(), item.getLatitude()]);
 
-                this.markers.set(item.id, newMarker);
-                if (this.map && item.showOnMap !== false) {
+                this.markers.set(item.getId(), newMarker);
+                if (this.map && item.getShowOnMap() !== false) {
                     newMarker.addTo(this.map);
                 }
             }

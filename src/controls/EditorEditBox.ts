@@ -97,7 +97,7 @@ export class EditorEditBox {
         this.itemNameInput.placeholder = 'Enter item name';
         this.itemNameInput.onchange = () => {
             if (this.item) {
-                this.item.name = this.itemNameInput.value;
+                this.item.setName(this.itemNameInput.value);
             }
         };
         let itemNameDiv = document.createElement('div');
@@ -116,9 +116,9 @@ export class EditorEditBox {
         this.groupSelect.onchange = () => {
             if (this.item) {
                 if (this.groupSelect.value === '') {
-                    this.item.groupId = undefined;
+                    this.item.setGroupId(undefined);
                 } else {
-                    this.item.groupId = this.groupSelect.value;
+                    this.item.setGroupId(this.groupSelect.value);
                 }
             }
         }
@@ -243,31 +243,31 @@ export class EditorEditBox {
         divOrgName.appendChild(this.selectOrgName);
 
         this.selectGrundzeichen.onchange = () => {
-            this.item.symbol.grundzeichen = this.selectGrundzeichen.value as GrundzeichenId;
+            this.item.getSymbol().grundzeichen = this.selectGrundzeichen.value as GrundzeichenId;
             this.updateIconDisplay();
         };
         this.selectVerwaltungsstufe.onchange = () => {
-            this.item.symbol.verwaltungsstufe = this.selectVerwaltungsstufe.value as VerwaltungsstufeId;
+            this.item.getSymbol().verwaltungsstufe = this.selectVerwaltungsstufe.value as VerwaltungsstufeId;
             this.updateIconDisplay();
         }
         this.selectOrganisation.onchange = () => {
-            this.item.symbol.organisation = this.selectOrganisation.value as OrganisationId;
+            this.item.getSymbol().organisation = this.selectOrganisation.value as OrganisationId;
             this.updateIconDisplay();
         }
         this.selectFachaufgabe.onchange = () => {
-            this.item.symbol.fachaufgabe = this.selectFachaufgabe.value as FachaufgabeId;
+            this.item.getSymbol().fachaufgabe = this.selectFachaufgabe.value as FachaufgabeId;
             this.updateIconDisplay();
         }
         this.selectEinheit.onchange = () => {
-            this.item.symbol.einheit = this.selectEinheit.value as EinheitId;
+            this.item.getSymbol().einheit = this.selectEinheit.value as EinheitId;
             this.updateIconDisplay();
         }
         this.selectFunktion.onchange = () => {
-            this.item.symbol.funktion = this.selectFunktion.value as FunktionId;
+            this.item.getSymbol().funktion = this.selectFunktion.value as FunktionId;
             this.updateIconDisplay();
         }
         this.selectSymbol.onchange = () => {
-            this.item.symbol.symbol = this.selectSymbol.value as SymbolId;
+            this.item.getSymbol().symbol = this.selectSymbol.value as SymbolId;
             this.updateIconDisplay();
         }
 
@@ -290,31 +290,31 @@ export class EditorEditBox {
 
 
         this.selectText.onchange = () => {
-            this.item.symbol.text = this.selectText.value;
+            this.item.getSymbol().text = this.selectText.value;
             this.updateIconDisplay();
         }
         this.selectTyp.onchange = () => {
-            this.item.symbol.typ = this.selectTyp.value;
+            this.item.getSymbol().typ = this.selectTyp.value;
             this.updateIconDisplay();
         }
         this.selectName.onchange = () => {
-            this.item.symbol.name = this.selectName.value;
+            this.item.getSymbol().name = this.selectName.value;
             this.updateIconDisplay();
         }
         this.selectOrgName.onchange = () => {
-            this.item.symbol.organisationName = this.selectOrgName.value;
+            this.item.getSymbol().organisationName = this.selectOrgName.value;
             this.updateIconDisplay();
         }
 
         this.createButton.textContent = 'Clear & Create new';
         this.createButton.onclick = () => {
 
-            let newItem: NamedGeoReferencedObject = {
+            let newItem = new NamedGeoReferencedObject({
                 id: null,
                 latitude: this.map.getCenter().lat,
                 longitude: this.map.getCenter().lng,
                 name: ''
-            }
+            });
             this.setItem(newItem, true);
         }
         this.container.appendChild(this.createButton);
@@ -323,7 +323,7 @@ export class EditorEditBox {
         this.saveButton.onclick = () => {
             ApiProvider.getInstance().saveMapItem(this.item).then((item) => {
                 console.log("Item saved:", item);
-                NotificationController.getInstance().showNotification("Saved Item: " + item.id + "")
+                NotificationController.getInstance().showNotification("Saved Item: " + item.getId() + "")
             });
         }
         this.container.appendChild(this.saveButton);
@@ -338,9 +338,9 @@ export class EditorEditBox {
         this.deleteButton = document.createElement('button');
         this.deleteButton.textContent = 'Delete';
         this.deleteButton.onclick = () => {
-            ApiProvider.getInstance().deleteMapItem(this.item?.id).then(() => {
-                console.log("Item deleted:", this.item?.id);
-                DataProvider.getInstance().deleteMapLocation(this.item?.id);
+            ApiProvider.getInstance().deleteMapItem(this.item?.getId()).then(() => {
+                console.log("Item deleted:", this.item?.getId());
+                DataProvider.getInstance().deleteMapLocation(this.item?.getId());
             });
         }
         this.container.appendChild(this.deleteButton);
@@ -384,8 +384,8 @@ export class EditorEditBox {
     }
 
     private updateIconDisplay() {
-        if (this.item.symbol) {
-            this.iconDisplay.src = erzeugeTaktischesZeichen(this.item.symbol).dataUrl;
+        if (this.item.getSymbol()) {
+            this.iconDisplay.src = erzeugeTaktischesZeichen(this.item.getSymbol()).dataUrl;
         }
     }
 
@@ -414,29 +414,29 @@ export class EditorEditBox {
             return
         }
         this.controlsEnabled(true);
-        this.itemNameInput.value = item.name || '';
-        this.groupSelect.value = item.groupId || '';
-        if (item.symbol) {
-            this.selectGrundzeichen.value = item.symbol.grundzeichen || '';
-            this.selectOrganisation.value = item.symbol.organisation || '';
-            this.selectVerwaltungsstufe.value = item.symbol.verwaltungsstufe || '';
-            this.selectFachaufgabe.value = item.symbol.fachaufgabe || '';
-            this.selectEinheit.value = item.symbol.einheit || '';
-            this.selectFunktion.value = item.symbol.funktion || '';
-            this.selectSymbol.value = item.symbol.symbol || '';
-            this.selectText.value = item.symbol.text || '';
-            this.selectTyp.value = item.symbol.typ || '';
-            this.selectName.value = item.symbol.name || '';
-            this.selectOrgName.value = item.symbol.organisationName || '';
+        this.itemNameInput.value = item.getName() || '';
+        this.groupSelect.value = item.getGroupId() || '';
+        if (item.getSymbol()) {
+            this.selectGrundzeichen.value = item.getSymbol().grundzeichen || '';
+            this.selectOrganisation.value = item.getSymbol().organisation || '';
+            this.selectVerwaltungsstufe.value = item.getSymbol().verwaltungsstufe || '';
+            this.selectFachaufgabe.value = item.getSymbol().fachaufgabe || '';
+            this.selectEinheit.value = item.getSymbol().einheit || '';
+            this.selectFunktion.value = item.getSymbol().funktion || '';
+            this.selectSymbol.value = item.getSymbol().symbol || '';
+            this.selectText.value = item.getSymbol().text || '';
+            this.selectTyp.value = item.getSymbol().typ || '';
+            this.selectName.value = item.getSymbol().name || '';
+            this.selectOrgName.value = item.getSymbol().organisationName || '';
 
             this.updateIconDisplay();
             this.enableImageControls(true);
         }
 
-        if (item.id === '') {
+        if (item.getId() === '') {
             this.headerLabel.textContent = "Lege an..";
         } else {
-            this.headerLabel.textContent = item.id;
+            this.headerLabel.textContent = item.getId();
         }
 
     }

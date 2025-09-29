@@ -71,8 +71,6 @@ mapContainer.classList.add('w-full'); // Add a class for styling
 mapContainer.classList.add('h-full'); // Add a class for styling
 
 
-
-
 if (DataProvider.getInstance().getMode() == ViewMode.EDIT) {
     document.body.appendChild(editorLayout);
     editorLayout.appendChild(mapContainer);
@@ -138,7 +136,7 @@ GlobalEventHandler.getInstance().on(DataProviderEventType.MAP_STYLE_UPDATED, (ev
     const e: DataProviderEvent = event as DataProviderEvent;
     const style = e.data as LayerInfo;
     console.log("Setting map style to:", style);
-    map.setStyle(style.url);
+    map.setStyle(style.getUrl());
 });
 
 map.on('moveend', () => {

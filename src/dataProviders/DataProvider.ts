@@ -134,12 +134,12 @@ export class DataProvider {
      * @param id - Unique identifier for the location
      * @param item - The location object to store
      */
-    public addMapItem(id: string, item: NamedGeoReferencedObject): void {
-        if (this.mapLocations.has(id)) {
-            this.mapLocations.set(id, item);
+    public addMapItem(item: NamedGeoReferencedObject): void {
+        if (this.mapLocations.has(item.getId())) {
+            this.mapLocations.set(item.getId(), item);
             this.triggerEvent(DataProviderEventType.MAP_ITEM_UPDATED, item);
         } else {
-            this.mapLocations.set(id, item);
+            this.mapLocations.set(item.getId(), item);
             this.triggerEvent(DataProviderEventType.MAP_ITEM_CREATED, item);
         }
     }

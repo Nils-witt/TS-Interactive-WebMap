@@ -92,20 +92,20 @@ export class SearchControl extends Evented implements IControl {
         if (!this.map) {
             return;
         }
-        if (this.shownMarkers.has(entity.id)) {
-            console.log("Entity already shown:", entity.name);
+        if (this.shownMarkers.has(entity.getId())) {
+            console.log("Entity already shown:", entity.getName());
             return; // Entity is already shown, no need to add again
         }
 
-        console.log("Showing entity:", entity.name);
+        console.log("Showing entity:", entity.getName());
 
         let marker = new Marker()
-            .setLngLat([entity.longitude, entity.latitude])
+            .setLngLat([entity.getLongitude(), entity.getLatitude()])
             .addTo(this.map);
-        this.shownMarkers.set(entity.id, marker);
+        this.shownMarkers.set(entity.getId(), marker);
 
         for (const otherMarker of this.shownMarkers.keys()) {
-            if (otherMarker === entity.id) {
+            if (otherMarker === entity.getId()) {
                 continue; // Skip the current entity
             }
             console.log("Other marker:", otherMarker);
@@ -116,7 +116,7 @@ export class SearchControl extends Evented implements IControl {
         this.internalClickAbortHandler = () => {
             console.log("Aborting click handler");
             marker.remove();
-            this.shownMarkers.delete(entity.id);
+            this.shownMarkers.delete(entity.getId());
             this.internalClickAbortHandler = undefined;
         }
 
@@ -134,8 +134,8 @@ export class SearchControl extends Evented implements IControl {
         button.onclick = () => {
             this.showSingleEntity(entity);
             this.map?.flyTo({
-                center: [entity.longitude, entity.latitude],
-                zoom: entity.zoomLevel || 15, // Adjust zoom level as needed
+                center: [entity.getLongitude(), entity.getLatitude()],
+                zoom: entity.getZoomLevel() || 15, // Adjust zoom level as needed
                 essential: true // This ensures the animation is not interrupted
             });
             //UrlDataHandler.setSelectedMarker(entity.id);
@@ -165,8 +165,8 @@ export class SearchControl extends Evented implements IControl {
         this.resultsContainer.classList.remove("hidden");
         let resultCount = 0;
 
-        let entries = Array.from(DataProvider.getInstance().getMapLocations().values()).filter(entity => entity.name.toLowerCase().includes(query.toLowerCase()));
-        entries = entries.sort((a, b) => a.name.localeCompare(b.name)); // Sort results by name
+        let entries = Array.from(DataProvider.getInstance().getMapLocations().values()).filter(entity => entity.getName().toLowerCase().includes(query.toLowerCase()));
+        entries = entries.sort((a, b) => a.getName().localeCompare(b.getName())); // Sort results by name
         if (entries.length === 0) {
             this.resultsContainer.classList.add("hidden");
             return; // No results found, exit early
@@ -177,8 +177,8 @@ export class SearchControl extends Evented implements IControl {
             row.onclick = () => {
                 this.showSingleEntity(entity);
                 this.map?.flyTo({
-                    center: [entity.longitude, entity.latitude],
-                    zoom: entity.zoomLevel || 15, // Adjust zoom level as needed
+                    center: [entity.getLongitude(), entity.getLatitude() || 0],
+                    zoom: entity.getZoomLevel() || 15, // Adjust zoom level as needed
                     essential: true // This ensures the animation is not interrupted
                 });
                 //UrlDataHandler.setSelectedMarker(entity.id);
@@ -191,7 +191,7 @@ export class SearchControl extends Evented implements IControl {
 
             let nameCell = row.insertCell();
             nameCell.classList.add("pl-6");
-            nameCell.innerText = entity.name;
+            nameCell.innerText = entity.getName();
             resultCount++;
             if (resultCount >= this.resultLimit) {
                 break; // Stop after reaching the result limit

@@ -1,4 +1,4 @@
-import type {LayerInfo} from "../types/LayerInfo.ts";
+import {LayerInfo} from "../types/LayerInfo";
 import {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject";
 import {DataProvider} from "./DataProvider";
 import {IMapGroup} from "../types/MapEntity";
@@ -45,14 +45,15 @@ export class ApiProvider {
                 DataProvider.getInstance().setMapStyle(styles[0]);
             }
         });
-        this.getOverlayLayers().then(overlays => {
+        this.getOverlayLayers().then((overlays:LayerInfo[]) => {
             for (const overlay of overlays) {
-                DataProvider.getInstance().addOverlay(overlay.id, overlay);
+                console.log("Adding overlay:", overlay);
+                DataProvider.getInstance().addOverlay(overlay.getId(), overlay);
             }
         });
         this.getMapItems().then(items => {
             for (const item of items) {
-                DataProvider.getInstance().addMapItem(item.id, item);
+                DataProvider.getInstance().addMapItem(item);
             }
         });
         this.getMapGroups().then(items => {
@@ -155,11 +156,19 @@ export class ApiProvider {
             const url = DataProvider.getInstance().getApiUrl() + '/overlays/'
             console.log("Fetching overlay layers from:", url);
             console.log("Using token:", DataProvider.getInstance().getApiToken());
-            return await this.fetchData(url);
+
+            for (const layer of (await this.fetchData(url))) {
+                overlays.push(new LayerInfo({
+                    id: layer.id,
+                    name: layer.name,
+                    url: layer.url,
+                    description: layer.description
+                }));
+            }
         } catch (error) {
             console.error("Error fetching overlay layers:", error);
-            return overlays; // Return empty array on error
         }
+        return overlays; // Return empty array on error
     }
 
     public async getMapStyles(): Promise<LayerInfo[]> {
@@ -167,11 +176,18 @@ export class ApiProvider {
 
         try {
             const url = DataProvider.getInstance().getApiUrl() + '/styles/'
-            return await this.fetchData(url);
+            for (const layer of (await this.fetchData(url))) {
+                overlays.push(new LayerInfo({
+                    id: layer.id,
+                    name: layer.id,
+                    url: layer.url,
+                    description: layer.description
+                }));
+            }
         } catch (error) {
             console.error("Error fetching overlay layers:", error);
-            return overlays; // Return empty array on error
         }
+        return overlays; // Return empty array on error
     }
 
     public async getMapItems(): Promise<NamedGeoReferencedObject[]> {
@@ -211,17 +227,17 @@ export class ApiProvider {
     }
 
     public async saveMapItem(item: NamedGeoReferencedObject, updateDataProvider: boolean = true): Promise<NamedGeoReferencedObject | null> {
-        let url = DataProvider.getInstance().getApiUrl() + `/items/${item.id}/`;
+        let url = DataProvider.getInstance().getApiUrl() + `/items/${item.getId()}/`;
         let method = "PUT";
 
-        if (!item.id) {
+        if (!item.getId()) {
             url = DataProvider.getInstance().getApiUrl() + '/items/';
             method = "POST"; // Use POST for creating new items
         }
 
         const data = {
             ...item,
-            group: item.groupId ? DataProvider.getInstance().getApiUrl() + '/map_groups/' + item.groupId + '/' : null,
+            group: item.getGroupId() ? DataProvider.getInstance().getApiUrl() + '/map_groups/' + item.getGroupId() + '/' : null,
         }
 
         try {
@@ -237,7 +253,7 @@ export class ApiProvider {
                 groupId: resData.group_id
             });
             if (updateDataProvider) {
-                DataProvider.getInstance().addMapItem(item.id, item);
+                DataProvider.getInstance().addMapItem(item);
             }
             return item;
         } catch (e) {

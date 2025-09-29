@@ -53,7 +53,6 @@ export class LayersControl extends Evented implements IControl {
      */
     private activeOverlays: Map<string, boolean> = new Map();
 
-
     private layers_settings_container: Map<string, HTMLDivElement> = new Map();
 
     /**
@@ -135,7 +134,7 @@ export class LayersControl extends Evented implements IControl {
         // Update the layers map
         this.layers.clear();
         for (const layer of overlays.values()) {
-            this.layers.set(layer.id, layer);
+            this.layers.set(layer.getId(), layer);
         }
 
         // Create a checkbox for each new layer and add it to the container
@@ -145,49 +144,71 @@ export class LayersControl extends Evented implements IControl {
         }
     }
 
+    private showLayerRecursive(id: string){
+        const layer = this.layers.get(id);
+        console.log("showing layer", id, layer)
+        if (layer == undefined) {
+            return
+        }
+        if (!this.map.getLayer(layer.getId() + '-layer')) {
+            if (layer.getUnderlayingLayer() != null) {
+                console.log("above", layer.getName(),"UL", layer.getUnderlayingLayer())
+                this.showLayerRecursive(layer.getUnderlayingLayer())
+            }
+            this.map.addLayer({
+                id: layer.getId() + '-layer',  // Create unique layer ID
+                type: "raster",           // Render as raster layer
+                source: layer.getId(),         // Reference to the source created above
+            });
+        }
+    }
+
+    private updateShownlayers(){
+        console.log("updating shown layers")
+        const layersToAdd: LayerInfo[] = Array.from(this.layers.values()).sort((a, b) => a.getName().localeCompare(b.getName()));
+
+        for (const layer of layersToAdd) {
+            if (!this.map.getSource(layer.getId())) {
+                this.map.addSource(layer.getId(), {
+                    type: "raster",           // Use raster tiles
+                    tiles: [layer.getUrl() + "?accesstoken=" + DataProvider.getInstance().getApiToken()],       // URL template for the tiles
+                    tileSize: 256             // Standard tile size
+                });
+            }
+        }
+        for (const layer of layersToAdd) {
+            if (this.map.getLayer(layer.getId() + '-layer')) {
+                this.map.removeLayer(layer.getId() + '-layer');
+            }
+        }
+
+        for (const layer of layersToAdd) {
+            this.showLayerRecursive(layer.getId())
+        }
+
+        for (const layer of layersToAdd) {
+            if (this.activeOverlays.get(layer.getId()) == true) {
+                this.map?.setLayoutProperty(layer.getId() + "-layer", "visibility", "visible");
+            } else {
+                this.map?.setLayoutProperty(layer.getId() + "-layer", "visibility", "none");
+            }
+        }
+
+    }
+
     private addLayer(layer: LayerInfo): void {
         if (this.map === undefined) {
             console.error("LayersControl: Map is not initialized. Cannot add layer.");
             return;
         }
         if (this.map.loaded()) {
-            // Add the layer source
-            this.map.addSource(layer.id, {
-                type: "raster",           // Use raster tiles
-                tiles: [layer.url + "?accesstoken=" + DataProvider.getInstance().getApiToken()],       // URL template for the tiles
-                tileSize: 256             // Standard tile size
-            });
-
-            // Create a map layer using the source
-            this.map.addLayer({
-                id: layer.id + '-layer',  // Create unique layer ID
-                type: "raster",           // Render as raster layer
-                source: layer.id,         // Reference to the source created above
-            });
-            if (!this.activeOverlays.has(layer.id)) {
-                this.map.setLayoutProperty(layer.id + "-layer", "visibility", "none");
-            }
+            this.updateShownlayers();
         } else {
             this.map.once('load', () => {
-                // Add the layer source
-                this.map?.addSource(layer.id, {
-                    type: "raster",           // Use raster tiles
-                    tiles: [layer.url + "?accesstoken=" + DataProvider.getInstance().getApiToken()],       // URL template for the tiles
-                    tileSize: 256             // Standard tile size
-                });
-
-                // Create a map layer using the source
-                this.map?.addLayer({
-                    id: layer.id + '-layer',  // Create unique layer ID
-                    type: "raster",           // Render as raster layer
-                    source: layer.id,         // Reference to the source created above
-                });
-                if (!this.activeOverlays.has(layer.id)) {
-                    this.map?.setLayoutProperty(layer.id + "-layer", "visibility", "none");
-                }
+                this.updateShownlayers();
             });
         }
-        this.layers.set(layer.id, layer);
+        this.layers.set(layer.getId(), layer);
         let labeled_checkbox = this.createLabeledCheckbox(layer);
 
         this.layersContainer.appendChild(labeled_checkbox);
@@ -201,10 +222,10 @@ export class LayersControl extends Evented implements IControl {
     private getRemoteLayerTiles(layer: LayerInfo): Promise<string[]> {
         return new Promise((resolve) => {
             let url: URL | undefined;
-            if (layer.url.startsWith('http')) {
-                url = new URL(layer.url.substring(0, layer.url.search("{z}"))); // Ensure the URL is absolute
+            if (layer.getUrl().startsWith('http')) {
+                url = new URL(layer.getUrl().substring(0, layer.getUrl().search("{z}"))); // Ensure the URL is absolute
             } else {
-                url = new URL(layer.url.substring(0, layer.url.search("{z}")), window.location.origin); // Ensure the URL is absolute
+                url = new URL(layer.getUrl().substring(0, layer.getUrl().search("{z}")), window.location.origin); // Ensure the URL is absolute
             }
 
             fetch(url.href + "/index.json?accesstoken=" + DataProvider.getInstance().getApiToken()).then(async response => {
@@ -242,10 +263,10 @@ export class LayersControl extends Evented implements IControl {
     private getCacheLayerTiles(layer: LayerInfo): Promise<string[]> {
         return new Promise(async (resolve) => {
             let url: URL | undefined;
-            if (layer.url.startsWith('http')) {
-                url = new URL(layer.url.substring(0, layer.url.search("{z}"))); // Ensure the URL is absolute
+            if (layer.getUrl().startsWith('http')) {
+                url = new URL(layer.getUrl().substring(0, layer.getUrl().search("{z}"))); // Ensure the URL is absolute
             } else {
-                url = new URL(layer.url.substring(0, layer.url.search("{z}")), window.location.origin); // Ensure the URL is absolute
+                url = new URL(layer.getUrl().substring(0, layer.getUrl().search("{z}")), window.location.origin); // Ensure the URL is absolute
             }
 
 
@@ -298,10 +319,10 @@ export class LayersControl extends Evented implements IControl {
 
         return new Promise<boolean>(async (resolve) => {
             let url: URL | undefined;
-            if (layer.url.startsWith('http')) {
-                url = new URL(layer.url.substring(0, layer.url.search("{z}"))); // Ensure the URL is absolute
+            if (layer.getUrl().startsWith('http')) {
+                url = new URL(layer.getUrl().substring(0, layer.getUrl().search("{z}"))); // Ensure the URL is absolute
             } else {
-                url = new URL(layer.url.substring(0, layer.url.search("{z}")), window.location.origin); // Ensure the URL is absolute
+                url = new URL(layer.getUrl().substring(0, layer.getUrl().search("{z}")), window.location.origin); // Ensure the URL is absolute
             }
 
 
@@ -352,9 +373,8 @@ export class LayersControl extends Evented implements IControl {
 
     private openLayerSettings(layer: LayerInfo) {
 
-        let current_opacity = layer.opacity || 1.0; // Default to 1.0 if opacity is not set
 
-        let container = this.layers_settings_container.get(layer.id)
+        let container = this.layers_settings_container.get(layer.getId())
         if (container == undefined) {
             container = document.createElement("div");
             container.classList.add("absolute", "top-0", "left-0", "w-full", "h-full", "z-50", "flex", "flex-col", "items-center", "justify-center");
@@ -367,22 +387,22 @@ export class LayersControl extends Evented implements IControl {
             const opacityLabel = document.createElement("label");
             opacityLabel.classList.add();
             opacityLabel.setAttribute("for", "opacity-range");
-            opacityLabel.textContent = `Opacity: ${current_opacity * 100}%`;
+            opacityLabel.textContent = `Opacity: ${layer.getOpacity() * 100}%`;
             const opacityInput = document.createElement("input");
             opacityInput.setAttribute("type", "range");
             opacityInput.setAttribute("id", "opacity-range");
             opacityInput.setAttribute("min", "0");
             opacityInput.setAttribute("max", "100");
-            opacityInput.setAttribute("value", current_opacity * 100 + "");
+            opacityInput.setAttribute("value", layer.getOpacity() * 100 + "");
             opacityInput.classList.add("w-full", "h-2", "bg-gray-200", "rounded-lg", "appearance-none", "cursor-pointer", "dark:bg-gray-700");
             opacityInput.addEventListener("input", () => {
                 const opacity = parseFloat(opacityInput.value) / 100;
                 opacityLabel.textContent = `Opacity: ${opacityInput.value}%`;
                 if (this.map) {
-                    this.map.setPaintProperty(layer.id + "-layer", "raster-opacity", opacity);
+                    this.map.setPaintProperty(layer.getOpacity() + "-layer", "raster-opacity", opacity);
                 }
-                layer.opacity = opacity;
-                DataProvider.getInstance().addOverlay(layer.id, layer);
+                layer.setOpacity(opacity);
+                DataProvider.getInstance().addOverlay(layer.getId(), layer);
             });
             opacityContainer.appendChild(opacityLabel);
             opacityContainer.appendChild(opacityInput);
@@ -458,7 +478,6 @@ export class LayersControl extends Evented implements IControl {
 
             downloadContainer.appendChild(downloadButton);
 
-
             let resetContainer = document.createElement("div");
             resetContainer.classList.add("mb-4");
             let resetButton = document.createElement("button");
@@ -467,13 +486,45 @@ export class LayersControl extends Evented implements IControl {
             resetButton.addEventListener("click", () => {
                 if (confirm("Are you sure you want to reset the layer cache? This will clear all cached data.")) {
                     resetButton.innerText = "Resetting...";
-                    console.log(layer.name)
-                    caches.delete('overlay-' + layer.name).then(() => {
+                    caches.delete('overlay-' + layer.getName()).then(() => {
                         resetButton.innerText = "Reset Complete";
                     });
                 }
             });
             resetContainer.appendChild(resetButton);
+
+            let underlayingLayerContainer = document.createElement("div");
+            underlayingLayerContainer.classList.add("mb-4");
+            let selectLabel = document.createElement("label");
+            selectLabel.classList.add("block", "text-sm", "font-medium", "text-gray-700");
+            selectLabel.textContent = "Underlaying Layer";
+            underlayingLayerContainer.appendChild(selectLabel);
+            let select = document.createElement("select");
+            select.required = false;
+            underlayingLayerContainer.appendChild(select);
+            select.addEventListener("change", (event) => {
+                const target = event.target as HTMLSelectElement;
+                layer.setUnderlayingLayer(target.value);
+                console.log(layer)
+                this.layers.set(layer.getId(), layer);
+                this.updateShownlayers();
+            });
+            let option = document.createElement("option");
+            option.value = null;
+            option.textContent = "None";
+            select.appendChild(option);
+            for (const l of this.layers.values()) {
+                if (l.getId() != layer.getId()) {
+                    let option = document.createElement("option");
+                    option.value = l.getId();
+                    option.textContent = l.getName();
+                    select.appendChild(option);
+                    if (layer.getUnderlayingLayer() != null && typeof layer.getUnderlayingLayer() === "string" && layer.getUnderlayingLayer() === l.getId()) {
+                        option.selected = true;
+                    }
+                }
+            }
+
 
             let logoutContainer = document.createElement("div");
             logoutContainer.classList.add("mb-4");
@@ -499,6 +550,7 @@ export class LayersControl extends Evented implements IControl {
 
             contentContainer.appendChild(downloadContainer);
             contentContainer.appendChild(resetContainer);
+            contentContainer.appendChild(underlayingLayerContainer);
             contentContainer.appendChild(logoutContainer);
 
 
@@ -513,7 +565,7 @@ export class LayersControl extends Evented implements IControl {
                 }
 
             });
-            this.layers_settings_container.set(layer.id, container);
+            this.layers_settings_container.set(layer.getId(), container);
         }
         document.body.appendChild(container);
 
@@ -578,7 +630,7 @@ export class LayersControl extends Evented implements IControl {
         let input = document.createElement("input");
         cLabel.appendChild(input);
         input.type = "checkbox";
-        input.id = "cb-" + layer.id; // Set the ID to the layer ID for easy reference
+        input.id = "cb-" + layer.getId(); // Set the ID to the layer ID for easy reference
         input.classList.add("peer", "h-5", "w-5", "cursor-pointer", "transition-all", "appearance-none", "rounded", "shadow", "hover:shadow-md", "border", "border-slate-300", "checked:bg-slate-800", "checked:border-slate-800")
 
         let span = document.createElement("span");
@@ -593,11 +645,11 @@ export class LayersControl extends Evented implements IControl {
         let textLabel = document.createElement("label");
         container.appendChild(textLabel);
         textLabel.classList.add("cursor-pointer", "ml-2", "text-slate-600", "text-sm");
-        textLabel.textContent = layer.name;
+        textLabel.textContent = layer.getName();
 
 
         if (this.map?.loaded()) {
-            if (this.map.getLayoutProperty(layer.id + "-layer", "visibility") != "none") {
+            if (this.map.getLayoutProperty(layer.getId() + "-layer", "visibility") != "none") {
                 input.checked = true; // Default to checked if layer is visible
             }
         } else {
@@ -606,7 +658,7 @@ export class LayersControl extends Evented implements IControl {
             this.map?.once('load', () => {
                 // Enable the checkbox once the map is loaded
                 input.disabled = false;
-                if (this.map?.getLayoutProperty(layer.id + "-layer", "visibility") != "none") {
+                if (this.map?.getLayoutProperty(layer.getId() + "-layer", "visibility") != "none") {
                     input.checked = true; // Default to checked if layer is visible
                 }
             });
@@ -622,11 +674,11 @@ export class LayersControl extends Evented implements IControl {
 
             if (layer && this.map) {
                 // Update the layer's visibility property in the map
-                this.map.setLayoutProperty(layer.id + "-layer", "visibility", visibility);
+                this.map.setLayoutProperty(layer.getId() + "-layer", "visibility", visibility);
                 if (visibility === "visible") {
-                    this.activeOverlays.set(layer.id, true);
+                    this.activeOverlays.set(layer.getId(), true);
                 } else {
-                    this.activeOverlays.delete(layer.id);
+                    this.activeOverlays.delete(layer.getId());
                 }
                 localStorage.setItem("activeOverlays", JSON.stringify(Array.from(this.activeOverlays.keys())));
             }
@@ -654,7 +706,7 @@ export class LayersControl extends Evented implements IControl {
                 if (this.map) {
                     is_visible =
                         is_visible &&
-                        this.map.getLayoutProperty(layer.id + '-layer', "visibility") !== "none";
+                        this.map.getLayoutProperty(layer.getId() + '-layer', "visibility") !== "none";
                 } else {
                     is_visible = false; // If no map, then no layers can be visible
                 }
@@ -662,9 +714,9 @@ export class LayersControl extends Evented implements IControl {
                 // Set checkbox state to match layer visibility
                 input.checked = is_visible;
                 if (is_visible) {
-                    this.activeOverlays.set(layer.id, true);
+                    this.activeOverlays.set(layer.getId(), true);
                 } else {
-                    this.activeOverlays.delete(layer.id);
+                    this.activeOverlays.delete(layer.getId());
                 }
             }
         }

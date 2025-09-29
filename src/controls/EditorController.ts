@@ -144,8 +144,8 @@ export class EditorController {
 
         let entries = Array.from(DataProvider.getInstance().getMapLocations().values());
         entries.sort((a, b) => {
-            if (a.name && b.name) {
-                return a.name.localeCompare(b.name);
+            if (a.getName() && b.getName()) {
+                return a.getName().localeCompare(b.getName());
             }
 
             return 0;
@@ -153,10 +153,10 @@ export class EditorController {
         for (const item of entries) {
 
             if (this.selectedGroupId) {
-                if (!item.groupId) {
+                if (!item.getGroupId()) {
                     continue;
                 }
-                if (this.selectedGroupId !== item.groupId) {
+                if (this.selectedGroupId !== item.getGroupId()) {
                     continue;
                 }
             }
@@ -166,12 +166,12 @@ export class EditorController {
             let groups = row.insertCell();
             let cellActions = row.insertCell();
 
-            cellName.textContent = item.name || 'Unnamed Item';
+            cellName.textContent = item.getName() || 'Unnamed Item';
 
             //groups.textContent = item.groups ? item.groups.join(', ') : 'No Groups';
 
-            if (item.groupId && DataProvider.getInstance().getMapGroups().get(item.groupId)) {
-                let group = DataProvider.getInstance().getMapGroups().get(item.groupId);
+            if (item.getGroupId() && DataProvider.getInstance().getMapGroups().get(item.getGroupId())) {
+                let group = DataProvider.getInstance().getMapGroups().get(item.getGroupId());
                 groups.textContent = group?.name || 'No Group';
             }else {
                 groups.textContent = 'No Group';
@@ -188,7 +188,7 @@ export class EditorController {
 
             locateButton.onclick = () => {
                 this.map.flyTo({
-                    center: [item.longitude, item.latitude],
+                    center: [item.getLongitude(), item.getLatitude()],
                     zoom: 18,
                     essential: true // This ensures the animation is not interrupted
                 });
@@ -199,14 +199,14 @@ export class EditorController {
                     this.internalClickAbortHandler(); // Abort any previous click handler
                 }
 
-                console.log("Editor: Set position for item", item.id);
+                console.log("Editor: Set position for item", item.getId());
 
                 row.style.backgroundColor = "lightblue"; // Highlight the row
                 this.internalClickSuccessHandler = (event: MapMouseEvent) => {
-                    console.log("Editor: Set position for item", item.id, event.lngLat);
-                    item.longitude = event.lngLat.lng;
-                    item.latitude = event.lngLat.lat;
-                    DataProvider.getInstance().addMapItem(item.id, item);
+                    console.log("Editor: Set position for item", item.getId(), event.lngLat);
+                    item.setLongitude(event.lngLat.lng);
+                    item.setLatitude(event.lngLat.lat);
+                    DataProvider.getInstance().addMapItem(item);
                     row.style.backgroundColor = ""; // Reset the row background
 
                     ApiProvider.getInstance().saveMapItem(item);
@@ -225,11 +225,11 @@ export class EditorController {
                 if (this.internalClickAbortHandler) {
                     this.internalClickAbortHandler(); // Abort any previous click handler
                 }
-                console.log("Editor: Edit item", item.id);
+                console.log("Editor: Edit item", item.getId());
                 row.style.backgroundColor = "lightblue"; // Highlight the row
                 this.editorEditBox.setItem(item);
                 let marker = new Marker();
-                marker.setLngLat([item.longitude, item.latitude]);
+                marker.setLngLat([item.getLongitude(), item.getLatitude()]);
                 marker.addTo(this.map);
 
                 this.internalClickAbortHandler = () => {
@@ -241,7 +241,7 @@ export class EditorController {
 
 
                 this.map.flyTo({
-                    center: [item.longitude, item.latitude],
+                    center: [item.getLongitude(), item.getLatitude()],
                     zoom: 18,
                     essential: true // This ensures the animation is not interrupted
                 });
