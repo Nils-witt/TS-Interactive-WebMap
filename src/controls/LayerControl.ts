@@ -399,7 +399,7 @@ export class LayersControl extends Evented implements IControl {
                 const opacity = parseFloat(opacityInput.value) / 100;
                 opacityLabel.textContent = `Opacity: ${opacityInput.value}%`;
                 if (this.map) {
-                    this.map.setPaintProperty(layer.getOpacity() + "-layer", "raster-opacity", opacity);
+                    this.map.setPaintProperty(layer.getId() + "-layer", "raster-opacity", opacity);
                 }
                 layer.setOpacity(opacity);
                 DataProvider.getInstance().addOverlay(layer.getId(), layer);
