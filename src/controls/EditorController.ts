@@ -1,13 +1,13 @@
 import {type Map as MapLibreMap, MapMouseEvent, Marker} from "maplibre-gl";
-import {DataProvider, DataProviderEventType} from "../common_components/DataProvider";
-import {ApiProvider} from "../common_components/ApiProvider";
+import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider";
+import {ApiProvider} from "../dataProviders/ApiProvider";
 import {EditorEditBox} from "./EditorEditBox";
-import {NamedGeoReferencedObject} from "../common_components/enitites/NamedGeoReferencedObject";
+import {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject";
 import {icon} from "@fortawesome/fontawesome-svg-core";
 import {faMap} from "@fortawesome/free-solid-svg-icons/faMap";
 import {faMapPin} from "@fortawesome/free-solid-svg-icons/faMapPin";
 import {faPenToSquare} from "@fortawesome/free-solid-svg-icons/faPenToSquare";
-import {GlobalEventHandler} from "../common_components/GlobalEventHandler";
+import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
 
 
 export class EditorController {

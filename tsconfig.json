@@ -1,4 +1,5 @@
 {
+  // TypeScript compiler configuration for MapLibre WebMap
   "compilerOptions": {
     "target": "ES2021",
     "useDefineForClassFields": true,

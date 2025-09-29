@@ -5,19 +5,20 @@
 /// <reference lib="dom" />
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {GeolocateControl, Map as MapLibreMap, NavigationControl} from 'maplibre-gl';
-import type {LayerInfo} from "./common_components/types/LayerInfo";
-import {ApiProvider, ApiProviderEventTypes} from "./common_components/ApiProvider";
+import type {LayerInfo} from "./types/LayerInfo";
+import {ApiProvider, ApiProviderEventTypes} from "./dataProviders/ApiProvider";
 import {DrawingController} from "./controls/DrawingController";
-import {DataProvider, DataProviderEvent, DataProviderEventType, ViewMode} from "./common_components/DataProvider";
+import {DataProvider, DataProviderEvent, DataProviderEventType, ViewMode} from "./dataProviders/DataProvider";
 import {EditorController} from "./controls/EditorController";
-import {SearchControl} from "./common_components/controls/SearchControl";
+import {SearchControl} from "./controls/SearchControl";
 import {MapEditContextMenu} from "./controls/MapEditContextMenu";
 import './style.css'
-import {LoginController} from "./common_components/controls/LoginController";
-import {LayersControl} from "./common_components/controls/LayerControl";
+import {LoginController} from "./controls/LoginController";
+import {LayersControl} from "./controls/LayerControl";
 import {registerSW} from "virtual:pwa-register";
-import {GlobalEventHandler} from "./common_components/GlobalEventHandler";
+import {GlobalEventHandler} from "./dataProviders/GlobalEventHandler";
 import {loadBrowserConfig} from "./BrowserHelper";
+import {NotificationController} from "./controls/NotificationController";
 
 
 if (window.location.pathname === '/') {
@@ -153,3 +154,13 @@ GlobalEventHandler.getInstance().on(ApiProviderEventTypes.LOGIN_SUCCESS, () => {
 ApiProvider.getInstance().loadAllData();
 
 console.log("MapLibre WebMap initialized");
+
+NotificationController.getInstance().setConnectionTest(5);
+
+
+(async () => {
+    let cache = await caches.open('tacmap-cache');
+    cache.addAll([
+        "/index.html",
+    ])
+})()

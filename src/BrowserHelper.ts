@@ -1,4 +1,4 @@
-import {DataProvider} from "./common_components/DataProvider";
+import {DataProvider} from "./dataProviders/DataProvider";
 
 
 export function loadBrowserConfig() {

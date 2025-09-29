@@ -1,8 +1,8 @@
 import {Map as MapLibreMap, Marker} from 'maplibre-gl';
-import {DataProviderEvent, DataProviderEventType} from "../common_components/DataProvider";
-import type {NamedGeoReferencedObject} from "../common_components/enitites/NamedGeoReferencedObject";
+import {DataProviderEvent, DataProviderEventType} from "../dataProviders/DataProvider";
+import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject";
 import {DisplayHelper} from "../DisplayHelper";
-import {GlobalEventHandler} from "../common_components/GlobalEventHandler";
+import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
 
 export class DrawingController {
 

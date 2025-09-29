@@ -1,8 +1,17 @@
 #!/bin/bash
+# Build helper for CI/local environments.
+# - Cleans node_modules and dist to ensure a fresh build
+# - Uses official Node docker image to avoid requiring node/npm on host
+# - Installs dependencies and runs the build
 
+set -euo pipefail
 
-# This script builds the project using the specified build tool.
-rm -r ./node_modules
-rm -r ./dist
-docker run --rm -i -v "$(pwd)":/app -w /app node:22-bookworm npm install && npm run build
-rm -r ./node_modules
+rm -rf ./node_modules
+rm -rf ./dist
+
+docker run --rm -i \
+  -v "$(pwd)":/app \
+  -w /app \
+  node:22-bookworm bash -lc "npm ci && npm run build"
+
+rm -rf ./node_modules

@@ -1,21 +1,19 @@
 /// <reference no-default-lib="true"/>
 /// <reference lib="esnext" />
 /// <reference lib="webworker" />
+/**
+ * Custom Service Worker for MapLibre WebMap.
+ * Cache strategy overview:
+ * - admin: network-only (no cache)
+ * - api-cache: network-first with cache fallback and backfill
+ * - overlay-*: cache-first (tiles), no backfill by default
+ * - vector-cache: cache-first with backfill on miss
+ * - default/others: bypass (or simple fetch)
+ */
 const sw = self as unknown as ServiceWorkerGlobalScope & typeof globalThis;
 
-sw.addEventListener('install', (event) => {
+sw.addEventListener('install', () => {
     console.log('Service Worker installed');
-    event.waitUntil(new Promise(async (resolve) => {
-
-            await caches.delete('tacmap-cache')
-
-            const cache = await caches.open('tacmap-cache');
-            await cache.addAll([
-                '/index.html',
-            ]);
-            resolve(true);
-        })
-    )
 });
 sw.addEventListener('activate', () => {
     console.log('Service Worker activated');
@@ -30,6 +28,10 @@ sw.addEventListener('activate', () => {
         })
 });
 
+/**
+ * Classify request URL into a semantic group used to select a cache.
+ * overlay-<name> for /overlays/<name>/... paths, 'api' for /api, 'vector' for /vector, 'admin' for /admin, otherwise 'default'.
+ */
 function getURLType(url: URL) {
     if (url.pathname.startsWith('/overlays/')) {
         let path = url.pathname.replace('/overlays/', '');
@@ -51,6 +53,9 @@ function getURLType(url: URL) {
     return 'default'; // Default type
 }
 
+/**
+ * Some overlay caches use absolute URLs as keys. Normalize event.request.url accordingly.
+ */
 function transformCacheUrl(cacheName: string, url: string): URL {
     let locURL = new URL(url);
     if (cacheName.startsWith("overlay-")) {
@@ -65,6 +70,10 @@ function transformCacheUrl(cacheName: string, url: string): URL {
  *
  * @param url
  * @return A tuple containing the cache name, whether to use network first, and whether to use cache.
+ */
+/**
+ * Decide cache bucket and strategy for a given URL.
+ * Returns tuple: [cacheName, networkFirst, useCache, putMissingInCache]
  */
 function getCacheName(url: URL): [string, boolean, boolean, boolean] {
     let reqType = getURLType(url);
@@ -81,9 +90,10 @@ function getCacheName(url: URL): [string, boolean, boolean, boolean] {
     if (reqType === 'vector') {
         return ['vector-cache', false, true, true];
     }
-    if (url.origin == sw.registration.scope) {
-        return [reqType, false, false, false];
+    if (sw.registration.scope.startsWith(url.origin)) {
+        return [reqType, true, false, false];
     }
+    console.log(`[SW] Fetch ${url}; ${url.origin} == ${sw.registration.scope}`)
     return ['never', true, false, false];
 
 }
@@ -91,14 +101,20 @@ function getCacheName(url: URL): [string, boolean, boolean, boolean] {
 
 sw.addEventListener("fetch", (event) => {
     let url = new URL(event.request.url);
+    console.log(`[SW] Fetch ${url}`)
     if (event.request.method !== 'GET') {
         return;
     }
+    if (event.request.url == "https://karten.bereitschaften-drk-bonn.de/"){
+        url = new URL("https://karten.bereitschaften-drk-bonn.de/index.html")
+    }
+
     let [useCacheName, networkFirst, useCache, putMissingInCache] = getCacheName(url);
     if (useCache) {
+        console.log(`Fetch ${url} useCache ${useCacheName}; netForst: ${networkFirst}; useCache ${useCache}`)
         if (networkFirst) {
             event.respondWith(
-                fetch(event.request)
+                fetch(event.request,{ signal: AbortSignal.timeout(2000) })
                     .then(response => {
                         if (response && response.ok) {
                             let responseToCache = response.clone();
@@ -126,11 +142,11 @@ sw.addEventListener("fetch", (event) => {
             );
         } else {
             event.respondWith(caches.open(useCacheName).then((cache) => {
-
                 return cache.match(transformCacheUrl(useCacheName, event.request.url)).then((cachedResponse) => {
                     if (cachedResponse) {
                         return cachedResponse;
                     }
+                    console.log(`Locally not found: ${url}`)
                     return fetch(event.request.url).then((fetchedResponse) => {
                         if (fetchedResponse && fetchedResponse.ok && putMissingInCache) {
                             cache.put(event.request, fetchedResponse.clone());

@@ -1,4 +1,4 @@
-import {NamedGeoReferencedObject} from "../common_components/enitites/NamedGeoReferencedObject";
+import {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject";
 import {
     einheiten,
     type EinheitId,
@@ -16,11 +16,11 @@ import {
 } from "taktische-zeichen-core";
 import {verwaltungsstufen} from "taktische-zeichen-core/src/verwaltungsstufen";
 import type {GrundzeichenId} from "taktische-zeichen-core/src/grundzeichen";
-import {DataProvider, DataProviderEvent, DataProviderEventType} from "../common_components/DataProvider";
-import {ApiProvider} from "../common_components/ApiProvider";
-import {NotificationController} from "../common_components/controls/NotificationController";
+import {DataProvider, DataProviderEvent, DataProviderEventType} from "../dataProviders/DataProvider";
+import {ApiProvider} from "../dataProviders/ApiProvider";
+import {NotificationController} from "./NotificationController";
 import {Map as MapLibreMap} from "maplibre-gl";
-import {GlobalEventHandler} from "../common_components/GlobalEventHandler";
+import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
 
 
 export class EditorEditBox {

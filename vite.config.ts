@@ -6,6 +6,11 @@ import rollupPluginTypescript from '@rollup/plugin-typescript'
 import {nodeResolve} from '@rollup/plugin-node-resolve'
 
 
+/**
+ * Vite configuration with Tailwind and PWA plugin.
+ * Additionally compiles the TypeScript service worker (src/sw-custom.ts) via Rollup
+ * into dist/sw-custom.js so Workbox can import it at runtime.
+ */
 const CompileTsServiceWorker = () => ({
     name: 'compile-typescript-service-worker',
     async writeBundle(_options, _outputBundle) {
