@@ -4,7 +4,7 @@ import {defineConfig} from "eslint/config";
 import js from '@eslint/js'
 
 export default defineConfig([
-    {ignores: ['dist']},
+    {ignores: ['dist', 'vite.config.ts']},
     {
         files: ["src/**/*.{js,ts}"],
         languageOptions: {globals: globals.browser},
