@@ -11,7 +11,7 @@
 
 import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject";
 import type {LayerInfo} from "../types/LayerInfo";
-import {IMapGroup} from "../types/MapEntity";
+import type {IMapGroup} from "../types/MapEntity";
 import {GlobalEventHandler} from "./GlobalEventHandler";
 import {LngLat} from "maplibre-gl";
 
@@ -227,6 +227,7 @@ export class DataProvider {
     public removeOverlay(id: string): void {
         if (this.overlays.has(id)) {
             const overlay = this.overlays.get(id);
+            if (!overlay) return;
             this.overlays.delete(id);
             this.triggerEvent(DataProviderEventType.OVERLAY_DELETED, overlay);
         } else {
@@ -274,21 +275,21 @@ export class DataProvider {
     }
 
     public setApiUrl(url: string): void {
-        this.apiUrl = url;
+        localStorage.setItem('apiUrl', url)
         this.triggerEvent(DataProviderEventType.API_URL_UPDATED, url);
     }
 
     public getApiUrl(): string {
-        return this.apiUrl;
+        return localStorage.getItem('apiUrl') || '/api';
     }
 
     public setApiToken(token: string): void {
-        this.apiToken = token;
+        localStorage.setItem('apiToken', token)
         this.triggerEvent(DataProviderEventType.API_TOKEN_UPDATED, token);
     }
 
     public getApiToken(): string {
-        return this.apiToken;
+        return localStorage.getItem('apiToken') || '';
     }
 
 }

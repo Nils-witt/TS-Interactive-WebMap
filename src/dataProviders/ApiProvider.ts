@@ -1,9 +1,9 @@
 import {LayerInfo} from "../types/LayerInfo";
 import {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject";
 import {DataProvider} from "./DataProvider";
-import {IMapGroup} from "../types/MapEntity";
+import type {IMapGroup} from "../types/MapEntity";
+import type {TaktischesZeichen} from "taktische-zeichen-core/dist/types/types";
 import {GlobalEventHandler} from "./GlobalEventHandler";
-import {TaktischesZeichen} from "taktische-zeichen-core/dist/types/types";
 
 
 export class ApiProviderEvent extends Event {
@@ -39,30 +39,6 @@ export class ApiProvider {
         return ApiProvider.instance;
     }
 
-
-    public async loadAllData(): Promise<void> {
-        this.getMapStyles().then(styles => {
-            if (styles.length > 0) {
-                DataProvider.getInstance().setMapStyle(styles[0]);
-            }
-        });
-        this.getOverlayLayers().then((overlays: LayerInfo[]) => {
-            for (const overlay of overlays) {
-                console.log("Adding overlay:", overlay);
-                DataProvider.getInstance().addOverlay(overlay.getId(), overlay);
-            }
-        });
-        this.getMapItems().then(items => {
-            for (const item of items) {
-                DataProvider.getInstance().addMapItem(item);
-            }
-        });
-        this.getMapGroups().then(items => {
-            for (const item of items) {
-                DataProvider.getInstance().addMapGroup(item.id, item);
-            }
-        });
-    }
 
     public async testLogin(): Promise<void> {
         const url = DataProvider.getInstance().getApiUrl() + '/token/verify/';
@@ -107,23 +83,23 @@ export class ApiProvider {
             if (res.ok) {
                 const data = await res.json();
                 DataProvider.getInstance().setApiToken(data.access); // Store the token for future requests
-                localStorage.setItem('authToken', data.access); // Store token in local storage
                 this.notifyListeners(ApiProviderEventTypes.LOGIN_SUCCESS, {message: "Login successful"});
-            } else {
-                this.notifyListeners(ApiProviderEventTypes.LOGIN_FAILURE, {message: "Login failed"});
+            }else {
+                throw new Error(`HTTP error! status: ${res.status}`);
             }
         } catch (e) {
             console.error("Error preparing request options:", e);
+            throw e;
         }
     }
 
-    private async callApi(url: string, method: string, headers: Headers = new Headers(), body?: object): Promise<object> {
+    private async callApi(url: string, method: string, headers: Headers = new Headers(), body?: object): Promise<object | null> {
 
         if (DataProvider.getInstance().getApiToken()) {
             headers.append("Authorization", `Bearer ${DataProvider.getInstance().getApiToken()}`);
         }
 
-        const requestOptions = {
+        const requestOptions: RequestInit = {
             method: method,
             headers: headers
         };
@@ -147,7 +123,7 @@ export class ApiProvider {
         }
     }
 
-    public async fetchData(url: string): Promise<object> {
+    public async fetchData(url: string): Promise<object| null> {
         return this.callApi(url, 'GET');
     }
 
@@ -225,7 +201,7 @@ export class ApiProvider {
                     zoomLevel: item.zoom_level,
                     symbol: item.symbol,
                     showOnMap: item.show_on_map,
-                    groupId: item.group_id
+                    groupId: item.group_id || undefined
                 });
             });
         } catch (error) {
@@ -286,7 +262,7 @@ export class ApiProvider {
                 zoomLevel: resData.zoom_level,
                 symbol: resData.symbol,
                 showOnMap: resData.show_on_map,
-                groupId: resData.group_id
+                groupId: resData.group_id || undefined
             });
             if (updateDataProvider) {
                 DataProvider.getInstance().addMapItem(item);
