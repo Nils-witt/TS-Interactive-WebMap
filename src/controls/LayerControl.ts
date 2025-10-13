@@ -6,6 +6,7 @@ import {faMap} from "@fortawesome/free-solid-svg-icons/faMap";
 import {faXmark} from "@fortawesome/free-solid-svg-icons/faXmark";
 import {faGear} from "@fortawesome/free-solid-svg-icons/faGear";
 import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
+import {LayerCachingController} from "./CachingController";
 
 /**
  * LayersControl provides a UI to toggle overlays and open per-layer settings.
@@ -214,169 +215,7 @@ export class LayersControl extends Evented implements IControl {
         this.layersContainer.appendChild(labeled_checkbox);
     }
 
-    /**
-     * Fetches all tiles for a remote layer by retrieving the index.json file
-     * @param layer
-     * @private
-     */
-    private getRemoteLayerTiles(layer: LayerInfo): Promise<string[]> {
-        return new Promise((resolve) => {
-            let url: URL | undefined;
-            if (layer.getUrl().startsWith('http')) {
-                url = new URL(layer.getUrl().substring(0, layer.getUrl().search("{z}"))); // Ensure the URL is absolute
-            } else {
-                url = new URL(layer.getUrl().substring(0, layer.getUrl().search("{z}")), window.location.origin); // Ensure the URL is absolute
-            }
-
-            fetch(url.href + "/index.json?accesstoken=" + DataProvider.getInstance().getApiToken()).then(async response => {
-                if (!response.ok) {
-                    return;
-                }
-
-                const filelist = []
-                const data = await response.json()
-
-                const zVals = Object.keys(data);
-                for (let i = 0; i < zVals.length; i++) {
-                    const z = zVals[i];
-                    const xVals = Object.keys(data[z]);
-                    for (let j = 0; j < xVals.length; j++) {
-                        const x = xVals[j];
-                        const yVals = Object.keys(data[z][x]);
-
-                        for (let k = 0; k < yVals.length; k++) {
-                            const y = data[z][x][k];
-                            const tileUrl = `${url.href}${z}/${x}/${y}`;
-                            filelist.push(tileUrl);
-                        }
-                    }
-
-                }
-                resolve(filelist);
-            }).catch(error => {
-                console.error("Failed to fetch index.json:", error);
-                resolve([]);
-            });
-        });
-    }
-
-    private getCacheLayerTiles(layer: LayerInfo): Promise<string[]> {
-        return new Promise((resolve) => {
-            let url: URL | undefined;
-            if (layer.getUrl().startsWith('http')) {
-                url = new URL(layer.getUrl().substring(0, layer.getUrl().search("{z}"))); // Ensure the URL is absolute
-            } else {
-                url = new URL(layer.getUrl().substring(0, layer.getUrl().search("{z}")), window.location.origin); // Ensure the URL is absolute
-            }
-
-
-            const path = url.pathname.replace('/overlays/', '');
-            const parts = path.split('/');
-            const cacheName = 'overlay-' + parts[0]; // Use the first part of the path as the cache name
-
-            caches.open(cacheName).then((cache) => {
-                cache.keys().then((keys) => {
-                    console.log("Cache keys for", cacheName, ":", keys);
-                    resolve(keys.map(key => key.url));
-                }).catch(error => {
-                    console.error("Failed to get cache keys:", error);
-                });
-            });
-        });
-    }
-
-    private getMissingCacheFiles(layer: LayerInfo): Promise<string[]> {
-        return new Promise((resolve) => {
-            const missingFiles: string[] = [];
-
-            this.getRemoteLayerTiles(layer).then((remoteFiles) => {
-                this.getCacheLayerTiles(layer).then((cacheFiles) => {
-                    console.log("Remote files:", remoteFiles);
-                    console.log("Cache files:", cacheFiles);
-
-                    // Check for missing files
-                    remoteFiles.forEach((file) => {
-                        if (!cacheFiles.includes(file)) {
-                            missingFiles.push(file);
-                        }
-                    });
-
-                    console.log("Missing files:", missingFiles);
-                    resolve(missingFiles);
-                }).catch(error => {
-                    console.error("Error getting cache layer tiles:", error);
-                    resolve([]); // Return empty array on error
-                });
-            }).catch(error => {
-                console.error("Error getting remote layer tiles:", error);
-                resolve([]); // Return empty array on error
-            });
-
-        });
-    }
-
-    private downloadLayerToCache(layer: LayerInfo, button: HTMLButtonElement): Promise<boolean> {
-
-        return new Promise<boolean>((resolve) => {
-            let url: URL | undefined;
-            if (layer.getUrl().startsWith('http')) {
-                url = new URL(layer.getUrl().substring(0, layer.getUrl().search("{z}"))); // Ensure the URL is absolute
-            } else {
-                url = new URL(layer.getUrl().substring(0, layer.getUrl().search("{z}")), window.location.origin); // Ensure the URL is absolute
-            }
-
-
-            const path = url.pathname.replace('/overlays/', '');
-            const parts = path.split('/');
-            const cacheName = 'overlay-' + parts[0]; // Use the first part of the path as the cache name
-
-            this.getMissingCacheFiles(layer).then((missingFiles) => {
-
-
-                let missingCount = missingFiles.length;
-
-                const bntInterval = setInterval(() => {
-                    button.innerText = `Downloading Layer ${missingCount}tiles`;
-                }, 1000);
-
-                caches.open(cacheName).then(async (cache) => {
-                    for (let i = 0; i < missingFiles.length; i++) {
-                        await new Promise<void>((resolve, reject) => {
-
-                            fetch(missingFiles[i] + "?accesstoken=" + DataProvider.getInstance().getApiToken()).then(response => {
-                                if (!response.ok) {
-                                    console.error("Failed to fetch layer file:", missingFiles[i], "Status:", response.status);
-                                    reject(false);
-                                    return;
-                                }
-                                cache.put(missingFiles[i], response.clone()).then(() => {
-                                    resolve();
-                                }).catch(error => {
-                                    console.error("Failed to cache layer file:", missingFiles[i], error);
-                                    reject(false);
-                                    return;
-                                });
-
-                            }).catch(error => {
-                                console.error("Error fetching layer file:", missingFiles[i], error);
-                                reject(false);
-                                return;
-                            });
-                        });
-                        missingCount = missingFiles.length - i;
-                        await new Promise(resolve => setTimeout(resolve, 50)); // Add a delay to avoid overwhelming the cache
-                    }
-                    clearInterval(bntInterval);
-                    resolve(true);
-                });
-            });
-        });
-    }
-
-
     private openLayerSettings(layer: LayerInfo) {
-
-
         let container = this.layers_settings_container.get(layer.getId())
         if (container == undefined) {
             container = document.createElement("div");
@@ -419,7 +258,7 @@ export class LayersControl extends Evented implements IControl {
             downloadButton.textContent = "Loading...";
             downloadButton.addEventListener("click", () => {
                 downloadButton.innerText = "Downloading...";
-                this.downloadLayerToCache(layer, downloadButton).then((success) => {
+                LayerCachingController.getInstance().downloadLayerToCache(layer, downloadButton).then((success) => {
                     if (success) {
                         downloadButton.classList.remove("bg-red-500");
                         downloadButton.classList.add("bg-green-500");
@@ -437,38 +276,25 @@ export class LayersControl extends Evented implements IControl {
                 });
             });
             (async () => {
-                try {
-                    const remoteTiles = await this.getRemoteLayerTiles(layer);
-                    const cacheTiles = await this.getCacheLayerTiles(layer);
-                    console.log("Remote Tiles:", remoteTiles);
-                    console.log("Cache Tiles:", cacheTiles);
 
-                    const neededTiles = [];
-                    for (const tile of remoteTiles) {
-                        if (!cacheTiles.includes(tile)) {
-                            neededTiles.push(tile);
-                        }
-                    }
+                const layerStatus = await LayerCachingController.getInstance().getLayerCachedStatus(layer)
 
-                    if (remoteTiles.length === 0) {
-                        downloadButton.classList.add("bg-red-500");
-                        downloadButton.textContent = "No tiles available for download";
-                        downloadButton.disabled = true; // Disable the button if no tiles are available
-                    } else if (neededTiles.length === 0) {
+                switch (layerStatus) {
+                    case "cached":
                         downloadButton.classList.remove("bg-red-500");
                         downloadButton.classList.add("bg-green-500");
                         downloadButton.textContent = "Already downloaded to cache";
                         downloadButton.disabled = true; // Disable the button if all tiles are already cached
-                    } else {
+                        break;
+                    case 'error':
+                        downloadButton.classList.add("bg-red-500");
+                        downloadButton.textContent = "No tiles available for download";
+                        downloadButton.disabled = true; // Disable the button if no tiles are available
+                        break;
+                    default:
                         downloadButton.classList.remove("bg-red-500", "bg-yellow-500");
                         downloadButton.classList.add("bg-blue-500");
-                        downloadButton.textContent = `Download Layer ${neededTiles.length}/${remoteTiles.length} tiles`;
-                    }
-                } catch (error) {
-                    console.error("Error fetching layer tiles:", error);
-                    downloadButton.classList.add("bg-red-500");
-                    downloadButton.textContent = "Error fetching tiles";
-                    downloadButton.disabled = true; // Disable the button if an error occurs
+                        downloadButton.textContent = `Download Layer reamining tiles`;
                 }
             })();
 
@@ -489,9 +315,9 @@ export class LayersControl extends Evented implements IControl {
             resetButton.addEventListener("click", () => {
                 if (confirm("Are you sure you want to reset the layer cache? This will clear all cached data.")) {
                     resetButton.innerText = "Resetting...";
-                    caches.delete('overlay-' + layer.getName()).then(() => {
-                        resetButton.innerText = "Reset Complete";
-                    });
+                    LayerCachingController.getInstance().resetLayerCache(layer).then(() => {
+                        resetButton.innerText = "Done";
+                    })
                 }
             });
             resetContainer.appendChild(resetButton);

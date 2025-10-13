@@ -11,5 +11,5 @@ FROM nginx:alpine
 LABEL authors="Nils Witt"
 LABEL description="Nginx with a custom configuration for serving static files"
 
-COPY --from=builder /app/dist  /usr/share/nginx/html
+COPY --from=builder /src/dist  /usr/share/nginx/html
 

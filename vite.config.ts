@@ -1,9 +1,11 @@
 import tailwindcss from '@tailwindcss/vite'
 import {VitePWA} from "vite-plugin-pwa";
-import {InputOptions, OutputOptions, rollup} from 'rollup'
+import {type InputOptions, type OutputOptions, rollup} from 'rollup'
+import tsconfigPaths from "vite-tsconfig-paths";
 
 import rollupPluginTypescript from '@rollup/plugin-typescript'
 import {nodeResolve} from '@rollup/plugin-node-resolve'
+import {reactRouter} from "@react-router/dev/vite";
 
 
 /**
@@ -31,7 +33,9 @@ const CompileTsServiceWorker = () => ({
 export default {
     plugins: [
         tailwindcss(),
-        CompileTsServiceWorker(),
+        reactRouter(),
+        tsconfigPaths(),
+/*        CompileTsServiceWorker(),
         VitePWA({
             registerType: 'autoUpdate',
             workbox: {
@@ -61,6 +65,6 @@ export default {
                     }
                 ]
             }
-        })
+        })*/
     ]
 }
