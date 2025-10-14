@@ -1,10 +1,11 @@
-import {Evented, type IControl, Map as MapLibreMap} from "maplibre-gl";
+import {type ControlPosition, Evented, type IControl, Map as MapLibreMap} from "maplibre-gl";
 import type {LayerInfo} from "../types/LayerInfo.ts";
 import {icon} from "@fortawesome/fontawesome-svg-core";
 import {faMap} from "@fortawesome/free-solid-svg-icons/faMap";
 import {faXmark} from "@fortawesome/free-solid-svg-icons/faXmark";
 import {DOM} from "maplibre-gl/src/util/dom";
 import {DataProvider} from "../dataProviders/DataProvider";
+import {useControl} from "react-map-gl/maplibre";
 
 /**
  * LayersControl provides a UI to toggle overlays and open per-layer settings.
@@ -16,9 +17,28 @@ import {DataProvider} from "../dataProviders/DataProvider";
  */
 
 
+type ReactLayerControlProps = {
+    layers: LayerInfo[];
+    shownLayers: string[];
+    position: ControlPosition;
+    dataProvider: DataProvider;
+}
+
+function ReactLayerControl(props: ReactLayerControlProps) {
+    const layercontrol = useControl(() => new LayersControl(props as LayerControlOptions), {
+        position: props.position
+    });
+    layercontrol.setOverlays(props.layers);
+
+    return null;
+}
+
+export default ReactLayerControl;
+
 type LayerControlOptions = {
-    layers?: Map<string, LayerInfo>;
+    layers: LayerInfo[];
     shownLayers?: string[];
+    dataProvider: DataProvider;
 }
 
 /**
@@ -70,7 +90,6 @@ export class LayersControl extends Evented implements IControl {
         super();
         this.map = undefined;
         this.options = options;
-        this.overlays = options.layers || new Map();
 
         this.container = DOM.create("div", "maplibregl-ctrl");
         this.container.classList.add(
@@ -95,6 +114,9 @@ export class LayersControl extends Evented implements IControl {
             this.setOpen(!this.isOpen);
         });
 
+
+        this.setOverlays(this.options.layers);
+
     }
 
     private setOpen(open: boolean): void {
@@ -109,9 +131,9 @@ export class LayersControl extends Evented implements IControl {
     }
 
     private showLayerRecursive(id: string | null | undefined) {
-        if(id == null) return;
-        if(id == undefined) return;
-        if(this.map == undefined) return;
+        if (id == null) return;
+        if (id == undefined) return;
+        if (this.map == undefined) return;
         const layer = this.overlays.get(id);
         if (layer == undefined) {
             return
@@ -130,14 +152,13 @@ export class LayersControl extends Evented implements IControl {
 
     private updateShownlayers() {
         if (this.map == undefined) return;
-        console.log("updating shown layers")
         const layersToAdd: LayerInfo[] = Array.from(this.overlays.values()).sort((a, b) => a.getName().localeCompare(b.getName()));
 
         for (const layer of layersToAdd) {
             if (!this.map.getSource(layer.getId())) {
                 this.map.addSource(layer.getId(), {
                     type: "raster",           // Use raster tiles
-                    tiles: [layer.getUrl() + "?accesstoken=" + DataProvider.getInstance().getApiToken()],       // URL template for the tiles
+                    tiles: [layer.getUrl() + "?accesstoken=" + this.options.dataProvider.getApiToken()],       // URL template for the tiles
                     tileSize: 256             // Standard tile size
                 });
             }
@@ -221,7 +242,7 @@ export class LayersControl extends Evented implements IControl {
     }
 
 
-    private buildUI(){
+    private buildUI() {
         this.inputs = [];
         this.layersContainer.innerHTML = "";
 
@@ -239,7 +260,6 @@ export class LayersControl extends Evented implements IControl {
 
     public setOverlays(overlays: LayerInfo[]): void {
         this.overlays = new Map();
-        console.log("S",overlays)
         for (const layer of overlays) {
             this.overlays.set(layer.getId(), layer);
         }

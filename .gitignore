@@ -2,3 +2,5 @@
 /dist/
 /maplibre-webmap.iml
 /.idea/
+/build
+/.react-router

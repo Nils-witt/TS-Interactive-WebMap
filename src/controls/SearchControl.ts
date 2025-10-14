@@ -1,4 +1,4 @@
-import {Evented, type IControl, Map as MapLibreMap, Marker} from "maplibre-gl";
+import {type ControlPosition, Evented, type IControl, Map as MapLibreMap, Marker} from "maplibre-gl";
 import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider";
 import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject";
 import {icon} from "@fortawesome/fontawesome-svg-core";
@@ -6,6 +6,7 @@ import {faMagnifyingGlass} from "@fortawesome/free-solid-svg-icons/faMagnifyingG
 import {faMapLocationDot} from "@fortawesome/free-solid-svg-icons/faMapLocationDot";
 import {faXmark} from "@fortawesome/free-solid-svg-icons/faXmark";
 import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
+import {useControl} from "react-map-gl/maplibre";
 
 /**
  * SearchControl provides a lightweight search UI for NamedGeoReferencedObject entries.
@@ -13,6 +14,26 @@ import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
  * - Displays a result list and allows flying to a selected entity
  * - Shows a temporary marker and cleans it up on next map click
  */
+
+
+type ReactSearchControlProps = {
+    position: ControlPosition;
+    dataProvider: DataProvider;
+    globalEventHandler: GlobalEventHandler;
+}
+type SearchControlOptions = {
+    dataProvider: DataProvider;
+    globalEventHandler: GlobalEventHandler;
+}
+export function ReactSearchControl(props: ReactSearchControlProps) {
+    useControl(() => new SearchControl(props as SearchControlOptions), {
+        position: props.position
+    });
+
+    return null;
+}
+export default ReactSearchControl;
+
 
 /**
  * A control for MapLibre GL JS that allows users to toggle the visibility of map layers.
@@ -55,13 +76,16 @@ export class SearchControl extends Evented implements IControl {
 
     private internalClickAbortHandler: undefined | (() => void) = undefined;
 
+    private options: SearchControlOptions;
+
     /**
      * Creates a new LayersControl instance
      *
      * @param options - Array of LayerInfo objects representing available layers
      */
-    public constructor() {
+    public constructor(options: SearchControlOptions) {
         super();
+        this.options = options;
 
         this.map = undefined;
 
@@ -75,7 +99,7 @@ export class SearchControl extends Evented implements IControl {
 
         this.createSearchContainer();
 
-        GlobalEventHandler.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, () => {
+        options.globalEventHandler.on(DataProviderEventType.MAP_ITEM_UPDATED, () => {
             if (this.searchInput && this.searchInput.value.trim().length > 0) {
                 this.onSearchBoxUpdate(this.searchInput.value);
             }
@@ -150,6 +174,7 @@ export class SearchControl extends Evented implements IControl {
      */
     private onSearchBoxUpdate(query: string): void {
         query = query.trim();
+        if (!this.resultsContainer) return;
         if (!this.searchResultsBody) {
             console.error("Search results table not initialized");
             return;
@@ -165,7 +190,7 @@ export class SearchControl extends Evented implements IControl {
         this.resultsContainer.classList.remove("hidden");
         let resultCount = 0;
 
-        let entries = Array.from(DataProvider.getInstance().getMapLocations().values()).filter(entity => entity.getName().toLowerCase().includes(query.toLowerCase()));
+        let entries = Array.from(this.options.dataProvider.getMapLocations().values()).filter(entity => entity.getName().toLowerCase().includes(query.toLowerCase()));
         entries = entries.sort((a, b) => a.getName().localeCompare(b.getName())); // Sort results by name
         if (entries.length === 0) {
             this.resultsContainer.classList.add("hidden");
@@ -178,11 +203,10 @@ export class SearchControl extends Evented implements IControl {
                 this.showSingleEntity(entity);
                 this.map?.flyTo({
                     center: [entity.getLongitude(), entity.getLatitude() || 0],
-                    zoom: entity.getZoomLevel() || 15, // Adjust zoom level as needed
-                    essential: true // This ensures the animation is not interrupted
+                    zoom: entity.getZoomLevel() || 15,
+                    essential: true
                 });
-                //UrlDataHandler.setSelectedMarker(entity.id);
-                this.setOpen(false); // Close the search control after selecting an entity
+                this.setOpen(false);
             }
 
             const actionCell = row.insertCell();
@@ -341,7 +365,6 @@ export class SearchControl extends Evented implements IControl {
         this.searchInput.addEventListener("input", (e) => {
             const target = e.target as HTMLInputElement;
             this.onSearchBoxUpdate(target.value);
-            console.log("Search input updated:", target.value);
         });
 
         this.searchIconContainer.addEventListener("click", () => {
