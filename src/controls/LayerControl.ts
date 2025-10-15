@@ -238,6 +238,9 @@ export class LayersControl extends Evented implements IControl {
 
 
     private buildUI() {
+        if (this.map == undefined || !this.map.loaded()) {
+            return;
+        }
         this.layersContainer.innerHTML = "";
 
         // Create a checkbox for each new layer and add it to the container
@@ -273,6 +276,7 @@ export class LayersControl extends Evented implements IControl {
         map.once('load', () => {
             this.buildUI();
         });
+
         // Return the container element to be added to the map
         return this.container;
     }
