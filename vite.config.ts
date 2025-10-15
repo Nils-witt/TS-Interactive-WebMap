@@ -3,8 +3,7 @@ import {VitePWA} from "vite-plugin-pwa";
 import {type InputOptions, type OutputOptions, rollup} from 'rollup'
 import react from '@vitejs/plugin-react'
 
-import rollupPluginTypescript from '@rollup/plugin-typescript'
-import {nodeResolve} from '@rollup/plugin-node-resolve'
+import typescript from '@rollup/plugin-typescript'
 import {defineConfig} from "vite";
 
 /**
@@ -17,7 +16,11 @@ const CompileTsServiceWorker = () => ({
     async writeBundle() {
         const inputOptions: InputOptions = {
             input: 'src/sw-custom.ts',
-            plugins: [rollupPluginTypescript(), nodeResolve()],
+            plugins: [
+                typescript({tsconfig: "./tsconfig.rollup.json"})
+            ],
+            jsx: false
+
         }
         const outputOptions: OutputOptions = {
             file: 'dist/sw-custom.js',
@@ -31,39 +34,39 @@ const CompileTsServiceWorker = () => ({
 
 
 export default defineConfig({
-  plugins: [
-      react(),
-      tailwindcss(),
-      CompileTsServiceWorker(),
-      VitePWA({
-          registerType: 'autoUpdate',
-          workbox: {
-              importScripts: ['./sw-custom.js'],
-              navigateFallbackDenylist: [/^\/(api|admin|vector|overlays)/]
-          },
-          includeAssets: ['icons/192.png', 'icons/512.png'],
-          devOptions: {
-              enabled: false
-          },
-          manifest: {
-              name: 'TacMap',
-              short_name: 'TacMap',
-              description: 'TacMap',
-              theme_color: '#ffffff',
-              // start_url: '/index.html',
-              icons: [
-                  {
-                      "src": "icons/192.png",
-                      "type": "image/png",
-                      "sizes": "192x192"
-                  },
-                  {
-                      "src": "icons/512.png",
-                      "type": "image/png",
-                      "sizes": "512x512"
-                  }
-              ]
-          }
-      })
-  ],
+    plugins: [
+        CompileTsServiceWorker(),
+        react(),
+        tailwindcss(),
+        VitePWA({
+            registerType: 'autoUpdate',
+            workbox: {
+                importScripts: ['./sw-custom.js'],
+                navigateFallbackDenylist: [/^\/(api|admin|vector|overlays)/]
+            },
+            includeAssets: ['icons/192.png', 'icons/512.png'],
+            devOptions: {
+                enabled: false
+            },
+            manifest: {
+                name: 'TacMap',
+                short_name: 'TacMap',
+                description: 'TacMap',
+                theme_color: '#ffffff',
+                // start_url: '/index.html',
+                icons: [
+                    {
+                        "src": "icons/192.png",
+                        "type": "image/png",
+                        "sizes": "192x192"
+                    },
+                    {
+                        "src": "icons/512.png",
+                        "type": "image/png",
+                        "sizes": "512x512"
+                    }
+                ]
+            }
+        })
+    ],
 })

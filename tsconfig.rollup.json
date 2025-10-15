@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["dom"],
+    "module": "ESNext",
+    "types": ["vite/client", "web"],
+    "skipLibCheck": true,
+
+    /* Linting */
+    "strict": true,
+  },
+  "include": ["./src/sw-custom.ts"],
+  "exclude": ["node_modules"]
+}
