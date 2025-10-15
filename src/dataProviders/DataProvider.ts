@@ -11,7 +11,7 @@
 
 import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject";
 import type {LayerInfo} from "../types/LayerInfo";
-import {IMapGroup} from "../types/MapEntity";
+import type {IMapGroup} from "../types/MapEntity";
 import {GlobalEventHandler} from "./GlobalEventHandler";
 import {LngLat} from "maplibre-gl";
 
@@ -21,13 +21,13 @@ import {LngLat} from "maplibre-gl";
  */
 export class DataProviderEvent extends Event {
     /** Event type identifier, corresponds to DataProviderEventType values */
-    type: string;
+    eventType: string;
     /** Data payload associated with the event */
     data: number | object | string;
 
-    constructor(type: string, data: string | object | number) {
-        super(type);
-        this.type = type;
+    constructor(eventType: string, data: string | object | number) {
+        super(eventType);
+        this.eventType = eventType;
         this.data = data;
     }
 }
@@ -47,7 +47,9 @@ export enum DataProviderEventType {
     MAP_STYLE_UPDATED = 'mapStyle-updated',
     /** Triggered when map groups are added or updated */
     MAP_GROUPS_UPDATED = 'mapGroups-updated',
+    /** Triggered when a new map group is created */
     MAP_GROUPS_CREATED = 'mapGroups-created',
+    /** Triggered when a map group is deleted */
     MAP_GROUPS_DELETED = 'mapGroups-deleted',
     /** Triggered when a new overlay is added to the map */
     OVERLAY_ADDED = 'overlay-added',
@@ -56,16 +58,10 @@ export enum DataProviderEventType {
     /** Triggered when an overlay is removed **/
     OVERLAY_DELETED = 'overlay-deleted',
 
-    VIEW_MODE_CHANGED = 'view-mode-changed',
     MAP_CENTER_UPDATED = 'map-center-updated',
     MAP_ZOOM_UPDATED = 'map-zoom-updated',
     API_URL_UPDATED = 'api-url-updated',
     API_TOKEN_UPDATED = 'api-token-updated',
-}
-
-export enum ViewMode {
-    VIEW = 'view',
-    EDIT = 'edit'
 }
 
 /**
@@ -90,10 +86,6 @@ export class DataProvider {
 
     private mapCenter: LngLat = new LngLat(0.0, 0.0); // Default center of the map
     private mapZoom: number = 1;
-    private apiUrl: string = '';
-    private apiToken: string = '';
-
-    private mode: ViewMode = ViewMode.VIEW;
 
     /** Singleton instance reference */
     private static instance: DataProvider;
@@ -227,6 +219,7 @@ export class DataProvider {
     public removeOverlay(id: string): void {
         if (this.overlays.has(id)) {
             const overlay = this.overlays.get(id);
+            if (!overlay) return;
             this.overlays.delete(id);
             this.triggerEvent(DataProviderEventType.OVERLAY_DELETED, overlay);
         } else {
@@ -241,17 +234,6 @@ export class DataProvider {
      */
     public getOverlays(): Map<string, LayerInfo> {
         return this.overlays;
-    }
-
-    public getMode(): ViewMode {
-        return this.mode;
-    }
-
-    public setViewMode(mode: ViewMode): void {
-        if (this.mode == mode) return;
-
-        this.mode = mode;
-        this.triggerEvent(DataProviderEventType.VIEW_MODE_CHANGED, mode);
     }
 
     public getMapCenter(): LngLat {
@@ -274,21 +256,21 @@ export class DataProvider {
     }
 
     public setApiUrl(url: string): void {
-        this.apiUrl = url;
+        localStorage.setItem('apiUrl', url)
         this.triggerEvent(DataProviderEventType.API_URL_UPDATED, url);
     }
 
     public getApiUrl(): string {
-        return this.apiUrl;
+        return localStorage.getItem('apiUrl') || '/api';
     }
 
     public setApiToken(token: string): void {
-        this.apiToken = token;
+        localStorage.setItem('apiToken', token)
         this.triggerEvent(DataProviderEventType.API_TOKEN_UPDATED, token);
     }
 
     public getApiToken(): string {
-        return this.apiToken;
+        return localStorage.getItem('apiToken') || '';
     }
 
 }

@@ -15,7 +15,7 @@ export default defineConfig([
             ...tseslint.configs.recommended,
         ],
         rules: {
-           // 'no-console': 'warn'
+            // 'no-console': 'warn'
         }
     },
 ]);

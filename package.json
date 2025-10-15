@@ -1,38 +1,45 @@
 {
-  "name": "WebMap",
+  "name": "vite-react-typescript-starter",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "full-build": "npm i && tsc && vite build"
-  },
-  "devDependencies": {
-    "@types/node": "^24.3.0",
-    "eslint": "^9.36.0",
-    "globals": "^16.4.0",
-    "typescript": "~5.9.2",
-    "typescript-eslint": "^8.45.0",
-    "vite": "^7.1.7",
-    "vite-plugin-eslint": "^1.8.1",
-    "vite-plugin-pwa": "^1.0.3"
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@eslint/js": "^9.36.0",
-    "@fortawesome/fontawesome-svg-core": "^7.0.0",
-    "@fortawesome/free-brands-svg-icons": "^7.0.0",
-    "@fortawesome/free-regular-svg-icons": "^7.0.0",
-    "@fortawesome/free-solid-svg-icons": "^7.0.0",
     "@microsoft/eslint-formatter-sarif": "^3.1.0",
     "@rollup/plugin-typescript": "^12.1.4",
-    "@tailwindcss/vite": "^4.1.12",
-    "jose": "^6.0.13",
-    "maplibre-gl": "^5.7.0",
-    "maplibre-gl-opacity": "^1.8.0",
-    "tailwindcss": "^4.1.12",
+    "@tailwindcss/vite": "^4.1.14",
+    "@types/web": "^0.0.279",
+    "@vis.gl/react-maplibre": "^8.1.0",
+    "maplibre-gl": "^5.9.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "sass": "^1.93.2",
+    "tailwindcss": "^4.1.14",
     "taktische-zeichen-core": "^0.9.0",
-    "tslib": "^2.8.1"
+    "tslib": "^2.8.1",
+    "vite-plugin-pwa": "^1.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.37.0",
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-brands-svg-icons": "^7.1.0",
+    "@fortawesome/free-regular-svg-icons": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@types/node": "^24.7.2",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.0.4",
+    "eslint": "^9.37.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.4.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.1",
+    "vite": "^7.1.10"
   }
 }

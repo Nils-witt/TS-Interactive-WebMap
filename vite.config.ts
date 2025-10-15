@@ -1,10 +1,10 @@
 import tailwindcss from '@tailwindcss/vite'
 import {VitePWA} from "vite-plugin-pwa";
-import {InputOptions, OutputOptions, rollup} from 'rollup'
+import {type InputOptions, type OutputOptions, rollup} from 'rollup'
+import react from '@vitejs/plugin-react'
 
-import rollupPluginTypescript from '@rollup/plugin-typescript'
-import {nodeResolve} from '@rollup/plugin-node-resolve'
-
+import typescript from '@rollup/plugin-typescript'
+import {defineConfig} from "vite";
 
 /**
  * Vite configuration with Tailwind and PWA plugin.
@@ -16,7 +16,11 @@ const CompileTsServiceWorker = () => ({
     async writeBundle() {
         const inputOptions: InputOptions = {
             input: 'src/sw-custom.ts',
-            plugins: [rollupPluginTypescript(), nodeResolve()],
+            plugins: [
+                typescript({tsconfig: "./tsconfig.rollup.json"})
+            ],
+            jsx: false
+
         }
         const outputOptions: OutputOptions = {
             file: 'dist/sw-custom.js',
@@ -28,10 +32,12 @@ const CompileTsServiceWorker = () => ({
     }
 })
 
-export default {
+
+export default defineConfig({
     plugins: [
-        tailwindcss(),
         CompileTsServiceWorker(),
+        react(),
+        tailwindcss(),
         VitePWA({
             registerType: 'autoUpdate',
             workbox: {
@@ -62,5 +68,5 @@ export default {
                 ]
             }
         })
-    ]
-}
+    ],
+})
