@@ -1,5 +1,4 @@
 import {useEffect, useState} from 'react'
-import './App.css'
 import {GlobalEventHandler} from "./dataProviders/GlobalEventHandler.ts";
 import {ApiProviderEventTypes} from "./dataProviders/ApiProvider.ts";
 import {MapComponent} from "./components/MapComponent.tsx";
@@ -13,8 +12,8 @@ useEffect(() => {
 
     ApiProvider.getInstance().getMapItems()
 },[]);
-
  */
+
 function App() {
     const [loggedin, setLoggedin] = useState<boolean>(true);
 
