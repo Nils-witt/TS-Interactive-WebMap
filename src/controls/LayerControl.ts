@@ -5,7 +5,7 @@ import {faMap} from "@fortawesome/free-solid-svg-icons/faMap";
 import {faXmark} from "@fortawesome/free-solid-svg-icons/faXmark";
 import {DOM} from "maplibre-gl/src/util/dom";
 import {DataProvider} from "../dataProviders/DataProvider";
-import {useControl} from "react-map-gl/maplibre";
+import {useControl} from "@vis.gl/react-maplibre";
 
 /**
  * LayersControl provides a UI to toggle overlays and open per-layer settings.
@@ -61,10 +61,7 @@ export class LayersControl extends Evented implements IControl {
     private isOpen: boolean = false; // Flag to track if the control is open or closed
 
     private spanIcon = document.createElement("span");
-    /**
-     * Array of checkbox input elements for each layer
-     */
-    private inputs: HTMLInputElement[];
+
 
     /**
      * Map of layer IDs to their corresponding LayerInfo objects for quick lookup
@@ -107,8 +104,6 @@ export class LayersControl extends Evented implements IControl {
 
         this.container.appendChild(this.layersContainer);
         this.container.appendChild(this.spanIcon);
-
-        this.inputs = [];
 
         this.spanIcon.addEventListener("click", () => {
             this.setOpen(!this.isOpen);
@@ -243,7 +238,6 @@ export class LayersControl extends Evented implements IControl {
 
 
     private buildUI() {
-        this.inputs = [];
         this.layersContainer.innerHTML = "";
 
         // Create a checkbox for each new layer and add it to the container

@@ -12,9 +12,6 @@
  */
 const sw = self as unknown as ServiceWorkerGlobalScope & typeof globalThis;
 
-sw.addEventListener('install', () => {
-    console.log('Service Worker installed');
-});
 sw.addEventListener('activate', () => {
     console.log('Service Worker activated');
     sw.clients.matchAll({
@@ -105,7 +102,7 @@ sw.addEventListener("fetch", (event) => {
     if (event.request.method !== 'GET') {
         return;
     }
-    if (event.request.url == "https://karten.bereitschaften-drk-bonn.de/"){
+    if (event.request.url == "https://karten.bereitschaften-drk-bonn.de/") {
         url = new URL("https://karten.bereitschaften-drk-bonn.de/index.html")
     }
 
@@ -113,32 +110,42 @@ sw.addEventListener("fetch", (event) => {
     if (useCache) {
         console.log(`Fetch ${url} useCache ${useCacheName}; netForst: ${networkFirst}; useCache ${useCache}`)
         if (networkFirst) {
-            event.respondWith(
-                fetch(event.request,{ signal: AbortSignal.timeout(2000) })
-                    .then(response => {
-                        if (response && response.ok) {
-                            const responseToCache = response.clone();
+            event.respondWith(new Promise((resolve, reject) => {
+                    fetch(event.request, {signal: AbortSignal.timeout(2000)})
+                        .then(async response => {
+                            if (response && response.ok) {
+                                const responseToCache = response.clone();
 
-                            caches.open(useCacheName).then((cache) => {
-                                cache.put(event.request, responseToCache); // Cache the new response
-                            });
-                            return response; // Clone the response to use it in the cache
-                        }
-                        if (response.status === 403) {
-                            return response;
-                        }
-                        return caches.match(event.request);
-
-                    })
-                    .catch(() => {
-                        return caches.match(event.request).then((cachedResponse) => {
-                            if (cachedResponse) {
-                                return cachedResponse;
-                            } else {
-                                return new Response("Not found", {status: 404})
+                                caches.open(useCacheName).then((cache) => {
+                                    cache.put(event.request, responseToCache); // Cache the new response
+                                });
+                                resolve(response);
+                                return;
+                            } else if (response.status === 403) {
+                                resolve(response);
+                                return;
                             }
-                        });
-                    })
+
+                            const cacheMatch = await caches.match(event.request);
+                            if (cacheMatch != undefined) {
+                                resolve(cacheMatch);
+                                return;
+                            } else {
+                                reject();
+                            }
+                            return;
+
+                        })
+                        .catch(() => {
+                            return caches.match(event.request).then((cachedResponse) => {
+                                if (cachedResponse) {
+                                    resolve(cachedResponse);
+                                } else {
+                                    resolve(new Response("Not found", {status: 404}))
+                                }
+                            });
+                        })
+                })
             );
         } else {
             event.respondWith(caches.open(useCacheName).then((cache) => {

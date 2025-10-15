@@ -1,9 +1,8 @@
-import {useControl} from "react-map-gl/maplibre";
 import type {ControlPosition, IControl} from "maplibre-gl";
-import {Map as MapLibreMap} from "maplibre-gl";
 import {DOM} from "maplibre-gl/src/util/dom";
 import {faGear} from "@fortawesome/free-solid-svg-icons/faGear";
 import {icon} from "@fortawesome/fontawesome-svg-core";
+import {useControl} from "@vis.gl/react-maplibre";
 
 type ReactButtonControlProps = {
     position: ControlPosition;
@@ -23,7 +22,6 @@ export function ReactButtonControl(props: ReactButtonControlProps) {
 
 export class ButtonControl implements IControl {
     private container: HTMLDivElement;
-    private map: MapLibreMap | undefined;
     private options: ButtonControlOptions;
 
     constructor(options: ButtonControlOptions) {
@@ -47,13 +45,11 @@ export class ButtonControl implements IControl {
         })
     }
 
-    onRemove(map: MapLibreMap): void {
+    onRemove(): void {
         this.container.parentNode?.removeChild(this.container);
-        this.map = undefined;
     }
 
-    onAdd(map: MapLibreMap): HTMLElement {
-        this.map = map;
+    onAdd(): HTMLElement {
         return this.container;
     }
 

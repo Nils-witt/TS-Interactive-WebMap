@@ -7,12 +7,12 @@ import {GlobalEventHandler} from "./GlobalEventHandler";
 
 
 export class ApiProviderEvent extends Event {
-    type: ApiProviderEventTypes;
+    eventType: ApiProviderEventTypes;
     data: object;
 
-    constructor(type: ApiProviderEventTypes, data: object) {
-        super(type);
-        this.type = type;
+    constructor(eventType: ApiProviderEventTypes, data: object) {
+        super(eventType);
+        this.eventType = eventType;
         this.data = data;
     }
 }
@@ -79,7 +79,6 @@ export class ApiProvider {
 
         try {
             const res = await fetch(url, requestOptions);
-            console.log("Login response:", res.status, res.statusText);
             if (res.ok) {
                 const data = await res.json();
                 DataProvider.getInstance().setApiToken(data.access); // Store the token for future requests
@@ -91,6 +90,10 @@ export class ApiProvider {
             console.error("Error preparing request options:", e);
             throw e;
         }
+    }
+    public logout(): void {
+        localStorage.removeItem('apiToken');
+        window.location.reload();
     }
 
     private async callApi(url: string, method: string, headers: Headers = new Headers(), body?: object): Promise<object | null> {
@@ -132,8 +135,6 @@ export class ApiProvider {
 
         try {
             const url = DataProvider.getInstance().getApiUrl() + '/overlays/'
-            console.log("Fetching overlay layers from:", url);
-            console.log("Using token:", DataProvider.getInstance().getApiToken());
 
             for (const layer of (await this.fetchData(url)) as {
                 id: string,
@@ -279,8 +280,7 @@ export class ApiProvider {
         const method = "DELETE";
 
         try {
-            const resData = await this.callApi(url, method, new Headers());
-            console.log("Delete response:", resData);
+            await this.callApi(url, method, new Headers());
             return true;
         } catch (e) {
             console.error("Error preparing request options:", e);

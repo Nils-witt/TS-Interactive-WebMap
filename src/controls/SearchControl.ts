@@ -6,7 +6,7 @@ import {faMagnifyingGlass} from "@fortawesome/free-solid-svg-icons/faMagnifyingG
 import {faMapLocationDot} from "@fortawesome/free-solid-svg-icons/faMapLocationDot";
 import {faXmark} from "@fortawesome/free-solid-svg-icons/faXmark";
 import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
-import {useControl} from "react-map-gl/maplibre";
+import {useControl} from "@vis.gl/react-maplibre";
 
 /**
  * SearchControl provides a lightweight search UI for NamedGeoReferencedObject entries.
