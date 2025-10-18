@@ -1,10 +1,10 @@
 import {ApiProvider} from "../dataProviders/ApiProvider";
-import {useEffect, useState} from "react";
+import {type ReactElement, useEffect, useState} from "react";
 
 
 import '../login.scss'
 
-export function LoginPage() {
+export function LoginPage(): ReactElement {
 
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");

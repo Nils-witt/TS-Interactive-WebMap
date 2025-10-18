@@ -8,7 +8,9 @@ import ReactLayerControl from "../controls/LayerControl";
 import ReactSearchControl from "../controls/SearchControl";
 import {DataProvider} from "../dataProviders/DataProvider";
 import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
-import ReactSettingsControl from "../controls/SettingsControl.ts";
+import {MapSettings} from "./SettingsComponent";
+import ReactButtonControl from "../controls/ButtonControl";
+import {faGear} from "@fortawesome/free-solid-svg-icons/faGear";
 
 
 export function MapComponent() {
@@ -24,6 +26,7 @@ export function MapComponent() {
 
     const [layers, setLayers] = React.useState<LayerInfo[]>([]);
     const [mapStyle, setMapStyle] = React.useState<LayerInfo | null>(null);
+    const [settingsOpen, setSettingsOpen] = React.useState<boolean>(false);
 
     useEffect(() => {
         ApiProvider.getInstance().getMapStyles().then(result => {
@@ -35,6 +38,10 @@ export function MapComponent() {
             }
         });
     }, []);
+
+    useEffect(() => {
+        console.log("Settings open:", settingsOpen);
+    }, [settingsOpen]);
 
     if (!mapStyle) {
         return <div>Loading...</div>;
@@ -56,7 +63,8 @@ export function MapComponent() {
             <NavigationControl/>
             <ReactLayerControl position="bottom-left" layers={layers} shownLayers={[]} dataProvider={dataProvider}/>
             <ReactSearchControl position="top-left" dataProvider={dataProvider} globalEventHandler={eventHandler}/>
-            <ReactSettingsControl position={"bottom-left"}></ReactSettingsControl>
+            <ReactButtonControl onClick={() => setSettingsOpen(true)} position={"bottom-left"} icon={faGear}></ReactButtonControl>
+            {settingsOpen && <MapSettings isOpen={[settingsOpen, setSettingsOpen]}/>}
         </MapLibreMap>
     )
 }

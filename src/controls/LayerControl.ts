@@ -277,6 +277,10 @@ export class LayersControl extends Evented implements IControl {
             this.buildUI();
         });
 
+        map.on('mousedown',() => {
+            this.setOpen(false);
+        })
+
         // Return the container element to be added to the map
         return this.container;
     }

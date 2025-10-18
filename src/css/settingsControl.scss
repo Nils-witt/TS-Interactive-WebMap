@@ -1,0 +1,38 @@
+
+.settings-control {
+
+
+}
+
+.settings-container-background {
+  position: absolute;
+  top: 0;
+    left: 0;
+
+  .settings-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40em;
+    height: 20em;
+    padding: 1em;
+    border-radius: 0.8em;
+    max-width: 100vw;
+
+    background-color: white;
+
+    > :first-child {
+      display: flex;
+      flex: auto;
+      flex-direction: row-reverse;
+    }
+
+    > div {
+      padding-top: 1em;
+      display: flex;
+      flex-direction: row;
+    }
+  }
+
+}
