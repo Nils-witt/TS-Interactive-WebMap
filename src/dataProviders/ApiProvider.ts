@@ -28,9 +28,7 @@ export class ApiProvider {
 
     private static instance: ApiProvider;
 
-    private constructor() {
-
-    }
+    private constructor() { /* empty */ }
 
     public static getInstance(): ApiProvider {
         if (!ApiProvider.instance) {
@@ -80,10 +78,10 @@ export class ApiProvider {
         try {
             const res = await fetch(url, requestOptions);
             if (res.ok) {
-                const data = await res.json();
+                const data: { access: string } = await res.json() as { access: string };
                 DataProvider.getInstance().setApiToken(data.access); // Store the token for future requests
                 this.notifyListeners(ApiProviderEventTypes.LOGIN_SUCCESS, {message: "Login successful"});
-            }else {
+            } else {
                 throw new Error(`HTTP error! status: ${res.status}`);
             }
         } catch (e) {
@@ -91,6 +89,7 @@ export class ApiProvider {
             throw e;
         }
     }
+
     public logout(): void {
         localStorage.removeItem('apiToken');
         window.location.reload();
@@ -119,6 +118,7 @@ export class ApiProvider {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         try {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
             return await response.json();
         } catch (e) {
             console.error("Error parsing JSON:", e);
@@ -126,7 +126,7 @@ export class ApiProvider {
         }
     }
 
-    public async fetchData(url: string): Promise<object| null> {
+    public async fetchData(url: string): Promise<object | null> {
         return this.callApi(url, 'GET');
     }
 
@@ -230,7 +230,7 @@ export class ApiProvider {
         return groups;
     }
 
-    public async saveMapItem(item: NamedGeoReferencedObject, updateDataProvider: boolean = true): Promise<NamedGeoReferencedObject | null> {
+    public async saveMapItem(item: NamedGeoReferencedObject, updateDataProvider = true): Promise<NamedGeoReferencedObject | null> {
         let url = DataProvider.getInstance().getApiUrl() + `/items/${item.getId()}/`;
         let method = "PUT";
 
@@ -288,7 +288,7 @@ export class ApiProvider {
         }
     }
 
-    private notifyListeners(event: ApiProviderEventTypes, data: { message: string }) {
+    private notifyListeners(event: ApiProviderEventTypes, data: { message: string }): void {
         GlobalEventHandler.getInstance().emit(event, new ApiProviderEvent(event, data))
     }
 }

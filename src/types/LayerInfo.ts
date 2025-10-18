@@ -1,4 +1,4 @@
-type LayerInfoType = {
+interface LayerInfoType {
     name: string;
     id: string;
     description: string;
@@ -35,7 +35,7 @@ export class LayerInfo {
     /**
      * Optional opacity for the layer, default is 1.0
      */
-    private opacity: number = 1.0; // Optional opacity for the layer, default is 1.0
+    private opacity: number; // Optional opacity for the layer, default is 1.0
 
     /**
      * Optional underlaying layer id for this layer, used for styling

@@ -17,7 +17,7 @@ export function MapComponent() {
 
     const dataProvider = DataProvider.getInstance();
     const eventHandler = GlobalEventHandler.getInstance();
-    const mapCenter: [number, number] = localStorage.getItem('mapCenter') ? JSON.parse(localStorage.getItem('mapCenter') || "[7.1545,50.7438]") : [7.1545, 50.7438];
+    const mapCenter: [number, number] = localStorage.getItem('mapCenter') ? JSON.parse(localStorage.getItem('mapCenter') || "[7.1545,50.7438]") as [number, number] : [7.1545, 50.7438];
 
     const mapMoved = (e: { viewState: { longitude: number, latitude: number, zoom: number } }) => {
         localStorage.setItem('mapCenter', JSON.stringify([e.viewState.longitude, e.viewState.latitude]));
@@ -29,19 +29,15 @@ export function MapComponent() {
     const [settingsOpen, setSettingsOpen] = React.useState<boolean>(false);
 
     useEffect(() => {
-        ApiProvider.getInstance().getMapStyles().then(result => {
+        void ApiProvider.getInstance().getMapStyles().then((result: LayerInfo[]) => {
             if (result.length > 0) {
                 setMapStyle(result[0]);
-                ApiProvider.getInstance().getOverlayLayers().then(result => {
+                void ApiProvider.getInstance().getOverlayLayers().then((result: LayerInfo[]) => {
                     setLayers(result);
                 });
             }
         });
     }, []);
-
-    useEffect(() => {
-        console.log("Settings open:", settingsOpen);
-    }, [settingsOpen]);
 
     if (!mapStyle) {
         return <div>Loading...</div>;
@@ -63,7 +59,8 @@ export function MapComponent() {
             <NavigationControl/>
             <ReactLayerControl position="bottom-left" layers={layers} shownLayers={[]} dataProvider={dataProvider}/>
             <ReactSearchControl position="top-left" dataProvider={dataProvider} globalEventHandler={eventHandler}/>
-            <ReactButtonControl onClick={() => setSettingsOpen(true)} position={"bottom-left"} icon={faGear}></ReactButtonControl>
+            <ReactButtonControl onClick={() => setSettingsOpen(true)} position={"bottom-left"}
+                                icon={faGear}></ReactButtonControl>
             {settingsOpen && <MapSettings isOpen={[settingsOpen, setSettingsOpen]}/>}
         </MapLibreMap>
     )

@@ -20,7 +20,7 @@ export function LoginPage(): ReactElement {
     }
 
     useEffect(() => {
-        ApiProvider.getInstance().testLogin();
+        void ApiProvider.getInstance().testLogin();
     }, [])
 
 

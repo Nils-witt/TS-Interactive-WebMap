@@ -23,7 +23,8 @@
     "erasableSyntaxOnly": false,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
+    "allowJs": true
   },
-  "include": ["vite.config.ts"],
+  "include": ["vite.config.ts", "src/**/*", "eslint.config.js"],
   "exclude": ["node_modules"]
 }

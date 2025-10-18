@@ -7,7 +7,7 @@ import ButtonGroup from '@mui/material/ButtonGroup';
 import {Utilities} from "../Utilities";
 
 
-type MapSettingsProps = {
+interface MapSettingsProps {
     isOpen: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
 }
 
@@ -26,12 +26,12 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
             </div>
 
             <div>
-                <Button variant={'outlined'} size={'small'} onClick={Utilities.logout}>Logout</Button>
+                <Button variant={'outlined'} size={'small'} onClick={() => Utilities.logout()}>Logout</Button>
             </div>
             <div>
                 <ButtonGroup variant={'outlined'} color={'warning'}>
-                    <Button size={'small'} onClick={Utilities.clearMapCache}>Clear Map Cache</Button>
-                    <Button size={'small'} onClick={Utilities.clearCache}>Clear full Cache</Button>
+                    <Button size={'small'} onClick={() => {void Utilities.clearMapCache()}}>Clear Map Cache</Button>
+                    <Button size={'small'} onClick={() => {void Utilities.clearCache()}}>Clear full Cache</Button>
                 </ButtonGroup>
             </div>
         </div>

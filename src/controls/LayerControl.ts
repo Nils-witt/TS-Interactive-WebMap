@@ -17,14 +17,14 @@ import {useControl} from "@vis.gl/react-maplibre";
  */
 
 
-type ReactLayerControlProps = {
+interface ReactLayerControlProps {
     layers: LayerInfo[];
     shownLayers: string[];
     position: ControlPosition;
     dataProvider: DataProvider;
 }
 
-function ReactLayerControl(props: ReactLayerControlProps) {
+function ReactLayerControl(props: ReactLayerControlProps): null {
     const layercontrol = useControl(() => new LayersControl(props as LayerControlOptions), {
         position: props.position
     });
@@ -35,7 +35,7 @@ function ReactLayerControl(props: ReactLayerControlProps) {
 
 export default ReactLayerControl;
 
-type LayerControlOptions = {
+interface LayerControlOptions {
     layers: LayerInfo[];
     shownLayers?: string[];
     dataProvider: DataProvider;
@@ -58,7 +58,7 @@ export class LayersControl extends Evented implements IControl {
 
     private layersContainer: HTMLElement;
 
-    private isOpen: boolean = false; // Flag to track if the control is open or closed
+    private isOpen = false; // Flag to track if the control is open or closed
 
     private spanIcon = document.createElement("span");
 
@@ -66,14 +66,14 @@ export class LayersControl extends Evented implements IControl {
     /**
      * Map of layer IDs to their corresponding LayerInfo objects for quick lookup
      */
-    private overlays: Map<string, LayerInfo> = new Map();
+    private overlays = new Map<string, LayerInfo>();
 
     /**
      * Map to track active overlays by their IDs
      * This is used to persist the state of active overlays across sessions
      * @private
      */
-    private activeOverlays: Map<string, boolean> = new Map();
+    private activeOverlays = new Map<string, boolean>();
 
 
     private options: LayerControlOptions;
@@ -125,7 +125,7 @@ export class LayersControl extends Evented implements IControl {
         }
     }
 
-    private showLayerRecursive(id: string | null | undefined) {
+    private showLayerRecursive(id: string | null | undefined): void {
         if (id == null) return;
         if (id == undefined) return;
         if (this.map == undefined) return;
@@ -145,7 +145,7 @@ export class LayersControl extends Evented implements IControl {
         }
     }
 
-    private updateShownlayers() {
+    private updateShownlayers(): void {
         if (this.map == undefined) return;
         const layersToAdd: LayerInfo[] = Array.from(this.overlays.values()).sort((a, b) => a.getName().localeCompare(b.getName()));
 
@@ -237,7 +237,7 @@ export class LayersControl extends Evented implements IControl {
     }
 
 
-    private buildUI() {
+    private buildUI():void {
         if (this.map == undefined || !this.map.loaded()) {
             return;
         }
@@ -273,11 +273,11 @@ export class LayersControl extends Evented implements IControl {
     public onAdd(map: MapLibreMap): HTMLElement {
         this.map = map;
 
-        map.once('load', () => {
+        void map.once('load', () => {
             this.buildUI();
         });
 
-        map.on('mousedown',() => {
+        map.on('mousedown', () => {
             this.setOpen(false);
         })
 
@@ -289,7 +289,7 @@ export class LayersControl extends Evented implements IControl {
      * Removes the control from the map
      * Required method for MapLibre IControl interface
      */
-    public onRemove() {
+    public onRemove(): void {
         // Remove the container from its parent element
         if (this.container.parentNode) {
             this.container.parentNode.removeChild(this.container);

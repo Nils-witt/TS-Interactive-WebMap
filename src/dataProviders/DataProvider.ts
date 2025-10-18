@@ -78,14 +78,14 @@ export class DataProvider {
     private mapStyle: LayerInfo | undefined;
 
     /** Collection of overlay layers that can be added to the map */
-    private overlays: Map<string, LayerInfo> = new Map();
+    private overlays: Map<string, LayerInfo> = new Map<string,LayerInfo>();
 
     /** Collection of map groups for organizing map elements */
-    private mapGroups: Map<string, IMapGroup> = new Map();
+    private mapGroups: Map<string, IMapGroup> = new Map<string, IMapGroup>();
 
 
     private mapCenter: LngLat = new LngLat(0.0, 0.0); // Default center of the map
-    private mapZoom: number = 1;
+    private mapZoom: number;
 
     /** Singleton instance reference */
     private static instance: DataProvider;
@@ -95,6 +95,7 @@ export class DataProvider {
      * Part of the Singleton pattern implementation.
      */
     private constructor() {
+        this.mapZoom = 2; // Default zoom level
     }
 
     /**

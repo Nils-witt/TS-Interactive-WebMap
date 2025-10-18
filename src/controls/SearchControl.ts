@@ -16,22 +16,24 @@ import {useControl} from "@vis.gl/react-maplibre";
  */
 
 
-type ReactSearchControlProps = {
+interface ReactSearchControlProps {
     position: ControlPosition;
     dataProvider: DataProvider;
     globalEventHandler: GlobalEventHandler;
 }
-type SearchControlOptions = {
+interface SearchControlOptions {
     dataProvider: DataProvider;
     globalEventHandler: GlobalEventHandler;
 }
-export function ReactSearchControl(props: ReactSearchControlProps) {
+
+export function ReactSearchControl(props: ReactSearchControlProps): null {
     useControl(() => new SearchControl(props as SearchControlOptions), {
         position: props.position
     });
 
     return null;
 }
+
 export default ReactSearchControl;
 
 
@@ -59,7 +61,7 @@ export class SearchControl extends Evented implements IControl {
      * The maximum number of search results to display
      * @private
      */
-    private resultLimit: number = 5;
+    private resultLimit = 5;
 
     /**
      * Map of shown entity IDs to their corresponding Marker objects for quick lookup
@@ -71,7 +73,7 @@ export class SearchControl extends Evented implements IControl {
      * Flag to track if the control is currently open
      * @private
      */
-    private isOpen: boolean = false;
+    private isOpen = false;
 
 
     private internalClickAbortHandler: undefined | (() => void) = undefined;
@@ -137,7 +139,7 @@ export class SearchControl extends Evented implements IControl {
             this.shownMarkers.delete(otherMarker);
         }
 
-        this.internalClickAbortHandler = () => {
+        this.internalClickAbortHandler = (): void => {
             console.log("Aborting click handler");
             marker.remove();
             this.shownMarkers.delete(entity.getId());
@@ -155,7 +157,7 @@ export class SearchControl extends Evented implements IControl {
 
         //button.textContent = "<>";
         button.innerHTML = icon(faMapLocationDot).html[0]
-        button.onclick = () => {
+        button.onclick = (): void => {
             this.showSingleEntity(entity);
             this.map?.flyTo({
                 center: [entity.getLongitude(), entity.getLatitude()],
@@ -199,7 +201,7 @@ export class SearchControl extends Evented implements IControl {
         for (const entity of entries) {
             const row = this.searchResultsBody.insertRow()
 
-            row.onclick = () => {
+            row.onclick = (): void => {
                 this.showSingleEntity(entity);
                 this.map?.flyTo({
                     center: [entity.getLongitude(), entity.getLatitude() || 0],
@@ -249,12 +251,11 @@ export class SearchControl extends Evented implements IControl {
         this.map = map;
 
         this.map.on("click", () => {
-            if (this.internalClickAbortHandler){
+            if (this.internalClickAbortHandler) {
                 this.internalClickAbortHandler();
             }
         });
 
-        this.loadStateFromUrl();
         // Return the container element to be added to the map
         return this.container;
     }
@@ -263,7 +264,7 @@ export class SearchControl extends Evented implements IControl {
      * Removes the control from the map
      * Required method for MapLibre IControl interface
      */
-    public onRemove() {
+    public onRemove(): void {
         // Remove the container from its parent element
         if (this.container.parentNode) {
             this.container.parentNode.removeChild(this.container);
@@ -273,13 +274,6 @@ export class SearchControl extends Evented implements IControl {
         this.map = undefined;
     }
 
-    /**
-     * Loads the state from the URL parameters.
-     * @private
-     */
-    private loadStateFromUrl() {
-
-    }
 
     /**
      * Creates the search input and results table elements.
@@ -327,7 +321,7 @@ export class SearchControl extends Evented implements IControl {
         closeIcon.innerHTML = icon(faXmark).html[0];
         closeIconContainer.appendChild(closeIcon);
         container.appendChild(closeIconContainer);
-        closeIconContainer.onclick = () => {
+        closeIconContainer.onclick = (): void => {
             this.setOpen(false); // Close the search control
         }
 

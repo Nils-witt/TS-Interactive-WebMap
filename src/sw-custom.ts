@@ -14,10 +14,9 @@ const sw = self as unknown as ServiceWorkerGlobalScope & typeof globalThis;
 
 sw.addEventListener('activate', () => {
     console.log('Service Worker activated');
-    sw.clients.matchAll({
+    void sw.clients.matchAll({
         includeUncontrolled: true
-    })
-        .then((clients) => {
+    }).then((clients) => {
             clients.forEach(function (client) {
                 console.log('Sending message to client:', client);
                 client.postMessage({cmd: "reload"})
@@ -29,7 +28,7 @@ sw.addEventListener('activate', () => {
  * Classify request URL into a semantic group used to select a cache.
  * overlay-<name> for /overlays/<name>/... paths, 'api' for /api, 'vector' for /vector, 'admin' for /admin, otherwise 'default'.
  */
-function getURLType(url: URL) {
+function getURLType(url: URL): string {
     if (url.pathname.startsWith('/overlays/')) {
         const path = url.pathname.replace('/overlays/', '');
         const parts = path.split('/');
@@ -116,8 +115,8 @@ sw.addEventListener("fetch", (event) => {
                             if (response && response.ok) {
                                 const responseToCache = response.clone();
 
-                                caches.open(useCacheName).then((cache) => {
-                                    cache.put(event.request, responseToCache); // Cache the new response
+                                void caches.open(useCacheName).then((cache) => {
+                                    void cache.put(event.request, responseToCache); // Cache the new response
                                 });
                                 resolve(response);
                                 return;
@@ -131,7 +130,7 @@ sw.addEventListener("fetch", (event) => {
                                 resolve(cacheMatch);
                                 return;
                             } else {
-                                reject();
+                                reject(new Error(`Could not fetch ${event.request.url}`));
                             }
                             return;
 
@@ -156,7 +155,10 @@ sw.addEventListener("fetch", (event) => {
                     console.log(`Locally not found: ${url}`)
                     return fetch(event.request.url).then((fetchedResponse) => {
                         if (fetchedResponse && fetchedResponse.ok && putMissingInCache) {
-                            cache.put(event.request, fetchedResponse.clone());
+                            cache.put(event.request, fetchedResponse.clone())
+                                .catch((e) => {
+                                    console.error("Error caching fetched response:", e);
+                                })
                         }
                         return fetchedResponse;
                     });

@@ -5,17 +5,18 @@ import {icon} from "@fortawesome/fontawesome-svg-core";
 import {useControl} from "@vis.gl/react-maplibre";
 import type {IconDefinition} from "@fortawesome/free-brands-svg-icons";
 
-type ReactButtonControlProps = {
+interface ReactButtonControlProps {
     position: ControlPosition;
     onClick: () => void;
     icon?: IconDefinition;
 }
-type ButtonControlOptions = {
+
+interface ButtonControlOptions {
     onClick: () => void;
     icon?: IconDefinition;
 }
 
-export function ReactButtonControl(props: ReactButtonControlProps) {
+export function ReactButtonControl(props: ReactButtonControlProps): null {
     useControl(() => new ButtonControl(props as ButtonControlOptions), {
         position: props.position
     });

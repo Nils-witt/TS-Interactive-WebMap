@@ -11,11 +11,18 @@ export default defineConfig([
         extends: [
             // js
             js.configs.recommended,
-            // ts
-            ...tseslint.configs.recommended,
         ],
         rules: {
             // 'no-console': 'warn'
         }
     },
+    tseslint.configs.recommendedTypeChecked,
+    {
+        languageOptions: {
+            parserOptions: {
+                projectService: true,
+            },
+        },
+    },
+    tseslint.configs.stylistic
 ]);

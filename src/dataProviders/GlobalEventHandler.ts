@@ -3,11 +3,9 @@ export class GlobalEventHandler {
 
     private static instance: GlobalEventHandler | null = null;
 
-    private listeners: Map<string, ((event: Event) => void)[]> = new Map();
+    private listeners: Map<string, ((event: Event) => void)[]> = new Map<string, ((event: Event) => void)[]>();
 
-    private constructor() {
-
-    }
+    private constructor() { /* empty */ }
 
     public static getInstance(): GlobalEventHandler {
         if (!this.instance) {
