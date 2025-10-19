@@ -296,7 +296,13 @@ export class ApiProvider {
             url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search("{z}")), window.location.origin); // Ensure the URL is absolute
         }
 
-        const response = await fetch(url.href + "/index.json?accesstoken=" + DataProvider.getInstance().getApiToken());
+        const response = await fetch(url.href + "/index.json?accesstoken=" + DataProvider.getInstance().getApiToken(),{
+            cache: 'no-store',
+            headers: {
+                'cache': 'no-store',
+                'cache-control': 'no-cache',
+            },
+        });
         if (response.ok){
             const data = await response.json() as Record<string, Record<string, string[]>>;
             const filelist: string[] = []
