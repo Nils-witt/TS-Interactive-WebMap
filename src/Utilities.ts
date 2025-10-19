@@ -23,4 +23,8 @@ export class Utilities {
     static logout(): void {
         localStorage.removeItem('apiToken')
     }
+
+    static sleep(millis = 0) {
+        return new Promise(resolve => setTimeout(resolve, millis));
+    }
 }

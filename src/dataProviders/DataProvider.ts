@@ -78,7 +78,7 @@ export class DataProvider {
     private mapStyle: LayerInfo | undefined;
 
     /** Collection of overlay layers that can be added to the map */
-    private overlays: Map<string, LayerInfo> = new Map<string,LayerInfo>();
+    private overlays: Map<string, LayerInfo> = new Map<string, LayerInfo>();
 
     /** Collection of map groups for organizing map elements */
     private mapGroups: Map<string, IMapGroup> = new Map<string, IMapGroup>();
@@ -207,12 +207,12 @@ export class DataProvider {
      * @param id - Unique identifier for the overlay
      * @param overlay - The overlay configuration to store
      */
-    public addOverlay(id: string, overlay: LayerInfo): void {
-        if (this.overlays.has(id)) {
-            this.overlays.set(id, overlay);
+    public addOverlay(overlay: LayerInfo): void {
+        if (this.overlays.has(overlay.getId())) {
+            this.overlays.set(overlay.getId(), overlay);
             this.triggerEvent(DataProviderEventType.OVERLAY_UPDATED, overlay);
         } else {
-            this.overlays.set(id, overlay);
+            this.overlays.set(overlay.getId(), overlay);
             this.triggerEvent(DataProviderEventType.OVERLAY_ADDED, overlay);
         }
     }

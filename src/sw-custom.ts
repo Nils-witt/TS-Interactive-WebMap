@@ -30,10 +30,7 @@ sw.addEventListener('activate', () => {
  */
 function getURLType(url: URL): string {
     if (url.pathname.startsWith('/overlays/')) {
-        const path = url.pathname.replace('/overlays/', '');
-        const parts = path.split('/');
-
-        return 'overlay-' + parts[0]; // Return overlay type
+        return 'overlay-tmp'; // Return overlay type
     }
     if (url.pathname.startsWith('/api/')) {
         return 'api'; // Return overlay type

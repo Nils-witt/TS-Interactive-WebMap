@@ -288,6 +288,36 @@ export class ApiProvider {
         }
     }
 
+    public async getOverlayTiles(overlay: LayerInfo): Promise<string[]> {
+        let url: URL | undefined;
+        if (overlay.getUrl().startsWith('http')) {
+            url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search("{z}"))); // Ensure the URL is absolute
+        } else {
+            url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search("{z}")), window.location.origin); // Ensure the URL is absolute
+        }
+
+        const response = await fetch(url.href + "/index.json?accesstoken=" + DataProvider.getInstance().getApiToken());
+        if (response.ok){
+            const data = await response.json() as Record<string, Record<string, string[]>>;
+            const filelist: string[] = []
+
+            for (const z of Object.keys(data)) {
+                for (const x of Object.keys(data[z])) {
+                    const yVals = Object.keys(data[z][x]);
+
+                    for (let k = 0; k < yVals.length; k++) {
+                        const y = data[z][x][k];
+                        const tileUrl = `${url.href}${z}/${x}/${y}`;
+                        filelist.push(tileUrl);
+                    }
+                }
+            }
+            return filelist;
+        }
+
+        return [];
+    }
+
     private notifyListeners(event: ApiProviderEventTypes, data: { message: string }): void {
         GlobalEventHandler.getInstance().emit(event, new ApiProviderEvent(event, data))
     }
