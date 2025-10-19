@@ -5,7 +5,7 @@
     "useDefineForClassFields": true,
     "lib": ["dom"],
     "module": "ESNext",
-    "types": ["vite/client", "web"],
+    "types": ["vite/client", "web", "vite-plugin-pwa/client"],
     "skipLibCheck": true,
 
     /* Bundler mode */

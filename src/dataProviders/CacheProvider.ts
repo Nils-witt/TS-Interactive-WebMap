@@ -58,5 +58,8 @@ export class CacheProvider {
                 btn.innerText = `Downloading... (${state.missing.length - i} / ${state.missing.length})`;
             }
         }
+        if (btn){
+            btn.innerText = `complete!`;
+        }
     }
 }

@@ -52,7 +52,7 @@ function LayerTableRow(props: { overlay: LayerInfo }): ReactElement {
             <td>{props.overlay.getName()}</td>
             <td>
                 <ButtonGroup>
-                    <Button ref={btnRef} size={'small'} onClick={downloadLayer}>Download</Button>
+                    <Button ref={btnRef} size={'small'} onClick={() => void downloadLayer()}>Download</Button>
                 </ButtonGroup>
             </td>
         </tr>
