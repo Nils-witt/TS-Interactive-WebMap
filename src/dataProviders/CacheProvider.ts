@@ -1,7 +1,6 @@
 import {ApiProvider} from "./ApiProvider.ts";
 import type {LayerInfo} from "../types/LayerInfo.ts";
 import {DataProvider} from "./DataProvider.ts";
-import {Utilities} from "../Utilities.ts";
 
 export class CacheProvider {
     private static instance: CacheProvider | null = null;
@@ -40,26 +39,32 @@ export class CacheProvider {
         }
     }
 
+    private async cacheTile(tileUrl: string, cache: Cache): Promise<void> {
+        const response = await fetch(tileUrl + '?accesstoken=' + DataProvider.getInstance().getApiToken());
+        void await cache.put(tileUrl, response);
+    }
+
     async cacheLayer(overlay: LayerInfo, btn?: HTMLButtonElement): Promise<void> {
         const state = await this.getOverlayCacheState(overlay);
         const cache = await caches.open(`overlay-${overlay.getId()}`);
         const tmpCache = await caches.open(`overlay-tmp`);
-        let i = 0
-        for (const tileUrl of state.missing) {
-            if(await tmpCache.match(tileUrl)){
-                await tmpCache.delete(tileUrl);
-            }
-            const response = await fetch(tileUrl + '?accesstoken=' + DataProvider.getInstance().getApiToken());
-            void await cache.put(tileUrl, response);
-            i++;
 
-            void await Utilities.sleep(100);
-            if(btn){
+        for (let i = 0; i < state.missing.length; i = i + 10) {
+
+            await Promise.all([
+                ...state.missing.slice(i, i + 10).map(tileUrl => this.cacheTile(tileUrl, cache))
+            ])
+            if (btn) {
                 btn.innerText = `Downloading... (${state.missing.length - i} / ${state.missing.length})`;
             }
         }
-        if (btn){
+
+        for (const tile of await cache.keys()) {
+            await tmpCache.delete(tile.url);
+        }
+        if (btn) {
             btn.innerText = `complete!`;
         }
+
     }
 }
