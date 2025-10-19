@@ -32,6 +32,7 @@ export function MapComponent() {
         void ApiProvider.getInstance().getMapStyles().then((result: LayerInfo[]) => {
             if (result.length > 0) {
                 setMapStyle(result[0]);
+                DataProvider.getInstance().setMapStyle(result[0]);
                 void ApiProvider.getInstance().getOverlayLayers().then((result: LayerInfo[]) => {
                     setLayers(result);
                     result.forEach(r => DataProvider.getInstance().addOverlay(r))

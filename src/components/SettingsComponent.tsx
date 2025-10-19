@@ -7,7 +7,7 @@ import ButtonGroup from '@mui/material/ButtonGroup';
 import {Utilities} from "../Utilities";
 import type {LayerInfo} from "../types/LayerInfo.ts";
 import {DataProvider} from "../dataProviders/DataProvider.ts";
-import {CacheProvider} from "../dataProviders/CacheProvider.ts";
+import CacheProvider from "../dataProviders/CacheProvider.ts";
 import {useRef} from 'react';
 
 
@@ -23,10 +23,10 @@ function LayerTableRow(props: { overlay: LayerInfo }): ReactElement {
         if (btnRef.current) {
             btnRef.current.disabled = true;
             btnRef.current.innerText = "Downloading...";
-            await CacheProvider.getInstance().cacheLayer(props.overlay, btnRef.current);
+            await CacheProvider.getInstance().cacheOverlay(props.overlay, btnRef.current);
 
         } else {
-            await CacheProvider.getInstance().cacheLayer(props.overlay);
+            await CacheProvider.getInstance().cacheOverlay(props.overlay);
         }
 
     }
@@ -71,7 +71,6 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
     useEffect(() => {
         const overlays = Array.from(DataProvider.getInstance().getOverlays().values());
         setOverlays(overlays)
-        console.log(DataProvider.getInstance().getOverlays().values().toArray())
     }, [])
 
     return (<div className={'settings-container-background'}>
@@ -93,6 +92,13 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
                     <Button size={'small'} onClick={() => {
                         void Utilities.clearCache()
                     }}>Clear full Cache</Button>
+                </ButtonGroup>
+            </div>
+            <div>
+                <ButtonGroup variant={'outlined'} >
+                    <Button size={'small'} onClick={() => {
+                        void CacheProvider.getInstance().cacheVectorForOverlays()
+                    }}>Download Vector Tiles</Button>
                 </ButtonGroup>
             </div>
             <div>
