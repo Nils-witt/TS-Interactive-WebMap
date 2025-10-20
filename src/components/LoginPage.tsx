@@ -12,6 +12,7 @@ export function LoginPage(): ReactElement {
     const [loading, setLoading] = useState(false);
 
     const handleLogin = () => {
+        console.log("Login.")
         setLoading(true);
         ApiProvider.getInstance().login(username, password).catch(() => {
             setError("Login failed");
@@ -26,7 +27,10 @@ export function LoginPage(): ReactElement {
 
     return (
         <div className="login-container">
-            <form className="login-form">
+            <form className="login-form" onSubmit={(e) => {
+                e.preventDefault();
+                handleLogin();
+            }}>
                 <div>
                     <h1>Login</h1>
                 </div>
@@ -39,7 +43,7 @@ export function LoginPage(): ReactElement {
                     <input type="password" onChange={(e) => setPassword(e.target.value)}/>
                 </div>
                 <div className={"login-row"}>
-                    <button type="button" onClick={handleLogin} disabled={loading}>Login</button>
+                    <button type="submit" onClick={handleLogin} disabled={loading}>Login</button>
                 </div>
                 {error && <p className="error-message">{error}</p>}
             </form>
