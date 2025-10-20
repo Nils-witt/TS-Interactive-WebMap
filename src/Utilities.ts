@@ -27,4 +27,20 @@ export class Utilities {
     static sleep(millis = 0) {
         return new Promise(resolve => setTimeout(resolve, millis));
     }
+
+    static splitTileUrl(tileUrl: string): { baseUrl: string, x: number, y: number, z: number, format: string } {
+        const regex = /(.*)\/(\d+)\/(\d+)\/(\d+)\.(\w+)$/;
+        const match = tileUrl.match(regex);
+        if (!match) {
+            throw new Error(`Invalid tile URL format: ${tileUrl}`);
+        }
+        return {
+            baseUrl: match[1],
+            z: parseInt(match[2], 10),
+            x: parseInt(match[3], 10),
+            y: parseInt(match[4], 10),
+            format: match[5]
+        }
+
+    }
 }

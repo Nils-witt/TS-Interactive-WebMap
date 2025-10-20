@@ -1,3 +1,5 @@
+import {Entity} from "./Entity.ts";
+
 interface LayerInfoType {
     name: string;
     id: string;
@@ -7,11 +9,17 @@ interface LayerInfoType {
     underlayingLayer?: string | null;
 }
 
+
+export enum LayerInfoEventType {
+    "orderChanged" = "orderChanged",
+    "changed" = "changed"
+}
+
 /**
  * Represents information about a map layer.
  * This type is used to define and manage layers that can be added to the map.
  */
-export class LayerInfo {
+export class LayerInfo extends Entity {
     /**
      * The display name of the layer shown in the layer control
      */
@@ -42,8 +50,15 @@ export class LayerInfo {
      */
     private underlayingLayer: string | null;
 
+    /**
+     * Order of the layer in the layer stack
+     * @private
+     */
+    private order = 0;
+
 
     constructor(props: LayerInfoType) {
+        super();
         this.name = props.name;
         this.id = props.id;
         this.description = props.description;
@@ -105,6 +120,15 @@ export class LayerInfo {
             opacity: this.opacity,
             underlayingLayer: this.underlayingLayer
         }
+    }
+
+    public getOrder(): number {
+        return this.order;
+    }
+    public setOrder(order: number): void {
+        this.order = order;
+        this.notify(LayerInfoEventType.orderChanged, order);
+        this.notify(LayerInfoEventType.changed, {order: order});
     }
 
 }

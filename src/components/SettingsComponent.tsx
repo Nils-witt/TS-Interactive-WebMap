@@ -7,8 +7,9 @@ import ButtonGroup from '@mui/material/ButtonGroup';
 import {Utilities} from "../Utilities";
 import type {LayerInfo} from "../types/LayerInfo.ts";
 import {DataProvider} from "../dataProviders/DataProvider.ts";
-import {CacheProvider} from "../dataProviders/CacheProvider.ts";
+import CacheProvider from "../dataProviders/CacheProvider.ts";
 import {useRef} from 'react';
+import {Input} from "@mui/material";
 
 
 interface MapSettingsProps {
@@ -18,15 +19,16 @@ interface MapSettingsProps {
 
 function LayerTableRow(props: { overlay: LayerInfo }): ReactElement {
     const btnRef = useRef<HTMLButtonElement | null>(null);
+    const [order, setOrder] = React.useState<number>(props.overlay.getOrder());
 
     const downloadLayer = async () => {
         if (btnRef.current) {
             btnRef.current.disabled = true;
             btnRef.current.innerText = "Downloading...";
-            await CacheProvider.getInstance().cacheLayer(props.overlay, btnRef.current);
+            await CacheProvider.getInstance().cacheOverlay(props.overlay, btnRef.current);
 
         } else {
-            await CacheProvider.getInstance().cacheLayer(props.overlay);
+            await CacheProvider.getInstance().cacheOverlay(props.overlay);
         }
 
     }
@@ -47,14 +49,26 @@ function LayerTableRow(props: { overlay: LayerInfo }): ReactElement {
 
     }, []);
 
+    useEffect(() => {
+        if (order != props.overlay.getOrder()) {
+            props.overlay.setOrder(order);
+            console.log("Setting order for ", props.overlay.getName(), " to ", order);
+        }
+    }, [order]);
+
     return (
         <tr key={props.overlay.getId()}>
             <td>{props.overlay.getName()}</td>
+            <td>
+                <Input type={'number'} defaultValue={order}
+                       onChange={(e) => setOrder(parseInt(e.target.value))}></Input>
+            </td>
             <td>
                 <ButtonGroup>
                     <Button ref={btnRef} size={'small'} onClick={() => void downloadLayer()}>Download</Button>
                 </ButtonGroup>
             </td>
+
         </tr>
     )
 
@@ -71,7 +85,6 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
     useEffect(() => {
         const overlays = Array.from(DataProvider.getInstance().getOverlays().values());
         setOverlays(overlays)
-        console.log(DataProvider.getInstance().getOverlays().values().toArray())
     }, [])
 
     return (<div className={'settings-container-background'}>
@@ -96,10 +109,18 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
                 </ButtonGroup>
             </div>
             <div>
+                <ButtonGroup variant={'outlined'}>
+                    <Button size={'small'} onClick={() => {
+                        void CacheProvider.getInstance().cacheVectorForOverlays()
+                    }}>Download Vector Tiles</Button>
+                </ButtonGroup>
+            </div>
+            <div>
                 <table>
                     <thead>
                     <tr>
                         <td>Available Overlays</td>
+                        <td>Layer Order</td>
                     </tr>
                     </thead>
                     <tbody>

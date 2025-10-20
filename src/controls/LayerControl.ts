@@ -1,5 +1,5 @@
 import {type ControlPosition, Evented, type IControl, Map as MapLibreMap} from "maplibre-gl";
-import type {LayerInfo} from "../types/LayerInfo.ts";
+import {type LayerInfo, LayerInfoEventType} from "../types/LayerInfo.ts";
 import {icon} from "@fortawesome/fontawesome-svg-core";
 import {faMap} from "@fortawesome/free-solid-svg-icons/faMap";
 import {faXmark} from "@fortawesome/free-solid-svg-icons/faXmark";
@@ -125,29 +125,14 @@ export class LayersControl extends Evented implements IControl {
         }
     }
 
-    private showLayerRecursive(id: string | null | undefined): void {
-        if (id == null) return;
-        if (id == undefined) return;
-        if (this.map == undefined) return;
-        const layer = this.overlays.get(id);
-        if (layer == undefined) {
-            return
-        }
-        if (!this.map.getLayer(layer.getId() + '-layer')) {
-            if (layer.getUnderlayingLayer() != null) {
-                this.showLayerRecursive(layer.getUnderlayingLayer())
-            }
-            this.map.addLayer({
-                id: layer.getId() + '-layer',  // Create unique layer ID
-                type: "raster",           // Render as raster layer
-                source: layer.getId(),         // Reference to the source created above
-            });
-        }
-    }
-
     private updateShownlayers(): void {
         if (this.map == undefined) return;
-        const layersToAdd: LayerInfo[] = Array.from(this.overlays.values()).sort((a, b) => a.getName().localeCompare(b.getName()));
+        const layersToAdd: LayerInfo[] = Array.from(this.overlays.values()).sort((a, b) => {
+            if (a.getOrder() != b.getOrder()) {
+                return a.getOrder() - b.getOrder();
+            }
+            return a.getName().localeCompare(b.getName());
+        });
 
         for (const layer of layersToAdd) {
             if (!this.map.getSource(layer.getId())) {
@@ -165,7 +150,11 @@ export class LayersControl extends Evented implements IControl {
         }
 
         for (const layer of layersToAdd) {
-            this.showLayerRecursive(layer.getId())
+            this.map.addLayer({
+                id: layer.getId() + '-layer',  // Create unique layer ID
+                type: "raster",           // Render as raster layer
+                source: layer.getId(),         // Reference to the source created above
+            });
         }
 
         for (const layer of layersToAdd) {
@@ -233,11 +222,18 @@ export class LayersControl extends Evented implements IControl {
             }
         });
 
+
+        if (this.map) {
+            if (this.map.getLayoutProperty(layer.getId() + "-layer", "visibility") === "visible") {
+                input.checked = true;
+                this.activeOverlays.set(layer.getId(), true);
+            }
+        }
         return container;
     }
 
 
-    private buildUI():void {
+    private buildUI(): void {
         if (this.map == undefined || !this.map.loaded()) {
             return;
         }
@@ -256,9 +252,21 @@ export class LayersControl extends Evented implements IControl {
     }
 
     public setOverlays(overlays: LayerInfo[]): void {
+
+        for (const layer of Array.from(this.overlays.keys())) {
+            if (!overlays.find(l => l.getId() === layer)) {
+                this.overlays.delete(layer);
+            }
+        }
+
         this.overlays = new Map();
-        for (const layer of overlays) {
+        for (const layer of overlays.filter(l => !Array.from(this.overlays.keys()).includes(l.getId()))) {
             this.overlays.set(layer.getId(), layer);
+
+            layer.on(LayerInfoEventType.orderChanged, (e) => {
+                console.log("Event: Layer order changed for ", layer.getName(), e);
+                this.updateShownlayers();
+            })
         }
         this.buildUI();
     }
