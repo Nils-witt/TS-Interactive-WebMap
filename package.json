@@ -18,7 +18,7 @@
     "@mui/material": "^7.3.4",
     "@rollup/plugin-typescript": "^12.1.4",
     "@tailwindcss/vite": "^4.1.14",
-    "@types/web": "^0.0.280",
+    "@types/web": "^0.0.281",
     "@vis.gl/react-maplibre": "^8.1.0",
     "maplibre-gl": "^5.9.0",
     "react": "^19.2.0",
