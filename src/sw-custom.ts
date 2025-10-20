@@ -22,6 +22,7 @@ sw.addEventListener('activate', () => {
                 client.postMessage({cmd: "reload"})
             })
         })
+    void caches.delete('api-cache');
 });
 
 /**
@@ -31,9 +32,6 @@ sw.addEventListener('activate', () => {
 function getURLType(url: URL): string {
     if (url.pathname.startsWith('/overlays/')) {
         return 'overlay-tmp'; // Return overlay type
-    }
-    if (url.pathname.startsWith('/api/')) {
-        return 'api'; // Return overlay type
     }
     if (url.pathname.startsWith('/vector/')) {
         return 'vector'; // Return overlay type

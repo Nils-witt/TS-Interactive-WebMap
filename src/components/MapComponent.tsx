@@ -1,16 +1,17 @@
 import * as React from 'react';
 import {Map as MapLibreMap} from '@vis.gl/react-maplibre';
 import {GeolocateControl, NavigationControl} from '@vis.gl/react-maplibre';
-import {LayerInfo} from "../types/LayerInfo";
 import {useEffect} from "react";
 import {ApiProvider} from "../dataProviders/ApiProvider";
 import ReactLayerControl from "../controls/LayerControl";
 import ReactSearchControl from "../controls/SearchControl";
-import {DataProvider} from "../dataProviders/DataProvider";
+import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider";
 import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
 import {MapSettings} from "./SettingsComponent";
 import ReactButtonControl from "../controls/ButtonControl";
 import {faGear} from "@fortawesome/free-solid-svg-icons/faGear";
+import type {MapStyle} from "../enitities/MapStyle.ts";
+import type {Overlay} from "../enitities/Overlay.ts";
 
 
 export function MapComponent() {
@@ -24,20 +25,25 @@ export function MapComponent() {
         localStorage.setItem('mapZoom', JSON.stringify(e.viewState.zoom));
     }
 
-    const [layers, setLayers] = React.useState<LayerInfo[]>([]);
-    const [mapStyle, setMapStyle] = React.useState<LayerInfo | null>(null);
+    const [mapStyle, setMapStyle] = React.useState<MapStyle | null>(null);
     const [settingsOpen, setSettingsOpen] = React.useState<boolean>(false);
 
     useEffect(() => {
-        void ApiProvider.getInstance().getMapStyles().then((result: LayerInfo[]) => {
+        const mapStyle = DataProvider.getInstance().getMapStyle()
+        if (mapStyle != undefined){
+            setMapStyle(mapStyle);
+        }
+        DataProvider.getInstance().on(DataProviderEventType.MAP_STYLE_UPDATED, (event) => {
+            setMapStyle(event.data as MapStyle);
+        });
+
+        void ApiProvider.getInstance().getMapStyles().then((result: MapStyle[]) => {
             if (result.length > 0) {
-                setMapStyle(result[0]);
-                DataProvider.getInstance().setMapStyle(result[0]);
-                void ApiProvider.getInstance().getOverlayLayers().then((result: LayerInfo[]) => {
-                    setLayers(result);
-                    result.forEach(r => DataProvider.getInstance().addOverlay(r))
-                });
+                DataProvider.getInstance().setMapStyle(result[0])
             }
+        });
+        void ApiProvider.getInstance().getOverlayLayers().then((result: Overlay[]) => {
+            result.forEach(r => DataProvider.getInstance().addOverlay(r))
         });
     }, []);
 
@@ -59,7 +65,7 @@ export function MapComponent() {
         >
             <GeolocateControl/>
             <NavigationControl/>
-            <ReactLayerControl position="bottom-left" layers={layers} shownLayers={[]} dataProvider={dataProvider}/>
+            <ReactLayerControl position="bottom-left" dataProvider={dataProvider}/>
             <ReactSearchControl position="top-left" dataProvider={dataProvider} globalEventHandler={eventHandler}/>
             <ReactButtonControl onClick={() => setSettingsOpen(true)} position={"bottom-left"}
                                 icon={faGear}></ReactButtonControl>

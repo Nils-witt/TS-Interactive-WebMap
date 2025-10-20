@@ -10,10 +10,12 @@
  */
 
 import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject";
-import type {LayerInfo} from "../types/LayerInfo";
 import type {IMapGroup} from "../types/MapEntity";
 import {GlobalEventHandler} from "./GlobalEventHandler";
 import {LngLat} from "maplibre-gl";
+import {DatabaseProvider} from "./DatabaseProvider.ts";
+import {Overlay} from "../enitities/Overlay.ts";
+import {MapStyle} from "../enitities/MapStyle.ts";
 
 /**
  * Interface representing an event dispatched by the DataProvider.
@@ -75,10 +77,10 @@ export class DataProvider {
     private mapLocations = new Map<string, NamedGeoReferencedObject>();
 
     /** Current map style configuration */
-    private mapStyle: LayerInfo | undefined;
+    private mapStyle: MapStyle | undefined;
 
     /** Collection of overlay layers that can be added to the map */
-    private overlays: Map<string, LayerInfo> = new Map<string, LayerInfo>();
+    private overlays: Map<string, Overlay> = new Map<string, Overlay>();
 
     /** Collection of map groups for organizing map elements */
     private mapGroups: Map<string, IMapGroup> = new Map<string, IMapGroup>();
@@ -107,8 +109,33 @@ export class DataProvider {
     public static getInstance(): DataProvider {
         if (!DataProvider.instance) {
             DataProvider.instance = new DataProvider();
+            void DataProvider.instance.loadFromDB();
         }
         return DataProvider.instance;
+    }
+
+    public async loadFromDB() {
+        console.log("Loading data from database...");
+        const dbProvider = await DatabaseProvider.getInstance();
+
+        const overlays = await dbProvider.getAllOverlays();
+
+        for (const overlayDB of overlays) {
+            const overlay = Overlay.of(overlayDB);
+            if (this.overlays.has(overlay.getId())) {
+                this.overlays.set(overlay.getId(), overlay);
+                this.triggerEvent(DataProviderEventType.OVERLAY_UPDATED, overlay);
+            } else {
+                this.overlays.set(overlay.getId(), overlay);
+                this.triggerEvent(DataProviderEventType.OVERLAY_ADDED, overlay);
+            }
+        }
+        const mapStyles = await dbProvider.getAllMapStyles();
+        for (const mapStyle of mapStyles) {
+            const style = MapStyle.of(mapStyle);
+            this.mapStyle = style;
+            this.triggerEvent(DataProviderEventType.MAP_STYLE_UPDATED, style);
+        }
     }
 
     /**
@@ -118,6 +145,7 @@ export class DataProvider {
      * @param data - The data to include with the event
      */
     private triggerEvent(eventType: string, data: object | string | number): void {
+        console.log("Triggering event:", eventType, data);
         GlobalEventHandler.getInstance().emit(eventType, new DataProviderEvent(eventType, data));
     }
 
@@ -187,8 +215,15 @@ export class DataProvider {
      *
      * @param style - The map style configuration to use
      */
-    public setMapStyle(style: LayerInfo): void {
+    public setMapStyle(style: MapStyle): void {
         this.mapStyle = style;
+        void DatabaseProvider.getInstance().then(instance => {
+            instance.saveMapStyle({
+                id: style.getID(),
+                name: style.getName(),
+                url: style.getUrl()
+            });
+        })
         this.triggerEvent(DataProviderEventType.MAP_STYLE_UPDATED, style);
     }
 
@@ -197,7 +232,7 @@ export class DataProvider {
      *
      * @returns The current map style or undefined if not set
      */
-    public getMapStyle(): LayerInfo | undefined {
+    public getMapStyle(): MapStyle | undefined {
         return this.mapStyle;
     }
 
@@ -207,7 +242,7 @@ export class DataProvider {
      * @param id - Unique identifier for the overlay
      * @param overlay - The overlay configuration to store
      */
-    public addOverlay(overlay: LayerInfo): void {
+    public addOverlay(overlay: Overlay): void {
         if (this.overlays.has(overlay.getId())) {
             this.overlays.set(overlay.getId(), overlay);
             this.triggerEvent(DataProviderEventType.OVERLAY_UPDATED, overlay);
@@ -215,6 +250,16 @@ export class DataProvider {
             this.overlays.set(overlay.getId(), overlay);
             this.triggerEvent(DataProviderEventType.OVERLAY_ADDED, overlay);
         }
+        void DatabaseProvider.getInstance().then(instance => {
+            instance.saveOverlay({
+                id: overlay.getId(),
+                name: overlay.getName(),
+                url: overlay.getUrl(),
+                order: overlay.getOrder(),
+                opacity: overlay.getOpacity(),
+                description: overlay.getDescription()
+            });
+        })
     }
 
     public removeOverlay(id: string): void {
@@ -233,7 +278,7 @@ export class DataProvider {
      *
      * @returns Map of all overlay configurations indexed by their IDs
      */
-    public getOverlays(): Map<string, LayerInfo> {
+    public getOverlays(): Map<string, Overlay> {
         return this.overlays;
     }
 
@@ -272,6 +317,10 @@ export class DataProvider {
 
     public getApiToken(): string {
         return localStorage.getItem('apiToken') || '';
+    }
+
+    public on(eventType: string, listener: (event: DataProviderEvent) => void): void {
+        GlobalEventHandler.getInstance().on(eventType, listener as ((event: Event) => void));
     }
 
 }

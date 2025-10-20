@@ -1,11 +1,11 @@
 import {type ControlPosition, Evented, type IControl, Map as MapLibreMap} from "maplibre-gl";
-import {type LayerInfo, LayerInfoEventType} from "../types/LayerInfo.ts";
 import {icon} from "@fortawesome/fontawesome-svg-core";
 import {faMap} from "@fortawesome/free-solid-svg-icons/faMap";
 import {faXmark} from "@fortawesome/free-solid-svg-icons/faXmark";
 import {DOM} from "maplibre-gl/src/util/dom";
-import {DataProvider} from "../dataProviders/DataProvider";
+import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider";
 import {useControl} from "@vis.gl/react-maplibre";
+import {type Overlay, OverlayEvent} from "../enitities/Overlay.ts";
 
 /**
  * LayersControl provides a UI to toggle overlays and open per-layer settings.
@@ -18,17 +18,14 @@ import {useControl} from "@vis.gl/react-maplibre";
 
 
 interface ReactLayerControlProps {
-    layers: LayerInfo[];
-    shownLayers: string[];
     position: ControlPosition;
     dataProvider: DataProvider;
 }
 
 function ReactLayerControl(props: ReactLayerControlProps): null {
-    const layercontrol = useControl(() => new LayersControl(props as LayerControlOptions), {
+    useControl(() => new LayersControl(props as LayerControlOptions), {
         position: props.position
     });
-    layercontrol.setOverlays(props.layers);
 
     return null;
 }
@@ -36,8 +33,6 @@ function ReactLayerControl(props: ReactLayerControlProps): null {
 export default ReactLayerControl;
 
 interface LayerControlOptions {
-    layers: LayerInfo[];
-    shownLayers?: string[];
     dataProvider: DataProvider;
 }
 
@@ -66,7 +61,7 @@ export class LayersControl extends Evented implements IControl {
     /**
      * Map of layer IDs to their corresponding LayerInfo objects for quick lookup
      */
-    private overlays = new Map<string, LayerInfo>();
+    private overlays = new Map<string, Overlay>();
 
     /**
      * Map to track active overlays by their IDs
@@ -109,9 +104,10 @@ export class LayersControl extends Evented implements IControl {
             this.setOpen(!this.isOpen);
         });
 
-
-        this.setOverlays(this.options.layers);
-
+        this.options.dataProvider.on(DataProviderEventType.OVERLAY_ADDED, () => {
+            this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
+        });
+        this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
     }
 
     private setOpen(open: boolean): void {
@@ -127,7 +123,7 @@ export class LayersControl extends Evented implements IControl {
 
     private updateShownlayers(): void {
         if (this.map == undefined) return;
-        const layersToAdd: LayerInfo[] = Array.from(this.overlays.values()).sort((a, b) => {
+        const layersToAdd: Overlay[] = Array.from(this.overlays.values()).sort((a, b) => {
             if (a.getOrder() != b.getOrder()) {
                 return a.getOrder() - b.getOrder();
             }
@@ -173,7 +169,7 @@ export class LayersControl extends Evented implements IControl {
      * @param layer - The layer information object
      * @returns A label element containing a checkbox and the layer name
      */
-    private createLabeledCheckbox(layer: LayerInfo): HTMLDivElement {
+    private createLabeledCheckbox(layer: Overlay): HTMLDivElement {
         const container = document.createElement("div");
         container.classList.add("m-1")
         container.classList.add("inline-flex", "items-center");
@@ -251,7 +247,7 @@ export class LayersControl extends Evented implements IControl {
         this.updateShownlayers();
     }
 
-    public setOverlays(overlays: LayerInfo[]): void {
+    public setOverlays(overlays: Overlay[]): void {
 
         for (const layer of Array.from(this.overlays.keys())) {
             if (!overlays.find(l => l.getId() === layer)) {
@@ -263,7 +259,7 @@ export class LayersControl extends Evented implements IControl {
         for (const layer of overlays.filter(l => !Array.from(this.overlays.keys()).includes(l.getId()))) {
             this.overlays.set(layer.getId(), layer);
 
-            layer.on(LayerInfoEventType.orderChanged, (e) => {
+            layer.on(OverlayEvent.orderChanged, (e) => {
                 console.log("Event: Layer order changed for ", layer.getName(), e);
                 this.updateShownlayers();
             })

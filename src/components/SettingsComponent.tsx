@@ -5,11 +5,11 @@ import {faX} from '@fortawesome/free-solid-svg-icons'
 import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';
 import {Utilities} from "../Utilities";
-import type {LayerInfo} from "../types/LayerInfo.ts";
 import {DataProvider} from "../dataProviders/DataProvider.ts";
 import CacheProvider from "../dataProviders/CacheProvider.ts";
 import {useRef} from 'react';
 import {Input} from "@mui/material";
+import type {Overlay} from "../enitities/Overlay.ts";
 
 
 interface MapSettingsProps {
@@ -17,7 +17,7 @@ interface MapSettingsProps {
 }
 
 
-function LayerTableRow(props: { overlay: LayerInfo }): ReactElement {
+function LayerTableRow(props: { overlay: Overlay }): ReactElement {
     const btnRef = useRef<HTMLButtonElement | null>(null);
     const [order, setOrder] = React.useState<number>(props.overlay.getOrder());
 
@@ -76,7 +76,7 @@ function LayerTableRow(props: { overlay: LayerInfo }): ReactElement {
 
 export function MapSettings(props: MapSettingsProps): ReactElement {
 
-    const [overlays, setOverlays] = React.useState<LayerInfo[]>([]);
+    const [overlays, setOverlays] = React.useState<Overlay[]>([]);
 
     const closeMenu = () => {
         props.isOpen[1](false);

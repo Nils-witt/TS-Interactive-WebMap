@@ -1,7 +1,8 @@
 import {ApiProvider} from "./ApiProvider.ts";
-import type {LayerInfo} from "../types/LayerInfo.ts";
 import {DataProvider} from "./DataProvider.ts";
 import {Utilities} from "../Utilities.ts";
+import type {Overlay} from "../enitities/Overlay.ts";
+import type {MapStyle} from "../enitities/MapStyle.ts";
 
 class CacheProvider {
     private static instance: CacheProvider | null = null;
@@ -30,7 +31,7 @@ class CacheProvider {
      * Gets the cache state for a given overlay, including remote tiles, cached tiles, and missing tiles.
      * @param overlay
      */
-    async getOverlayCacheState(overlay: LayerInfo): Promise<{
+    async getOverlayCacheState(overlay: Overlay): Promise<{
         remoteTiles: string[],
         cachedTiles: string[],
         missing: string[]
@@ -63,7 +64,7 @@ class CacheProvider {
      * @param vectorLayer
      * @param tiles
      */
-    async cacheVector(vectorLayer: LayerInfo, tiles: { x: number, y: number, z: number }[]): Promise<void> {
+    async cacheVector(vectorLayer: MapStyle, tiles: { x: number, y: number, z: number }[]): Promise<void> {
         const cache = await caches.open(`vector-cache`);
 
         const style = await fetch(vectorLayer.getUrl());
@@ -100,7 +101,7 @@ class CacheProvider {
      * @param overlay
      * @param btn
      */
-    async cacheOverlay(overlay: LayerInfo, btn?: HTMLButtonElement): Promise<void> {
+    async cacheOverlay(overlay: Overlay, btn?: HTMLButtonElement): Promise<void> {
         const state = await this.getOverlayCacheState(overlay);
         const cache = await caches.open(`overlay-${overlay.getId()}`);
         const tmpCache = await caches.open(`overlay-tmp`);

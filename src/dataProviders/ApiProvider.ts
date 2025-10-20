@@ -1,9 +1,10 @@
-import {LayerInfo} from "../types/LayerInfo";
 import {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject";
 import {DataProvider} from "./DataProvider";
 import type {IMapGroup} from "../types/MapEntity";
 import type {TaktischesZeichen} from "taktische-zeichen-core/dist/types/types";
 import {GlobalEventHandler} from "./GlobalEventHandler";
+import {Overlay} from "../enitities/Overlay.ts";
+import {MapStyle} from "../enitities/MapStyle.ts";
 
 
 export class ApiProviderEvent extends Event {
@@ -130,8 +131,8 @@ export class ApiProvider {
         return this.callApi(url, 'GET');
     }
 
-    public async getOverlayLayers(): Promise<LayerInfo[]> {
-        const overlays: LayerInfo[] = [];
+    public async getOverlayLayers(): Promise<Overlay[]> {
+        const overlays: Overlay[] = [];
 
         try {
             const url = DataProvider.getInstance().getApiUrl() + '/overlays/'
@@ -142,11 +143,13 @@ export class ApiProvider {
                 url: string,
                 description: string
             }[]) {
-                overlays.push(new LayerInfo({
+                overlays.push(Overlay.of({
                     id: layer.id,
                     name: layer.name,
                     url: layer.url,
-                    description: layer.description
+                    description: layer.description,
+                    order: 0,
+                    opacity: 1.0
                 }));
             }
         } catch (error) {
@@ -155,8 +158,8 @@ export class ApiProvider {
         return overlays; // Return empty array on error
     }
 
-    public async getMapStyles(): Promise<LayerInfo[]> {
-        const overlays: LayerInfo[] = [];
+    public async getMapStyles(): Promise<MapStyle[]> {
+        const overlays: MapStyle[] = [];
 
         try {
             const url = DataProvider.getInstance().getApiUrl() + '/styles/'
@@ -166,11 +169,10 @@ export class ApiProvider {
                 url: string,
                 description: string
             }[]) {
-                overlays.push(new LayerInfo({
+                overlays.push(MapStyle.of({
                     id: layer.id,
                     name: layer.id,
-                    url: layer.url,
-                    description: layer.description
+                    url: layer.url
                 }));
             }
         } catch (error) {
@@ -288,7 +290,7 @@ export class ApiProvider {
         }
     }
 
-    public async getOverlayTiles(overlay: LayerInfo): Promise<string[]> {
+    public async getOverlayTiles(overlay: Overlay): Promise<string[]> {
         let url: URL | undefined;
         if (overlay.getUrl().startsWith('http')) {
             url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search("{z}"))); // Ensure the URL is absolute
