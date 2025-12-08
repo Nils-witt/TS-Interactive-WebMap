@@ -36,7 +36,7 @@ export class ButtonControl implements IControl {
             'maplibregl-ctrl-group',
             'grid'
         );
-        this.container.classList.add('p-[5px]');
+        this.container.classList.add('buttoncontrol-root');
 
 
         const iconDef = this.options.icon || ButtonControl.fallBackIcon;

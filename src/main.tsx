@@ -1,9 +1,11 @@
 import {StrictMode} from 'react'
 import {createRoot} from 'react-dom/client'
-import './index.css'
-import 'maplibre-gl/dist/maplibre-gl.css'; // See notes below
-import App from './App'
 import {registerSW} from "virtual:pwa-register";
+
+import App from './App'
+
+import './css/components.scss'
+import 'maplibre-gl/dist/maplibre-gl.css'; // See notes below
 
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
