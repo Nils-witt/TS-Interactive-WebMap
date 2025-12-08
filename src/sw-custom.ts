@@ -17,11 +17,11 @@ sw.addEventListener('activate', () => {
     void sw.clients.matchAll({
         includeUncontrolled: true
     }).then((clients) => {
-            clients.forEach(function (client) {
-                console.log('Sending message to client:', client);
-                client.postMessage({cmd: "reload"})
-            })
-        })
+        clients.forEach(function (client) {
+            console.log('Sending message to client:', client);
+            client.postMessage({cmd: 'reload'});
+        });
+    });
     void caches.delete('api-cache');
 });
 
@@ -49,12 +49,12 @@ function getURLType(url: URL): string {
  */
 function transformCacheUrl(cacheName: string, url: string): URL {
     const locURL = new URL(url);
-    if (cacheName.startsWith("overlay-")) {
+    if (cacheName.startsWith('overlay-')) {
 
-        console.log(`Transform ${new URL(locURL.origin + locURL.pathname)}`)
+        console.log(`Transform ${new URL(locURL.origin + locURL.pathname)}`);
         return new URL(locURL.origin + locURL.pathname);
     }
-    return new URL(url)
+    return new URL(url);
 }
 
 /**
@@ -84,62 +84,62 @@ function getCacheName(url: URL): [string, boolean, boolean, boolean] {
     if (sw.registration.scope.startsWith(url.origin)) {
         return [reqType, true, false, false];
     }
-    console.log(`[SW] Fetch ${url}; ${url.origin} == ${sw.registration.scope}`)
+    console.log(`[SW] Fetch ${url}; ${url.origin} == ${sw.registration.scope}`);
     return ['never', true, false, false];
 
 }
 
 
-sw.addEventListener("fetch", (event) => {
+sw.addEventListener('fetch', (event) => {
     let url = new URL(event.request.url);
-    console.log(`[SW] Fetch ${url}`)
+    console.log(`[SW] Fetch ${url}`);
     if (event.request.method !== 'GET') {
         return;
     }
-    if (event.request.url == "https://karten.bereitschaften-drk-bonn.de/") {
-        url = new URL("https://karten.bereitschaften-drk-bonn.de/index.html")
+    if (event.request.url == 'https://karten.bereitschaften-drk-bonn.de/') {
+        url = new URL('https://karten.bereitschaften-drk-bonn.de/index.html');
     }
 
     const [useCacheName, networkFirst, useCache, putMissingInCache] = getCacheName(url);
     if (useCache) {
-        console.log(`Fetch ${url} useCache ${useCacheName}; netForst: ${networkFirst}; useCache ${useCache}`)
+        console.log(`Fetch ${url} useCache ${useCacheName}; netForst: ${networkFirst}; useCache ${useCache}`);
         if (networkFirst) {
             event.respondWith(new Promise((resolve, reject) => {
-                    fetch(event.request, {signal: AbortSignal.timeout(2000)})
-                        .then(async response => {
-                            if (response && response.ok) {
-                                const responseToCache = response.clone();
+                fetch(event.request, {signal: AbortSignal.timeout(2000)})
+                    .then(async response => {
+                        if (response && response.ok) {
+                            const responseToCache = response.clone();
 
-                                void caches.open(useCacheName).then((cache) => {
-                                    void cache.put(event.request, responseToCache); // Cache the new response
-                                });
-                                resolve(response);
-                                return;
-                            } else if (response.status === 403) {
-                                resolve(response);
-                                return;
-                            }
-
-                            const cacheMatch = await caches.match(event.request);
-                            if (cacheMatch != undefined) {
-                                resolve(cacheMatch);
-                                return;
-                            } else {
-                                reject(new Error(`Could not fetch ${event.request.url}`));
-                            }
-                            return;
-
-                        })
-                        .catch(() => {
-                            return caches.match(event.request).then((cachedResponse) => {
-                                if (cachedResponse) {
-                                    resolve(cachedResponse);
-                                } else {
-                                    resolve(new Response("Not found", {status: 404}))
-                                }
+                            void caches.open(useCacheName).then((cache) => {
+                                void cache.put(event.request, responseToCache); // Cache the new response
                             });
-                        })
-                })
+                            resolve(response);
+                            return;
+                        } else if (response.status === 403) {
+                            resolve(response);
+                            return;
+                        }
+
+                        const cacheMatch = await caches.match(event.request);
+                        if (cacheMatch != undefined) {
+                            resolve(cacheMatch);
+                            return;
+                        } else {
+                            reject(new Error(`Could not fetch ${event.request.url}`));
+                        }
+                        return;
+
+                    })
+                    .catch(() => {
+                        return caches.match(event.request).then((cachedResponse) => {
+                            if (cachedResponse) {
+                                resolve(cachedResponse);
+                            } else {
+                                resolve(new Response('Not found', {status: 404}));
+                            }
+                        });
+                    });
+            })
             );
         } else {
             event.respondWith(caches.open(useCacheName).then((cache) => {
@@ -147,13 +147,13 @@ sw.addEventListener("fetch", (event) => {
                     if (cachedResponse) {
                         return cachedResponse;
                     }
-                    console.log(`Locally not found: ${url}`)
+                    console.log(`Locally not found: ${url}`);
                     return fetch(event.request.url).then((fetchedResponse) => {
                         if (fetchedResponse && fetchedResponse.ok && putMissingInCache) {
                             cache.put(event.request, fetchedResponse.clone())
                                 .catch((e) => {
-                                    console.error("Error caching fetched response:", e);
-                                })
+                                    console.error('Error caching fetched response:', e);
+                                });
                         }
                         return fetchedResponse;
                     });

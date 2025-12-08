@@ -1,9 +1,9 @@
-import type {INamedGeoReferencedObject} from "../types/MapEntity.ts";
-import type {TaktischesZeichen} from "taktische-zeichen-core/dist/types/types";
-import {type DBRecord, Entity} from "./Entity.ts";
+import type {INamedGeoReferencedObject} from '../types/MapEntity.ts';
+import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
+import {type DBRecord, Entity} from './Entity.ts';
 
 
-export class NamedGeoReferencedObject extends Entity{
+export class NamedGeoReferencedObject extends Entity {
     private id: string;
     private latitude: number;
     private longitude: number;
@@ -68,18 +68,23 @@ export class NamedGeoReferencedObject extends Entity{
     public getZoomLevel(): number | undefined {
         return this.zoomLevel;
     }
+
     public getShowOnMap(): boolean | undefined {
         return this.showOnMap;
     }
+
     public getSymbol(): TaktischesZeichen | undefined {
         return this.symbol;
     }
+
     public getGroupId(): string | undefined {
         return this.groupId;
     }
+
     public setGroupId(groupId: string | undefined): void {
         this.groupId = groupId;
     }
+
     public getGeoReferencedObject(): INamedGeoReferencedObject {
         return {
             id: this.id,
@@ -87,7 +92,7 @@ export class NamedGeoReferencedObject extends Entity{
             longitude: this.longitude,
             name: this.name,
             zoomLevel: this.zoomLevel,
-        }
+        };
     }
 
     public setName(name: string): void {
@@ -101,6 +106,7 @@ export class NamedGeoReferencedObject extends Entity{
     public setShowOnMap(showOnMap: boolean): void {
         this.showOnMap = showOnMap;
     }
+
     public setSymbol(symbol: TaktischesZeichen): void {
         this.symbol = symbol;
     }
@@ -108,6 +114,7 @@ export class NamedGeoReferencedObject extends Entity{
     public setLatitude(latitude: number): void {
         this.latitude = latitude;
     }
+
     public setLongitude(longitude: number): void {
         this.longitude = longitude;
     }

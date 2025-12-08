@@ -9,12 +9,12 @@
  * Future implementation will include BroadcastChannel communication for cross-tab synchronization.
  */
 
-import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject";
-import type {IMapGroup} from "../types/MapEntity";
-import {GlobalEventHandler} from "./GlobalEventHandler";
-import {LngLat} from "maplibre-gl";
-import {Overlay} from "../enitities/Overlay.ts";
-import {MapStyle} from "../enitities/MapStyle.ts";
+import type {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject';
+import type {IMapGroup} from '../types/MapEntity';
+import {GlobalEventHandler} from './GlobalEventHandler';
+import {LngLat} from 'maplibre-gl';
+import {Overlay} from '../enitities/Overlay.ts';
+import {MapStyle} from '../enitities/MapStyle.ts';
 
 /**
  * Interface representing an event dispatched by the DataProvider.
@@ -119,7 +119,7 @@ export class DataProvider {
      * @param data - The data to include with the event
      */
     private triggerEvent(eventType: string, data: object | string | number): void {
-        console.log("Triggering event:", eventType, data);
+        console.log('Triggering event:', eventType, data);
         GlobalEventHandler.getInstance().emit(eventType, new DataProviderEvent(eventType, data));
     }
 
@@ -259,7 +259,7 @@ export class DataProvider {
     }
 
     public setApiUrl(url: string): void {
-        localStorage.setItem('apiUrl', url)
+        localStorage.setItem('apiUrl', url);
         this.triggerEvent(DataProviderEventType.API_URL_UPDATED, url);
     }
 
@@ -268,7 +268,7 @@ export class DataProvider {
     }
 
     public setApiToken(token: string): void {
-        localStorage.setItem('apiToken', token)
+        localStorage.setItem('apiToken', token);
         this.triggerEvent(DataProviderEventType.API_TOKEN_UPDATED, token);
     }
 

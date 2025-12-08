@@ -1,4 +1,4 @@
-import type {TaktischesZeichen} from "taktische-zeichen-core/dist/types/types";
+import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
 
 
 export interface IAbstractEntity {

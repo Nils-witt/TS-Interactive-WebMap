@@ -5,7 +5,8 @@ export class GlobalEventHandler {
 
     private listeners: Map<string, ((event: Event) => void)[]> = new Map<string, ((event: Event) => void)[]>();
 
-    private constructor() { /* empty */ }
+    private constructor() { /* empty */
+    }
 
     public static getInstance(): GlobalEventHandler {
         if (!this.instance) {

@@ -5,6 +5,7 @@ import {type ReactElement, useEffect, useState} from "react";
 import '../login.scss'
 
 export function LoginPage(): ReactElement {
+    const apiProvider = ApiProvider.getInstance();
 
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -13,14 +14,14 @@ export function LoginPage(): ReactElement {
 
     const handleLogin = () => {
         setLoading(true);
-        ApiProvider.getInstance().login(username, password).catch(() => {
+        apiProvider.login(username, password).catch(() => {
             setError("Login failed");
             setLoading(false);
         });
     }
 
     useEffect(() => {
-        void ApiProvider.getInstance().testLogin();
+        void apiProvider.testLogin();
     }, [])
 
 

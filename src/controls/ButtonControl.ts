@@ -1,9 +1,9 @@
-import type {ControlPosition, IControl} from "maplibre-gl";
-import {DOM} from "maplibre-gl/src/util/dom";
-import {faGear} from "@fortawesome/free-solid-svg-icons/faGear";
-import {icon} from "@fortawesome/fontawesome-svg-core";
-import {useControl} from "@vis.gl/react-maplibre";
-import type {IconDefinition} from "@fortawesome/free-brands-svg-icons";
+import type {ControlPosition, IControl} from 'maplibre-gl';
+import {DOM} from 'maplibre-gl/src/util/dom';
+import {faGear} from '@fortawesome/free-solid-svg-icons/faGear';
+import {icon} from '@fortawesome/fontawesome-svg-core';
+import {useControl} from '@vis.gl/react-maplibre';
+import type {IconDefinition} from '@fortawesome/free-brands-svg-icons';
 
 interface ReactButtonControlProps {
     position: ControlPosition;
@@ -31,26 +31,26 @@ export class ButtonControl implements IControl {
 
     constructor(options: ButtonControlOptions) {
         this.options = options;
-        this.container = DOM.create("div", "maplibregl-ctrl");
+        this.container = DOM.create('div', 'maplibregl-ctrl');
         this.container.classList.add(
-            "maplibregl-ctrl-group",
-            "grid"
+            'maplibregl-ctrl-group',
+            'grid'
         );
-        this.container.classList.add("p-[5px]");
+        this.container.classList.add('p-[5px]');
 
 
         const iconDef = this.options.icon || ButtonControl.fallBackIcon;
 
 
-        const iconSpan = document.createElement("span");
+        const iconSpan = document.createElement('span');
         iconSpan.innerHTML = icon(iconDef, {
             transform: {}
         }).html[0];
-        this.container.appendChild(iconSpan)
+        this.container.appendChild(iconSpan);
 
-        this.container.addEventListener("click", () => {
+        this.container.addEventListener('click', () => {
             this.options.onClick();
-        })
+        });
     }
 
     onRemove(): void {

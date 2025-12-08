@@ -1,31 +1,31 @@
-import {Entity} from "./Entity.ts";
+import {Entity} from './Entity.ts';
 
 
 export enum OverlayEvent {
-    changed = "overlayChanged",
-    orderChanged = "overlayOrderChanged"
+    changed = 'overlayChanged',
+    orderChanged = 'overlayOrderChanged'
 }
 
 export class Overlay extends Entity {
     /**
      * The display name of the layer shown in the layer control
      */
-    private name = "";
+    private name = '';
 
     /**
      * Unique identifier for the layer, used for source and layer creation
      */
-    private id = "";
+    private id = '';
 
     /**
      * Description of the layer's content and purpose
      */
-    private description = "";
+    private description = '';
 
     /**
      * URL to the tile source for this layer
      */
-    private url = "";
+    private url = '';
 
     /**
      * Optional opacity for the layer, default is 1.0
@@ -63,7 +63,7 @@ export class Overlay extends Entity {
             order: this.order,
             opacity: this.opacity,
             description: this.description
-        }
+        };
     }
 
     public getId(): string {

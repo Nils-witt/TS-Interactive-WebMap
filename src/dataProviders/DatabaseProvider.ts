@@ -1,14 +1,14 @@
 import {type IDBPDatabase, openDB} from 'idb';
-import type {StorageInterface} from "./StorageInterface.ts";
-import {Overlay} from "../enitities/Overlay.ts";
-import {MapStyle} from "../enitities/MapStyle.ts";
-import {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject.ts";
+import type {StorageInterface} from './StorageInterface.ts';
+import {Overlay} from '../enitities/Overlay.ts';
+import {MapStyle} from '../enitities/MapStyle.ts';
+import {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject.ts';
 
 
 enum DB_TABLES {
-    overlays = "overlays",
-    mapStyles = "mapStyles",
-    namedGeoReferencedObjects = "namedgeoreferencedobjects"
+    overlays = 'overlays',
+    mapStyles = 'mapStyles',
+    namedGeoReferencedObjects = 'namedgeoreferencedobjects'
 }
 
 export class DatabaseProvider implements StorageInterface {
@@ -22,10 +22,10 @@ export class DatabaseProvider implements StorageInterface {
 
     public async setUp(): Promise<void> {
 
-
-        this.db = await openDB(this.DB_NAME, 6, {
+        const dbVersion = 7;
+        this.db = await openDB(this.DB_NAME, dbVersion, {
             upgrade(db) {
-                console.log("Upgrading database to version 3");
+                console.log(`Upgrading database to version ${dbVersion}`);
                 if (!db.objectStoreNames.contains(DB_TABLES.overlays)) {
                     db.createObjectStore(DB_TABLES.overlays, {keyPath: 'id'});
                 }
@@ -47,7 +47,7 @@ export class DatabaseProvider implements StorageInterface {
     saveOverlay(overlay: Overlay): Promise<Overlay> {
 
         return new Promise((resolve) => {
-            if (!this.db) throw new Error("Database not initialized");
+            if (!this.db) throw new Error('Database not initialized');
 
             const overlayRecord = overlay.record();
             const tx = this.db.transaction(DB_TABLES.overlays, 'readwrite');
@@ -65,7 +65,7 @@ export class DatabaseProvider implements StorageInterface {
 
     deleteMapStyle(id: string): Promise<void> {
         return new Promise((resolve) => {
-            if (!this.db) throw new Error("Database not initialized");
+            if (!this.db) throw new Error('Database not initialized');
 
             const tx = this.db.transaction(DB_TABLES.mapStyles, 'readwrite');
 
@@ -74,7 +74,7 @@ export class DatabaseProvider implements StorageInterface {
                     void tx.objectStore(DB_TABLES.mapStyles).delete(id);
                     resolve();
                 } else {
-                    throw new Error("Not Exist");
+                    throw new Error('Not Exist');
                 }
             });
         });
@@ -83,7 +83,7 @@ export class DatabaseProvider implements StorageInterface {
     deleteNamedGeoReferencedObject(id: string): Promise<void> {
 
         return new Promise((resolve, reject) => {
-            if (!this.db) throw new Error("Database not initialized");
+            if (!this.db) throw new Error('Database not initialized');
             const tx = this.db.transaction(DB_TABLES.namedGeoReferencedObjects, 'readwrite');
 
             void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).getKey(id).then(result => {
@@ -91,7 +91,7 @@ export class DatabaseProvider implements StorageInterface {
                     void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).delete(id);
                     return resolve();
                 } else {
-                    return reject(new Error("Not Exist"));
+                    return reject(new Error('Not Exist'));
                 }
             });
         });
@@ -99,7 +99,7 @@ export class DatabaseProvider implements StorageInterface {
 
     deleteOverlay(id: string): Promise<boolean> {
         return new Promise((resolve, reject) => {
-            if (!this.db) throw new Error("Database not initialized");
+            if (!this.db) throw new Error('Database not initialized');
 
             const tx = this.db.transaction(DB_TABLES.overlays, 'readwrite');
 
@@ -108,7 +108,7 @@ export class DatabaseProvider implements StorageInterface {
                     void tx.objectStore(DB_TABLES.overlays).delete(id);
                     resolve(true);
                 } else {
-                    reject(new Error("Not Exist"));
+                    reject(new Error('Not Exist'));
                 }
             });
         });
@@ -116,7 +116,7 @@ export class DatabaseProvider implements StorageInterface {
 
     loadAllMapStyles(): Promise<Record<string, MapStyle>> {
         return new Promise<Record<string, MapStyle>>((resolve) => {
-            if (!this.db) throw new Error("Database not initialized");
+            if (!this.db) throw new Error('Database not initialized');
             const tx = this.db.transaction(DB_TABLES.mapStyles, 'readonly');
 
             void tx.objectStore(DB_TABLES.mapStyles).getAll()
@@ -133,7 +133,7 @@ export class DatabaseProvider implements StorageInterface {
 
     loadAllNamedGeoReferencedObjects(): Promise<Record<string, NamedGeoReferencedObject>> {
         return new Promise<Record<string, NamedGeoReferencedObject>>((resolve) => {
-            if (!this.db) throw new Error("Database not initialized");
+            if (!this.db) throw new Error('Database not initialized');
             const tx = this.db.transaction(DB_TABLES.namedGeoReferencedObjects, 'readonly');
 
             void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).getAll()
@@ -150,7 +150,7 @@ export class DatabaseProvider implements StorageInterface {
 
     loadAllOverlays(): Promise<Record<string, Overlay>> {
         return new Promise<Record<string, Overlay>>((resolve) => {
-            if (!this.db) throw new Error("Database not initialized");
+            if (!this.db) throw new Error('Database not initialized');
             const tx = this.db.transaction(DB_TABLES.overlays, 'readonly');
 
             void tx.objectStore(DB_TABLES.overlays).getAll()
@@ -167,7 +167,7 @@ export class DatabaseProvider implements StorageInterface {
 
     loadMapStyle(id: string): Promise<MapStyle | null> {
         return new Promise((resolve) => {
-            if (!this.db) throw new Error("Database not initialized");
+            if (!this.db) throw new Error('Database not initialized');
 
             const tx = this.db.transaction(DB_TABLES.mapStyles, 'readonly');
 
@@ -184,7 +184,7 @@ export class DatabaseProvider implements StorageInterface {
 
     loadNamedGeoReferencedObject(id: string): Promise<NamedGeoReferencedObject | null> {
         return new Promise<NamedGeoReferencedObject | null>((resolve) => {
-            if (!this.db) throw new Error("Database not initialized");
+            if (!this.db) throw new Error('Database not initialized');
 
             const tx = this.db.transaction(DB_TABLES.namedGeoReferencedObjects, 'readonly');
 
@@ -201,7 +201,7 @@ export class DatabaseProvider implements StorageInterface {
 
     loadOverlay(id: string): Promise<Overlay | null> {
         return new Promise<Overlay | null>((resolve) => {
-            if (!this.db) throw new Error("Database not initialized");
+            if (!this.db) throw new Error('Database not initialized');
 
             const tx = this.db.transaction(DB_TABLES.overlays, 'readonly');
 
@@ -218,7 +218,7 @@ export class DatabaseProvider implements StorageInterface {
 
     saveMapStyle(mapStyle: MapStyle): Promise<MapStyle> {
         return new Promise<MapStyle>((resolve) => {
-            if (!this.db) throw new Error("Database not initialized");
+            if (!this.db) throw new Error('Database not initialized');
 
             const mapStyleRecord = mapStyle.record();
             const tx = this.db.transaction(DB_TABLES.mapStyles, 'readwrite');
@@ -236,7 +236,7 @@ export class DatabaseProvider implements StorageInterface {
 
     saveNamedGeoReferencedObject(namedGeoReferencedObject: NamedGeoReferencedObject): Promise<NamedGeoReferencedObject> {
         return new Promise<NamedGeoReferencedObject>((resolve) => {
-            if (!this.db) throw new Error("Database not initialized");
+            if (!this.db) throw new Error('Database not initialized');
 
             const namedGeoReferencedObjectRecord = namedGeoReferencedObject.record();
             const tx = this.db.transaction(DB_TABLES.namedGeoReferencedObjects, 'readwrite');

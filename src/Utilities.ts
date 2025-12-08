@@ -2,7 +2,7 @@ export class Utilities {
 
 
     static async clearCache(): Promise<void> {
-        const cacheNames = await caches.keys()
+        const cacheNames = await caches.keys();
 
         await Promise.all(
             cacheNames.map((cacheName) => caches.delete(cacheName))
@@ -10,11 +10,11 @@ export class Utilities {
     }
 
     static async clearMapCache(): Promise<void> {
-        const cacheNames = await caches.keys()
+        const cacheNames = await caches.keys();
 
         await Promise.all(
             cacheNames.filter((name) => {
-                return name == "vector-cache" || name.startsWith('overlay-')
+                return name == 'vector-cache' || name.startsWith('overlay-');
             }).map((cacheName) => caches.delete(cacheName))
         );
     }
@@ -41,7 +41,7 @@ export class Utilities {
             x: parseInt(match[3], 10),
             y: parseInt(match[4], 10),
             format: match[5]
-        }
+        };
 
     }
 }

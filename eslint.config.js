@@ -9,11 +9,13 @@ export default defineConfig([
         files: ["src/**/*.{js,ts}"],
         languageOptions: {globals: globals.browser},
         extends: [
-            // js
             js.configs.recommended,
         ],
         rules: {
             // 'no-console': 'warn'
+            'semi': ['error', 'always'],
+            'quotes': ['error', 'single'],
+            'indent': ['error', 4],
         }
     },
     tseslint.configs.recommendedTypeChecked,

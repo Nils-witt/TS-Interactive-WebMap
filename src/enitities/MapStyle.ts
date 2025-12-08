@@ -1,9 +1,9 @@
-import {type DBRecord, Entity} from "./Entity.ts";
+import {type DBRecord, Entity} from './Entity.ts';
 
 
 export class MapStyle extends Entity {
     private id: string;
-    private name: string
+    private name: string;
     private url: string;
 
 

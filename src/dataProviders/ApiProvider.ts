@@ -1,11 +1,11 @@
-import {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject";
-import {DataProvider} from "./DataProvider";
-import type {IMapGroup} from "../types/MapEntity";
-import type {TaktischesZeichen} from "taktische-zeichen-core/dist/types/types";
-import {GlobalEventHandler} from "./GlobalEventHandler";
-import {Overlay} from "../enitities/Overlay.ts";
-import {MapStyle} from "../enitities/MapStyle.ts";
-import type {StorageInterface} from "./StorageInterface.ts";
+import {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject';
+import {DataProvider} from './DataProvider';
+import type {IMapGroup} from '../types/MapEntity';
+import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
+import {GlobalEventHandler} from './GlobalEventHandler';
+import {Overlay} from '../enitities/Overlay.ts';
+import {MapStyle} from '../enitities/MapStyle.ts';
+import type {StorageInterface} from './StorageInterface.ts';
 
 
 export class ApiProviderEvent extends Event {
@@ -34,17 +34,17 @@ export class ApiProvider implements StorageInterface {
     }
 
     setUp(): Promise<void> {
-        throw new Error("Method not implemented.");
+        throw new Error('Method not implemented.');
     }
 
     saveOverlay(overlay: Overlay): Promise<Overlay> {
-        throw new Error(`Method not implemented: saveOverlays ${overlay.getId()}`, );
+        throw new Error(`Method not implemented: saveOverlays ${overlay.getId()}`,);
     }
 
     loadOverlay(id: string): Promise<Overlay | null> {
         return new Promise<Overlay | null>(resolve => {
             try {
-                const url = DataProvider.getInstance().getApiUrl() + '/overlays/' + id + '/'
+                const url = DataProvider.getInstance().getApiUrl() + '/overlays/' + id + '/';
 
                 this.fetchData(url)
                     .then(data => {
@@ -63,11 +63,11 @@ export class ApiProvider implements StorageInterface {
                         }
                     })
                     .catch(e => {
-                        console.error("Error fetching overlay layer:", e);
+                        console.error('Error fetching overlay layer:', e);
                         resolve(null);
                     });
             } catch (error) {
-                console.error("Error fetching overlay layer:", error);
+                console.error('Error fetching overlay layer:', error);
                 resolve(null);
             }
         });
@@ -80,7 +80,7 @@ export class ApiProvider implements StorageInterface {
             const overlays: Record<string, Overlay> = {};
 
             try {
-                const url = DataProvider.getInstance().getApiUrl() + '/overlays/'
+                const url = DataProvider.getInstance().getApiUrl() + '/overlays/';
                 this.fetchData(url)
                     .then(data => {
                         for (const layer of data as {
@@ -101,12 +101,12 @@ export class ApiProvider implements StorageInterface {
                         resolve(overlays);
                     })
                     .catch(e => {
-                        console.error("Error fetching overlay layers:", e);
+                        console.error('Error fetching overlay layers:', e);
                     });
             } catch (error) {
-                console.error("Error fetching overlay layers:", error);
+                console.error('Error fetching overlay layers:', error);
             }
-        })
+        });
 
     }
 
@@ -127,7 +127,7 @@ export class ApiProvider implements StorageInterface {
         return new Promise<Record<string, MapStyle>>(resolve => {
             const mapStyles: Record<string, MapStyle> = {};
 
-            const url = DataProvider.getInstance().getApiUrl() + '/styles/'
+            const url = DataProvider.getInstance().getApiUrl() + '/styles/';
 
 
             this.fetchData(url)
@@ -148,7 +148,7 @@ export class ApiProvider implements StorageInterface {
                     resolve(mapStyles);
                 })
                 .catch(e => {
-                    console.error("Error fetching overlay layers:", e);
+                    console.error('Error fetching overlay layers:', e);
                 });
 
 
@@ -171,7 +171,7 @@ export class ApiProvider implements StorageInterface {
         return new Promise<Record<string, NamedGeoReferencedObject>>(resolve => {
             const items: Record<string, NamedGeoReferencedObject> = {};
 
-            const url = DataProvider.getInstance().getApiUrl() + '/items/'
+            const url = DataProvider.getInstance().getApiUrl() + '/items/';
 
 
             this.fetchData(url)
@@ -199,7 +199,7 @@ export class ApiProvider implements StorageInterface {
                     }
                 })
                 .catch(e => {
-                    console.error("Error fetching overlay layers:", e);
+                    console.error('Error fetching overlay layers:', e);
                 });
             resolve(items);
         });
@@ -220,23 +220,23 @@ export class ApiProvider implements StorageInterface {
     public async testLogin(): Promise<void> {
         const url = DataProvider.getInstance().getApiUrl() + '/token/verify/';
         const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
+        myHeaders.append('Content-Type', 'application/json');
 
         const data = {
             token: DataProvider.getInstance().getApiUrl()
         };
         const requestOptions = {
-            method: "POST",
+            method: 'POST',
             headers: myHeaders,
             body: JSON.stringify(data)
         };
         try {
             const res = await fetch(url, requestOptions);
             if (res.status == 401) {
-                this.notifyListeners(ApiProviderEventTypes.UNAUTHORIZED, {message: "Unauthorized access - check your token."});
+                this.notifyListeners(ApiProviderEventTypes.UNAUTHORIZED, {message: 'Unauthorized access - check your token.'});
             }
         } catch (e) {
-            console.error("Error preparing request options:", e);
+            console.error('Error preparing request options:', e);
         }
     }
 
@@ -244,12 +244,12 @@ export class ApiProvider implements StorageInterface {
     public async login(username: string, password: string): Promise<void> {
         const url = DataProvider.getInstance().getApiUrl() + '/token/';
         const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
+        myHeaders.append('Content-Type', 'application/json');
 
         const raw = JSON.stringify({username, password});
 
         const requestOptions = {
-            method: "POST",
+            method: 'POST',
             headers: myHeaders,
             body: raw
         };
@@ -259,12 +259,12 @@ export class ApiProvider implements StorageInterface {
             if (res.ok) {
                 const data: { access: string } = await res.json() as { access: string };
                 DataProvider.getInstance().setApiToken(data.access); // Store the token for future requests
-                this.notifyListeners(ApiProviderEventTypes.LOGIN_SUCCESS, {message: "Login successful"});
+                this.notifyListeners(ApiProviderEventTypes.LOGIN_SUCCESS, {message: 'Login successful'});
             } else {
                 throw new Error(`HTTP error! status: ${res.status}`);
             }
         } catch (e) {
-            console.error("Error preparing request options:", e);
+            console.error('Error preparing request options:', e);
             throw e;
         }
     }
@@ -277,7 +277,7 @@ export class ApiProvider implements StorageInterface {
     private async callApi(url: string, method: string, headers: Headers = new Headers(), body?: object): Promise<object | null> {
 
         if (DataProvider.getInstance().getApiToken()) {
-            headers.append("Authorization", `Bearer ${DataProvider.getInstance().getApiToken()}`);
+            headers.append('Authorization', `Bearer ${DataProvider.getInstance().getApiToken()}`);
         }
 
         const requestOptions: RequestInit = {
@@ -286,7 +286,7 @@ export class ApiProvider implements StorageInterface {
         };
         if (body) {
             requestOptions['body'] = JSON.stringify(body);
-            headers.append("Content-Type", "application/json");
+            headers.append('Content-Type', 'application/json');
         }
 
         const response = await fetch(url, requestOptions);
@@ -300,7 +300,7 @@ export class ApiProvider implements StorageInterface {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return
             return await response.json();
         } catch (e) {
-            console.error("Error parsing JSON:", e);
+            console.error('Error parsing JSON:', e);
             return null;
         }
     }
@@ -312,34 +312,34 @@ export class ApiProvider implements StorageInterface {
     public async getMapGroups(): Promise<IMapGroup[]> {
         const groups: IMapGroup[] = [];
         try {
-            const url = DataProvider.getInstance().getApiUrl() + '/map_groups/'
+            const url = DataProvider.getInstance().getApiUrl() + '/map_groups/';
 
             for (const group of (await this.fetchData(url)) as { id: string, name: string, description: string }[]) {
                 groups.push({
                     id: group.id,
                     name: group.name,
                     description: group.description
-                })
+                });
             }
         } catch (error) {
-            console.error("Error fetching overlay layers:", error);
+            console.error('Error fetching overlay layers:', error);
         }
         return groups;
     }
 
     public async saveMapItem(item: NamedGeoReferencedObject, updateDataProvider = true): Promise<NamedGeoReferencedObject | null> {
         let url = DataProvider.getInstance().getApiUrl() + `/items/${item.getId()}/`;
-        let method = "PUT";
+        let method = 'PUT';
 
         if (!item.getId()) {
             url = DataProvider.getInstance().getApiUrl() + '/items/';
-            method = "POST"; // Use POST for creating new items
+            method = 'POST'; // Use POST for creating new items
         }
 
         const data = {
             ...item,
             group: item.getGroupId() ? DataProvider.getInstance().getApiUrl() + '/map_groups/' + item.getGroupId() + '/' : null,
-        }
+        };
 
         try {
             const resData = await this.callApi(url, method, new Headers(), data) as {
@@ -367,7 +367,7 @@ export class ApiProvider implements StorageInterface {
             }
             return item;
         } catch (e) {
-            console.error("Error preparing request options:", e);
+            console.error('Error preparing request options:', e);
         }
         return null;
     }
@@ -375,12 +375,12 @@ export class ApiProvider implements StorageInterface {
     public async getOverlayTiles(overlay: Overlay): Promise<string[]> {
         let url: URL | undefined;
         if (overlay.getUrl().startsWith('http')) {
-            url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search("{z}"))); // Ensure the URL is absolute
+            url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search('{z}'))); // Ensure the URL is absolute
         } else {
-            url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search("{z}")), window.location.origin); // Ensure the URL is absolute
+            url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search('{z}')), window.location.origin); // Ensure the URL is absolute
         }
 
-        const response = await fetch(url.href + "/index.json?accesstoken=" + DataProvider.getInstance().getApiToken(), {
+        const response = await fetch(url.href + '/index.json?accesstoken=' + DataProvider.getInstance().getApiToken(), {
             cache: 'no-store',
             headers: {
                 'cache': 'no-store',
@@ -389,7 +389,7 @@ export class ApiProvider implements StorageInterface {
         });
         if (response.ok) {
             const data = await response.json() as Record<string, Record<string, string[]>>;
-            const filelist: string[] = []
+            const filelist: string[] = [];
 
             for (const z of Object.keys(data)) {
                 for (const x of Object.keys(data[z])) {
@@ -409,6 +409,6 @@ export class ApiProvider implements StorageInterface {
     }
 
     private notifyListeners(event: ApiProviderEventTypes, data: { message: string }): void {
-        GlobalEventHandler.getInstance().emit(event, new ApiProviderEvent(event, data))
+        GlobalEventHandler.getInstance().emit(event, new ApiProviderEvent(event, data));
     }
 }

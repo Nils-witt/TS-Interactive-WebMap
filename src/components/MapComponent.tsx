@@ -13,14 +13,18 @@ import type {MapStyle} from "../enitities/MapStyle.ts";
 import type {Overlay} from "../enitities/Overlay.ts";
 import type {StorageInterface} from "../dataProviders/StorageInterface.ts";
 import {DatabaseProvider} from "../dataProviders/DatabaseProvider.ts";
-import {LocalStorageProvider} from "../dataProviders/LocalStorageProvider.ts";
+import type {KeyValueInterface} from "../dataProviders/KeyValueInterface.ts";
 
+interface MapComponentProps {
+    keyValueStore: KeyValueInterface;
+    dataProvider: DataProvider;
+    eventHandler: GlobalEventHandler;
+    showSettings?: boolean;
+}
 
-export function MapComponent() {
+export function MapComponent(props: MapComponentProps) {
+    const {keyValueStore, dataProvider, eventHandler} = props;
 
-    const keyValueStore = new LocalStorageProvider();
-    const dataProvider = DataProvider.getInstance();
-    const eventHandler = GlobalEventHandler.getInstance();
     const mapCenter: [number, number] = localStorage.getItem('mapCenter') ? JSON.parse(localStorage.getItem('mapCenter') || "[7.1545,50.7438]") as [number, number] : [7.1545, 50.7438];
 
     const mapMoved = (e: { viewState: { longitude: number, latitude: number, zoom: number } }) => {
@@ -102,8 +106,9 @@ export function MapComponent() {
             <NavigationControl/>
             <ReactLayerControl position="bottom-left" dataProvider={dataProvider}/>
             <ReactSearchControl position="top-left" dataProvider={dataProvider} globalEventHandler={eventHandler}/>
-            <ReactButtonControl onClick={() => setSettingsOpen(true)} position={"bottom-left"}
-                                icon={faGear}></ReactButtonControl>
+            {props.showSettings &&
+                <ReactButtonControl onClick={() => setSettingsOpen(true)} position={"bottom-left"}
+                                    icon={faGear}></ReactButtonControl>}
             {settingsOpen && <MapSettings isOpen={[settingsOpen, setSettingsOpen]}/>}
         </MapLibreMap>
     )

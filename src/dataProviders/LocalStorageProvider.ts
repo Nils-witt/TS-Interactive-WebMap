@@ -1,4 +1,4 @@
-import type {KeyValueInterface} from "./KeyValueInterface.ts";
+import type {KeyValueInterface} from './KeyValueInterface.ts';
 
 
 export class LocalStorageProvider implements KeyValueInterface {
@@ -28,12 +28,12 @@ export class LocalStorageProvider implements KeyValueInterface {
     }
 
     removeItem(key: string): Promise<void> {
-        localStorage.removeItem(key)
+        localStorage.removeItem(key);
         return Promise.resolve();
     }
 
     setItem(key: string, value: string): Promise<void> {
-        localStorage.setItem(key, value)
+        localStorage.setItem(key, value);
         return Promise.resolve();
     }
 

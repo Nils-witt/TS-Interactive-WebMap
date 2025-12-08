@@ -1,4 +1,4 @@
-import React, {type ReactElement, useEffect} from "react";
+import React, {type ReactElement, useEffect, useRef} from "react";
 import '../css/settingsControl.scss'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {faX} from '@fortawesome/free-solid-svg-icons'
@@ -7,7 +7,6 @@ import ButtonGroup from '@mui/material/ButtonGroup';
 import {Utilities} from "../Utilities";
 import {DataProvider} from "../dataProviders/DataProvider.ts";
 import CacheProvider from "../dataProviders/CacheProvider.ts";
-import {useRef} from 'react';
 import {Input} from "@mui/material";
 import type {Overlay} from "../enitities/Overlay.ts";
 
