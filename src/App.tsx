@@ -4,16 +4,6 @@ import {ApiProviderEventTypes} from "./dataProviders/ApiProvider.ts";
 import {MapComponent} from "./components/MapComponent.tsx";
 import {LoginPage} from "./components/LoginPage.tsx";
 
-/*
-useEffect(() => {
-    GlobalEventHandler.getInstance().on(ApiProviderEventTypes.UNAUTHORIZED, () => {
-        navigate("/login");
-    });
-
-    ApiProvider.getInstance().getMapItems()
-},[]);
- */
-
 function App() {
     const [loggedin, setLoggedin] = useState<boolean>(true);
 

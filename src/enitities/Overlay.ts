@@ -1,5 +1,4 @@
 import {Entity} from "./Entity.ts";
-import type {OverlayDBEntry} from "../dataProviders/DatabaseProvider.ts";
 
 
 export enum OverlayEvent {
@@ -45,18 +44,18 @@ export class Overlay extends Entity {
     }
 
 
-    public static of(data: OverlayDBEntry): Overlay {
+    public static of(data: Record<string, string | number>): Overlay {
         const overlay = new Overlay();
-        overlay.id = data.id;
-        overlay.name = data.name;
-        overlay.url = data.url;
-        overlay.order = data.order;
-        overlay.opacity = data.opacity;
-        overlay.description = data.description;
+        overlay.id = data.id as string;
+        overlay.name = data.name as string;
+        overlay.url = data.url as string;
+        overlay.order = data.order as number;
+        overlay.opacity = data.opacity as number;
+        overlay.description = data.description as string;
         return overlay;
     }
 
-    public dbEntry(): OverlayDBEntry {
+    public record(): Record<string, string | number> {
         return {
             id: this.id,
             name: this.name,

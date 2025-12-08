@@ -1,5 +1,4 @@
-import {Entity} from "./Entity.ts";
-import type {MapStyleDBEntry} from "../dataProviders/DatabaseProvider.ts";
+import {type DBRecord, Entity} from "./Entity.ts";
 
 
 export class MapStyle extends Entity {
@@ -15,12 +14,20 @@ export class MapStyle extends Entity {
         this.url = '';
     }
 
-    public static of(data: MapStyleDBEntry): MapStyle {
+    public static of(data: DBRecord): MapStyle {
         const style = new MapStyle();
-        style.id = data.id;
-        style.name = data.name;
-        style.url = data.url;
+        style.id = data.id as string;
+        style.name = data.name as string;
+        style.url = data.url as string;
         return style;
+    }
+
+    public record(): DBRecord {
+        return {
+            id: this.id,
+            name: this.name,
+            url: this.url
+        };
     }
 
     public getID(): string {

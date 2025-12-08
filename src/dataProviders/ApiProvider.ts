@@ -5,6 +5,7 @@ import type {TaktischesZeichen} from "taktische-zeichen-core/dist/types/types";
 import {GlobalEventHandler} from "./GlobalEventHandler";
 import {Overlay} from "../enitities/Overlay.ts";
 import {MapStyle} from "../enitities/MapStyle.ts";
+import type {StorageInterface} from "./StorageInterface.ts";
 
 
 export class ApiProviderEvent extends Event {
@@ -25,11 +26,188 @@ export enum ApiProviderEventTypes {
 }
 
 
-export class ApiProvider {
+export class ApiProvider implements StorageInterface {
 
     private static instance: ApiProvider;
 
-    private constructor() { /* empty */ }
+    private constructor() { /* empty */
+    }
+
+    setUp(): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+
+    saveOverlay(overlay: Overlay): Promise<Overlay> {
+        throw new Error(`Method not implemented: saveOverlays ${overlay.getId()}`, );
+    }
+
+    loadOverlay(id: string): Promise<Overlay | null> {
+        return new Promise<Overlay | null>(resolve => {
+            try {
+                const url = DataProvider.getInstance().getApiUrl() + '/overlays/' + id + '/'
+
+                this.fetchData(url)
+                    .then(data => {
+                        if (data) {
+                            const overlay = Overlay.of({
+                                id: (data as { id: string }).id,
+                                name: (data as { name: string }).name,
+                                url: (data as { url: string }).url,
+                                description: (data as { description: string }).description,
+                                order: 0,
+                                opacity: 1.0
+                            });
+                            resolve(overlay);
+                        } else {
+                            resolve(null);
+                        }
+                    })
+                    .catch(e => {
+                        console.error("Error fetching overlay layer:", e);
+                        resolve(null);
+                    });
+            } catch (error) {
+                console.error("Error fetching overlay layer:", error);
+                resolve(null);
+            }
+        });
+    }
+
+    loadAllOverlays(): Promise<Record<string, Overlay>> {
+
+
+        return new Promise<Record<string, Overlay>>(resolve => {
+            const overlays: Record<string, Overlay> = {};
+
+            try {
+                const url = DataProvider.getInstance().getApiUrl() + '/overlays/'
+                this.fetchData(url)
+                    .then(data => {
+                        for (const layer of data as {
+                            id: string,
+                            name: string,
+                            url: string,
+                            description: string
+                        }[]) {
+                            overlays[layer.id] = Overlay.of({
+                                id: layer.id,
+                                name: layer.name,
+                                url: layer.url,
+                                description: layer.description,
+                                order: 0,
+                                opacity: 1.0
+                            });
+                        }
+                        resolve(overlays);
+                    })
+                    .catch(e => {
+                        console.error("Error fetching overlay layers:", e);
+                    });
+            } catch (error) {
+                console.error("Error fetching overlay layers:", error);
+            }
+        })
+
+    }
+
+    deleteOverlay(id: string): Promise<boolean> {
+        throw new Error(`Method not implemented. deleteOverlay ${id}`);
+    }
+
+    saveMapStyle(mapStyle: MapStyle): Promise<MapStyle> {
+        throw new Error(`Method not implemented. saveMapStyle: ${mapStyle.getID()}`);
+    }
+
+    loadMapStyle(id: string): Promise<MapStyle | null> {
+        throw new Error(`Method not implemented. loadMapStyle: ${id}`);
+    }
+
+    loadAllMapStyles(): Promise<Record<string, MapStyle>> {
+
+        return new Promise<Record<string, MapStyle>>(resolve => {
+            const mapStyles: Record<string, MapStyle> = {};
+
+            const url = DataProvider.getInstance().getApiUrl() + '/styles/'
+
+
+            this.fetchData(url)
+                .then(data => {
+                    for (const layer of data as {
+                        id: string,
+                        name: string,
+                        url: string,
+                        description: string
+                    }[]) {
+                        console.log(layer.id, layer.name, layer.url, layer.description);
+                        mapStyles[layer.id] = MapStyle.of({
+                            id: layer.id,
+                            name: layer.id,
+                            url: layer.url
+                        });
+                    }
+                    resolve(mapStyles);
+                })
+                .catch(e => {
+                    console.error("Error fetching overlay layers:", e);
+                });
+
+
+        });
+    }
+
+    deleteMapStyle(id: string): Promise<void> {
+        throw new Error(`Method not implemented. deleteMapStyle: ${id}`);
+    }
+
+    saveNamedGeoReferencedObject(namedGeoReferencedObject: NamedGeoReferencedObject): Promise<NamedGeoReferencedObject> {
+        throw new Error(`Method not implemented. saveNamedGeoReferencedObject: ${namedGeoReferencedObject.getId()}`);
+    }
+
+    loadNamedGeoReferencedObject(id: string): Promise<NamedGeoReferencedObject | null> {
+        throw new Error(`Method not implemented. loadNamedGeoReferencedObject: ${id}`);
+    }
+
+    loadAllNamedGeoReferencedObjects(): Promise<Record<string, NamedGeoReferencedObject>> {
+        return new Promise<Record<string, NamedGeoReferencedObject>>(resolve => {
+            const items: Record<string, NamedGeoReferencedObject> = {};
+
+            const url = DataProvider.getInstance().getApiUrl() + '/items/'
+
+
+            this.fetchData(url)
+                .then(data => {
+                    for (const item of data as {
+                        id: string,
+                        name: string,
+                        latitude: number,
+                        longitude: number,
+                        zoom_level: number,
+                        symbol: never,
+                        show_on_map: boolean,
+                        group_id: number
+                    }[]) {
+                        items[item.id] = NamedGeoReferencedObject.of({
+                            id: item.id,
+                            name: item.name,
+                            latitude: item.latitude,
+                            longitude: item.longitude,
+                            zoomLevel: item.zoom_level,
+                            symbol: item.symbol,
+                            showOnMap: item.show_on_map,
+                            groupId: item.group_id
+                        });
+                    }
+                })
+                .catch(e => {
+                    console.error("Error fetching overlay layers:", e);
+                });
+            resolve(items);
+        });
+    }
+
+    deleteNamedGeoReferencedObject(id: string): Promise<void> {
+        throw new Error(`Method not implemented. deleteNamedGeoReferencedObject: ${id}`);
+    }
 
     public static getInstance(): ApiProvider {
         if (!ApiProvider.instance) {
@@ -131,89 +309,6 @@ export class ApiProvider {
         return this.callApi(url, 'GET');
     }
 
-    public async getOverlayLayers(): Promise<Overlay[]> {
-        const overlays: Overlay[] = [];
-
-        try {
-            const url = DataProvider.getInstance().getApiUrl() + '/overlays/'
-
-            for (const layer of (await this.fetchData(url)) as {
-                id: string,
-                name: string,
-                url: string,
-                description: string
-            }[]) {
-                overlays.push(Overlay.of({
-                    id: layer.id,
-                    name: layer.name,
-                    url: layer.url,
-                    description: layer.description,
-                    order: 0,
-                    opacity: 1.0
-                }));
-            }
-        } catch (error) {
-            console.error("Error fetching overlay layers:", error);
-        }
-        return overlays; // Return empty array on error
-    }
-
-    public async getMapStyles(): Promise<MapStyle[]> {
-        const overlays: MapStyle[] = [];
-
-        try {
-            const url = DataProvider.getInstance().getApiUrl() + '/styles/'
-            for (const layer of (await this.fetchData(url)) as {
-                id: string,
-                name: string,
-                url: string,
-                description: string
-            }[]) {
-                overlays.push(MapStyle.of({
-                    id: layer.id,
-                    name: layer.id,
-                    url: layer.url
-                }));
-            }
-        } catch (error) {
-            console.error("Error fetching overlay layers:", error);
-        }
-        return overlays; // Return empty array on error
-    }
-
-    public async getMapItems(): Promise<NamedGeoReferencedObject[]> {
-
-        try {
-            const url = DataProvider.getInstance().getApiUrl() + '/items/'
-            const data = (await this.fetchData(url)) as {
-                id: string,
-                name: string,
-                latitude: number,
-                longitude: number,
-                zoom_level: number,
-                symbol: TaktischesZeichen,
-                show_on_map: boolean,
-                group_id: string | null
-            }[];
-            return data.map((item) => {
-                return new NamedGeoReferencedObject({
-                    id: item.id,
-                    name: item.name,
-                    latitude: item.latitude,
-                    longitude: item.longitude,
-                    zoomLevel: item.zoom_level,
-                    symbol: item.symbol,
-                    showOnMap: item.show_on_map,
-                    groupId: item.group_id || undefined
-                });
-            });
-        } catch (error) {
-            console.error("Error fetching items:", error);
-            return []; // Return empty array on error
-        }
-
-    }
-
     public async getMapGroups(): Promise<IMapGroup[]> {
         const groups: IMapGroup[] = [];
         try {
@@ -277,19 +372,6 @@ export class ApiProvider {
         return null;
     }
 
-    public async deleteMapItem(itemId: string): Promise<boolean> {
-        const url = DataProvider.getInstance().getApiUrl() + `/items/${itemId}/`;
-        const method = "DELETE";
-
-        try {
-            await this.callApi(url, method, new Headers());
-            return true;
-        } catch (e) {
-            console.error("Error preparing request options:", e);
-            return false;
-        }
-    }
-
     public async getOverlayTiles(overlay: Overlay): Promise<string[]> {
         let url: URL | undefined;
         if (overlay.getUrl().startsWith('http')) {
@@ -298,14 +380,14 @@ export class ApiProvider {
             url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search("{z}")), window.location.origin); // Ensure the URL is absolute
         }
 
-        const response = await fetch(url.href + "/index.json?accesstoken=" + DataProvider.getInstance().getApiToken(),{
+        const response = await fetch(url.href + "/index.json?accesstoken=" + DataProvider.getInstance().getApiToken(), {
             cache: 'no-store',
             headers: {
                 'cache': 'no-store',
                 'cache-control': 'no-cache',
             },
         });
-        if (response.ok){
+        if (response.ok) {
             const data = await response.json() as Record<string, Record<string, string[]>>;
             const filelist: string[] = []
 

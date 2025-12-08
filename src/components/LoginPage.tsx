@@ -12,7 +12,6 @@ export function LoginPage(): ReactElement {
     const [loading, setLoading] = useState(false);
 
     const handleLogin = () => {
-        console.log("Login.")
         setLoading(true);
         ApiProvider.getInstance().login(username, password).catch(() => {
             setError("Login failed");

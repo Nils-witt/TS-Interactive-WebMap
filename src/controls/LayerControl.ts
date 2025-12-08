@@ -105,9 +105,12 @@ export class LayersControl extends Evented implements IControl {
         });
 
         this.options.dataProvider.on(DataProviderEventType.OVERLAY_ADDED, () => {
+            console.log("Event: Overlay added");
+            console.log(this.options.dataProvider.getOverlays().values())
             this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
         });
         this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
+        console.log("MAP INIT:", Array.from(this.options.dataProvider.getOverlays().values()));
     }
 
     private setOpen(open: boolean): void {
@@ -220,9 +223,11 @@ export class LayersControl extends Evented implements IControl {
 
 
         if (this.map) {
-            if (this.map.getLayoutProperty(layer.getId() + "-layer", "visibility") === "visible") {
-                input.checked = true;
-                this.activeOverlays.set(layer.getId(), true);
+            if (this.map.getLayer(layer.getId() + "-layer")) {
+                if (this.map.getLayoutProperty(layer.getId() + "-layer", "visibility") === "visible") {
+                    input.checked = true;
+                    this.activeOverlays.set(layer.getId(), true);
+                }
             }
         }
         return container;

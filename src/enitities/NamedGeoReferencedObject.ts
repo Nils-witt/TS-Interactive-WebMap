@@ -1,8 +1,9 @@
 import type {INamedGeoReferencedObject} from "../types/MapEntity.ts";
 import type {TaktischesZeichen} from "taktische-zeichen-core/dist/types/types";
+import {type DBRecord, Entity} from "./Entity.ts";
 
 
-export class NamedGeoReferencedObject {
+export class NamedGeoReferencedObject extends Entity{
     private id: string;
     private latitude: number;
     private longitude: number;
@@ -13,6 +14,7 @@ export class NamedGeoReferencedObject {
     private groupId?: string | undefined; // Optional group ID for categorization
 
     constructor(data: INamedGeoReferencedObject) {
+        super();
         this.id = data.id;
         this.latitude = data.latitude;
         this.longitude = data.longitude;
@@ -21,6 +23,30 @@ export class NamedGeoReferencedObject {
         this.showOnMap = data.showOnMap;
         this.symbol = data.symbol; // Optional symbol for rendering, if applicable
         this.groupId = data.groupId; // Optional group ID for categorization
+    }
+
+    public static of(data: DBRecord): NamedGeoReferencedObject {
+        return new NamedGeoReferencedObject({
+            id: data.id as string,
+            latitude: Number(data.latitude),
+            longitude: Number(data.longitude),
+            name: data.name as string,
+            zoomLevel: data.zoomLevel !== undefined ? Number(data.zoomLevel) : undefined,
+            showOnMap: Boolean(data.showOnMap),
+        });
+    }
+
+
+    record(): DBRecord {
+        const record: DBRecord = {};
+        record['id'] = this.id;
+        return {
+            id: this.id,
+            latitude: this.latitude,
+            longitude: this.longitude,
+            name: this.name,
+            zoomLevel: this.zoomLevel || 0,
+        };
     }
 
     public getId(): string {

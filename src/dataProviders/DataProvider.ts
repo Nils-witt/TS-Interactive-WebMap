@@ -13,7 +13,6 @@ import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObje
 import type {IMapGroup} from "../types/MapEntity";
 import {GlobalEventHandler} from "./GlobalEventHandler";
 import {LngLat} from "maplibre-gl";
-import {DatabaseProvider} from "./DatabaseProvider.ts";
 import {Overlay} from "../enitities/Overlay.ts";
 import {MapStyle} from "../enitities/MapStyle.ts";
 
@@ -109,33 +108,8 @@ export class DataProvider {
     public static getInstance(): DataProvider {
         if (!DataProvider.instance) {
             DataProvider.instance = new DataProvider();
-            void DataProvider.instance.loadFromDB();
         }
         return DataProvider.instance;
-    }
-
-    public async loadFromDB() {
-        console.log("Loading data from database...");
-        const dbProvider = await DatabaseProvider.getInstance();
-
-        const overlays = await dbProvider.getAllOverlays();
-
-        for (const overlayDB of overlays) {
-            const overlay = Overlay.of(overlayDB);
-            if (this.overlays.has(overlay.getId())) {
-                this.overlays.set(overlay.getId(), overlay);
-                this.triggerEvent(DataProviderEventType.OVERLAY_UPDATED, overlay);
-            } else {
-                this.overlays.set(overlay.getId(), overlay);
-                this.triggerEvent(DataProviderEventType.OVERLAY_ADDED, overlay);
-            }
-        }
-        const mapStyles = await dbProvider.getAllMapStyles();
-        for (const mapStyle of mapStyles) {
-            const style = MapStyle.of(mapStyle);
-            this.mapStyle = style;
-            this.triggerEvent(DataProviderEventType.MAP_STYLE_UPDATED, style);
-        }
     }
 
     /**
@@ -217,13 +191,6 @@ export class DataProvider {
      */
     public setMapStyle(style: MapStyle): void {
         this.mapStyle = style;
-        void DatabaseProvider.getInstance().then(instance => {
-            instance.saveMapStyle({
-                id: style.getID(),
-                name: style.getName(),
-                url: style.getUrl()
-            });
-        })
         this.triggerEvent(DataProviderEventType.MAP_STYLE_UPDATED, style);
     }
 
@@ -250,16 +217,6 @@ export class DataProvider {
             this.overlays.set(overlay.getId(), overlay);
             this.triggerEvent(DataProviderEventType.OVERLAY_ADDED, overlay);
         }
-        void DatabaseProvider.getInstance().then(instance => {
-            instance.saveOverlay({
-                id: overlay.getId(),
-                name: overlay.getName(),
-                url: overlay.getUrl(),
-                order: overlay.getOrder(),
-                opacity: overlay.getOpacity(),
-                description: overlay.getDescription()
-            });
-        })
     }
 
     public removeOverlay(id: string): void {
