@@ -17,7 +17,7 @@
     "@microsoft/eslint-formatter-sarif": "^3.1.0",
     "@mui/material": "^7.3.6",
     "@rollup/plugin-typescript": "^12.3.0",
-    "@tailwindcss/vite": "^4.1.17",
+    "@tailwindcss/vite": "^4.1.18",
     "@types/web": "^0.0.298",
     "@vis.gl/react-maplibre": "^8.1.0",
     "maplibre-gl": "^5.14.0",
