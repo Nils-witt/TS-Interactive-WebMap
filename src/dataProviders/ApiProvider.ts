@@ -172,8 +172,6 @@ export class ApiProvider implements StorageInterface {
             const items: Record<string, NamedGeoReferencedObject> = {};
 
             const url = DataProvider.getInstance().getApiUrl() + '/items/';
-
-
             this.fetchData(url)
                 .then(data => {
                     for (const item of data as {
@@ -197,11 +195,11 @@ export class ApiProvider implements StorageInterface {
                             groupId: item.group_id
                         });
                     }
+                    resolve(items);
                 })
                 .catch(e => {
                     console.error('Error fetching overlay layers:', e);
                 });
-            resolve(items);
         });
     }
 
