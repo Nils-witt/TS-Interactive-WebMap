@@ -14,6 +14,7 @@ import type {Overlay} from "../enitities/Overlay.ts";
 import type {StorageInterface} from "../dataProviders/StorageInterface.ts";
 import {DatabaseProvider} from "../dataProviders/DatabaseProvider.ts";
 import type {KeyValueInterface} from "../dataProviders/KeyValueInterface.ts";
+import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject.ts";
 
 interface MapComponentProps {
     keyValueStore: KeyValueInterface;
@@ -25,6 +26,7 @@ interface MapComponentProps {
 export function MapComponent(props: MapComponentProps) {
     const {keyValueStore, dataProvider, eventHandler} = props;
 
+    // Use Coords from localStorage or default to Bonn, Germany if not found or invalid
     const mapCenter: [number, number] = localStorage.getItem('mapCenter') ? JSON.parse(localStorage.getItem('mapCenter') || "[7.1545,50.7438]") as [number, number] : [7.1545, 50.7438];
 
     const mapMoved = (e: { viewState: { longitude: number, latitude: number, zoom: number } }) => {
@@ -47,39 +49,27 @@ export function MapComponent(props: MapComponentProps) {
         void DatabaseProvider.getInstance().then(localStorage => {
             const remoteStorage: StorageInterface = ApiProvider.getInstance();
             void remoteStorage.loadAllMapStyles().then((result: Record<string, MapStyle>) => {
-                if (Object.entries(result).length > 0) {
-                    DataProvider.getInstance().setMapStyle(Object.entries(result)[0][1]);
-                    void localStorage.saveMapStyle(Object.entries(result)[0][1]);
-
-                    void localStorage.loadAllMapStyles().then(localStyles => {
-                        const remoteStyles = Object.values(result);
-                        for (const s of Object.values(localStyles)) {
-                            if (!remoteStyles.find(rs => rs.getID() === s.getID())) {
-                                void localStorage.deleteMapStyle(s.getID());
-                            }
-                        }
-                    });
-                } else {
-                    void localStorage.loadAllMapStyles().then(styles => {
-                        for (const s of Object.values(styles)) {
-                            void localStorage.deleteMapStyle(s.getID());
-                        }
-                    });
+                const mapStyles = Object.values(result);
+                if (mapStyles.length > 0) {
+                    DataProvider.getInstance().setMapStyle(Object.values(result)[0]);
                 }
+                void localStorage.replaceMapStyles(mapStyles);
             });
+
             void remoteStorage.loadAllOverlays().then((result: Record<string, Overlay>) => {
                 const remoteOverlays = Object.values(result);
                 remoteOverlays.forEach((overlay: Overlay) => {
                     DataProvider.getInstance().addOverlay(overlay);
-                    void localStorage.saveOverlay(overlay);
                 });
-                void localStorage.loadAllOverlays().then(localOverlays => {
-                    for (const s of Object.values(localOverlays)) {
-                        if (!remoteOverlays.find(rs => rs.getId() === s.getId())) {
-                            void localStorage.deleteOverlay(s.getId());
-                        }
-                    }
+                void localStorage.replaceOverlays(remoteOverlays)
+            });
+
+            void remoteStorage.loadAllNamedGeoReferencedObjects().then(result => {
+                const remoteObjects = Object.values(result);
+                remoteObjects.forEach((item: NamedGeoReferencedObject) => {
+                    DataProvider.getInstance().addMapItem(item);
                 });
+                void localStorage.replaceNamedGeoReferencedObjects(remoteObjects);
             });
         })
 

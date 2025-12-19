@@ -172,8 +172,6 @@ export class ApiProvider implements StorageInterface {
             const items: Record<string, NamedGeoReferencedObject> = {};
 
             const url = DataProvider.getInstance().getApiUrl() + '/items/';
-
-
             this.fetchData(url)
                 .then(data => {
                     for (const item of data as {
@@ -197,11 +195,11 @@ export class ApiProvider implements StorageInterface {
                             groupId: item.group_id
                         });
                     }
+                    resolve(items);
                 })
                 .catch(e => {
                     console.error('Error fetching overlay layers:', e);
                 });
-            resolve(items);
         });
     }
 
@@ -411,4 +409,20 @@ export class ApiProvider implements StorageInterface {
     private notifyListeners(event: ApiProviderEventTypes, data: { message: string }): void {
         GlobalEventHandler.getInstance().emit(event, new ApiProviderEvent(event, data));
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    replaceOverlays(_overlays: Overlay[]): Promise<void> {
+        throw new Error('Not implemented');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    replaceMapStyles(_mapStyles: MapStyle[]): Promise<void> {
+        throw new Error('Not implemented');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    replaceNamedGeoReferencedObjects(_namedGeoReferencedObjects: NamedGeoReferencedObject[]): Promise<void> {
+        throw new Error('Not implemented');
+    }
+
 }

@@ -86,17 +86,15 @@ export class LayersControl extends Evented implements IControl {
         this.container = DOM.create('div', 'maplibregl-ctrl');
         this.container.classList.add(
             'maplibregl-ctrl-group',
-            'grid'
+            'layerscontrol-root'
         );
 
-        this.spanIcon.classList.add('p-[10px]');
         this.spanIcon.innerHTML = icon(faMap, {
             transform: {}
         }).html[0];
 
         this.layersContainer = document.createElement('div');
-        this.layersContainer.classList.add('hidden', 'grid');
-
+        this.layersContainer.classList.add('hidden');
         this.container.appendChild(this.layersContainer);
         this.container.appendChild(this.spanIcon);
 
@@ -174,32 +172,15 @@ export class LayersControl extends Evented implements IControl {
      */
     private createLabeledCheckbox(layer: Overlay): HTMLDivElement {
         const container = document.createElement('div');
-        container.classList.add('m-1');
-        container.classList.add('inline-flex', 'items-center');
 
-
-        const cLabel = document.createElement('label');
-        container.appendChild(cLabel);
-        cLabel.classList.add('flex', 'items-center', 'cursor-pointer', 'relative');
 
         const input = document.createElement('input');
-        cLabel.appendChild(input);
+        container.appendChild(input);
         input.type = 'checkbox';
         input.id = 'cb-' + layer.getId(); // Set the ID to the layer ID for easy reference
-        input.classList.add('peer', 'h-5', 'w-5', 'cursor-pointer', 'transition-all', 'appearance-none', 'rounded', 'shadow', 'hover:shadow-md', 'border', 'border-slate-300', 'checked:bg-slate-800', 'checked:border-slate-800');
 
-        const span = document.createElement('span');
-        cLabel.appendChild(span);
-        span.classList.add('absolute', 'text-white', 'opacity-0', 'peer-checked:opacity-100', 'top-1/2', 'left-1/2', 'transform', '-translate-x-1/2', '-translate-y-1/2');
-        span.innerHTML = '      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"\n' +
-            '        stroke="currentColor" stroke-width="1">\n' +
-            '        <path fill-rule="evenodd"\n' +
-            '        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"\n' +
-            '        clip-rule="evenodd"></path>\n' +
-            '      </svg>';
         const textLabel = document.createElement('label');
         container.appendChild(textLabel);
-        textLabel.classList.add('cursor-pointer', 'ml-2', 'text-slate-600', 'text-sm');
         textLabel.textContent = layer.getName();
 
         // Add event listener to toggle layer visibility when checkbox is clicked

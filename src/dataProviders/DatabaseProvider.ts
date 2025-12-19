@@ -22,7 +22,7 @@ export class DatabaseProvider implements StorageInterface {
 
     public async setUp(): Promise<void> {
 
-        const dbVersion = 7;
+        const dbVersion = 8;
         this.db = await openDB(this.DB_NAME, dbVersion, {
             upgrade(db) {
                 console.log(`Upgrading database to version ${dbVersion}`);
@@ -31,6 +31,10 @@ export class DatabaseProvider implements StorageInterface {
                 }
                 if (!db.objectStoreNames.contains(DB_TABLES.mapStyles)) {
                     db.createObjectStore(DB_TABLES.mapStyles, {keyPath: 'id'});
+                }
+
+                if (!db.objectStoreNames.contains(DB_TABLES.namedGeoReferencedObjects)) {
+                    db.createObjectStore(DB_TABLES.namedGeoReferencedObjects, {keyPath: 'id'});
                 }
             }
         }) as unknown as IDBPDatabase;
@@ -248,6 +252,92 @@ export class DatabaseProvider implements StorageInterface {
                     void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).add(namedGeoReferencedObjectRecord);
                 }
                 resolve(namedGeoReferencedObject);
+            });
+        });
+    }
+
+    replaceMapStyles(mapStyles: MapStyle[]): Promise<void> {
+        return new Promise<void>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.mapStyles, 'readwrite');
+            void tx.objectStore(DB_TABLES.mapStyles).getAllKeys().then(result => {
+                console.log('MS',result);
+                const existingKeys = result as string[];
+
+                const newKeys = mapStyles.map(ms => ms.getID());
+
+
+                for (const existingKey of existingKeys) {
+                    if (!newKeys.includes(existingKey)) {
+                        void tx.objectStore(DB_TABLES.mapStyles).delete(existingKey);
+                    }
+                }
+
+                for (const mapStyle of mapStyles) {
+                    const mapStyleRecord = mapStyle.record();
+                    if (existingKeys.includes(mapStyle.getID())) {
+                        void tx.objectStore(DB_TABLES.mapStyles).put(mapStyleRecord);
+                    } else {
+                        void tx.objectStore(DB_TABLES.mapStyles).add(mapStyleRecord);
+                    }
+                }
+                resolve();
+            });
+        });
+    }
+
+    replaceOverlays(overlays: Overlay[]): Promise<void> {
+        return new Promise<void>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.overlays, 'readwrite');
+            void tx.objectStore(DB_TABLES.overlays).getAllKeys().then(result => {
+                console.log('MS',result);
+                const existingKeys = result as string[];
+                const newKeys = overlays.map(entry => entry.getId());
+
+                for (const existingKey of existingKeys) {
+                    if (!newKeys.includes(existingKey)) {
+                        void tx.objectStore(DB_TABLES.overlays).delete(existingKey);
+                    }
+                }
+
+                for (const overlay of overlays) {
+                    const overlayRecord = overlay.record();
+                    if (existingKeys.includes(overlay.getId())) {
+                        void tx.objectStore(DB_TABLES.overlays).put(overlayRecord);
+                    } else {
+                        void tx.objectStore(DB_TABLES.overlays).add(overlayRecord);
+                    }
+                }
+                resolve();
+            });
+        });
+    }
+
+    replaceNamedGeoReferencedObjects(namedGeoReferencedObjects: NamedGeoReferencedObject[]): Promise<void> {
+        return new Promise<void>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.namedGeoReferencedObjects, 'readwrite');
+            void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).getAllKeys().then(result => {
+                console.log('MS',result);
+                const existingKeys = result as string[];
+                const newKeys = namedGeoReferencedObjects.map(entry => entry.getId());
+
+                for (const existingKey of existingKeys) {
+                    if (!newKeys.includes(existingKey)) {
+                        void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).delete(existingKey);
+                    }
+                }
+
+                for (const namedGeoReferencedObject of namedGeoReferencedObjects) {
+                    const namedGeoReferencedObjectRecord = namedGeoReferencedObject.record();
+                    if (existingKeys.includes(namedGeoReferencedObject.getId())) {
+                        void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).put(namedGeoReferencedObjectRecord);
+                    } else {
+                        void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).add(namedGeoReferencedObjectRecord);
+                    }
+                }
+                resolve();
             });
         });
     }

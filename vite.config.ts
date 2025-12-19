@@ -1,4 +1,3 @@
-import tailwindcss from '@tailwindcss/vite'
 import {VitePWA} from "vite-plugin-pwa";
 import {type InputOptions, type OutputOptions, rollup} from 'rollup'
 import react from '@vitejs/plugin-react'
@@ -37,7 +36,6 @@ export default defineConfig({
     plugins: [
         CompileTsServiceWorker(),
         react(),
-        tailwindcss(),
         VitePWA({
             registerType: 'autoUpdate',
             workbox: {
