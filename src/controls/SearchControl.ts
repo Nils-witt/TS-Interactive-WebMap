@@ -310,8 +310,6 @@ export class SearchControl extends Evented implements IControl {
         spanIcon2.innerHTML = icon(faMagnifyingGlass).html[0];
 
 
-        //TODO insert Filter
-
         const closeIconContainer = document.createElement('button');
         const closeIcon = document.createElement('span');
         closeIcon.classList.add('p-[10px]');
@@ -321,6 +319,12 @@ export class SearchControl extends Evented implements IControl {
         closeIconContainer.onclick = (): void => {
             this.setOpen(false); // Close the search control
         };
+
+        const filterRow = document.createElement('div');
+        container.appendChild(filterRow);
+        // Add filter options here in the future
+
+
 
         const table = document.createElement('table');
         this.resultsContainer = table;

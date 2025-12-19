@@ -9,6 +9,8 @@ export interface StorageInterface {
 
     saveOverlay(overlay: Overlay): Promise<Overlay>;
 
+    replaceOverlays(overlays: Overlay[]): Promise<void>;
+
     loadOverlay(id: string): Promise<Overlay | null>;
 
     loadAllOverlays(): Promise<Record<string, Overlay>>;
@@ -17,6 +19,8 @@ export interface StorageInterface {
 
     saveMapStyle(mapStyle: MapStyle): Promise<MapStyle>;
 
+    replaceMapStyles(mapStyles: MapStyle[]): Promise<void>;
+
     loadMapStyle(id: string): Promise<MapStyle | null>;
 
     loadAllMapStyles(): Promise<Record<string, MapStyle>>;
@@ -24,6 +28,8 @@ export interface StorageInterface {
     deleteMapStyle(id: string): Promise<void>;
 
     saveNamedGeoReferencedObject(namedGeoReferencedObject: NamedGeoReferencedObject): Promise<NamedGeoReferencedObject>;
+
+    replaceNamedGeoReferencedObjects(namedGeoReferencedObjects: NamedGeoReferencedObject[]): Promise<void>;
 
     loadNamedGeoReferencedObject(id: string): Promise<NamedGeoReferencedObject | null>;
 
