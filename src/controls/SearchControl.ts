@@ -97,7 +97,7 @@ export class SearchControl extends Evented implements IControl {
         this.container.classList.add(
             'maplibregl-ctrl',        // Standard MapLibre control class
             'maplibregl-ctrl-group',  // Groups the control visually
-            'search-control',         // Custom class for styling
+            'searchcontrol-root',         // Custom class for styling
         );
 
         this.createSearchContainer();
@@ -282,46 +282,42 @@ export class SearchControl extends Evented implements IControl {
      */
     private createSearchContainer(): void {
         this.container.classList.add('max-w-[85vw]');
+
         this.searchIconContainer = document.createElement('div');
 
 
         const spanIcon = document.createElement('span');
         this.searchIconContainer.appendChild(spanIcon);
-        spanIcon.classList.add('p-[10px]');
         spanIcon.innerHTML = icon(faMagnifyingGlass).html[0];
 
 
         const container = document.createElement('div');
         this.searchContentContainer = container;
-        container.classList.add('overflow-x-auto', 'bg-white');
 
-        const searchContainer = document.createElement('div');
-        container.appendChild(searchContainer);
-        searchContainer.classList.add('relative', 'm-[2px]', 'mb-3', 'mr-5', 'float-left');
+        const containerRowOne = document.createElement('div');
+        container.appendChild(containerRowOne);
         const searchLabel = document.createElement('label');
-        searchContainer.appendChild(searchLabel);
-        searchLabel.classList.add('sr-only');
+        containerRowOne.appendChild(searchLabel);
         searchLabel.textContent = 'Search';
         const searchInput = document.createElement('input');
-        searchContainer.appendChild(searchInput);
+        containerRowOne.appendChild(searchInput);
         this.searchInput = searchInput;
         searchInput.type = 'text';
-        searchInput.classList.add('block', 'w-40', 'rounded-lg', 'border', 'py-2', 'pl-10', 'pr-4', 'text-sm', 'focus:border-blue-400', 'focus:outline-none', 'focus:ring-1', 'focus:ring-blue-400');
+        const searchIconButton = document.createElement('button');
+        containerRowOne.appendChild(searchIconButton);
         const spanIcon2 = document.createElement('span');
-        searchContainer.appendChild(spanIcon2);
-        spanIcon2.classList.add('pointer-events-none', 'absolute', 'left-3', 'top-1/2', '-translate-y-1/2', 'transform');
+        searchIconButton.appendChild(spanIcon2);
         spanIcon2.innerHTML = icon(faMagnifyingGlass).html[0];
 
 
         //TODO insert Filter
 
-        const closeIconContainer = document.createElement('div');
-        closeIconContainer.classList.add('relative', 'm-[2px]', 'mb-3', 'float-right', 'sm:block');
+        const closeIconContainer = document.createElement('button');
         const closeIcon = document.createElement('span');
         closeIcon.classList.add('p-[10px]');
         closeIcon.innerHTML = icon(faXmark).html[0];
         closeIconContainer.appendChild(closeIcon);
-        container.appendChild(closeIconContainer);
+        containerRowOne.appendChild(closeIconContainer);
         closeIconContainer.onclick = (): void => {
             this.setOpen(false); // Close the search control
         };
@@ -329,7 +325,6 @@ export class SearchControl extends Evented implements IControl {
         const table = document.createElement('table');
         this.resultsContainer = table;
         container.appendChild(table);
-        table.classList.add('min-w-full', 'text-left', 'text-xs', 'whitespace-nowrap');
 
         const thead = table.createTHead();
         const headerRow = thead.insertRow();

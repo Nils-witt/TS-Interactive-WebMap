@@ -81,6 +81,11 @@ export function MapComponent(props: MapComponentProps) {
                     }
                 });
             });
+
+            void remoteStorage.loadAllNamedGeoReferencedObjects().then(result => {
+                const remoteObjects = Object.values(result);
+                console.log(remoteObjects);
+            });
         })
 
 
