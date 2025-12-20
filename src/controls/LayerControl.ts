@@ -1,3 +1,11 @@
+/*
+ * LayerControl.ts
+ * ----------------
+ * Map layer control component that displays available overlays and allows toggling them.
+ * Exports: default ReactLayerControl which registers a MapLibre control using useControl.
+ * Purpose: bridge DataProvider overlays to UI controls on the map.
+ */
+
 import {type ControlPosition, Evented, type IControl, Map as MapLibreMap} from 'maplibre-gl';
 import {icon} from '@fortawesome/fontawesome-svg-core';
 import {faMap} from '@fortawesome/free-solid-svg-icons/faMap';

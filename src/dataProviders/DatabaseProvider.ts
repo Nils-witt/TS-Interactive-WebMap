@@ -1,3 +1,11 @@
+/*
+ * DatabaseProvider.ts
+ * --------------------
+ * Provides a local IndexedDB-backed storage with the same API as StorageInterface.
+ * Exports: DatabaseProvider singleton that resolves to an instance supporting persistence calls.
+ * Purpose: enable local offline persistence and syncing with remote ApiProvider.
+ */
+
 import {type IDBPDatabase, openDB} from 'idb';
 import type {StorageInterface} from './StorageInterface.ts';
 import {Overlay} from '../enitities/Overlay.ts';

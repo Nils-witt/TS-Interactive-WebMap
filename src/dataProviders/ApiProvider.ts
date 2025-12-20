@@ -1,3 +1,11 @@
+/*
+ * ApiProvider.ts
+ * ---------------
+ * Remote API client used to load map styles, overlays and named objects from server.
+ * Exports: ApiProvider singleton
+ * Purpose: wrap fetch calls and present a StorageInterface-like API to the app.
+ */
+
 import {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject';
 import {DataProvider} from './DataProvider';
 import type {IMapGroup} from '../types/MapEntity';

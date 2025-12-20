@@ -1,3 +1,18 @@
+/*
+ * MapComponent.tsx
+ * ----------------
+ * React component that renders the main interactive map using MapLibre.
+ * Purpose: initialize map state, load remote styles/overlays/objects, persist view state
+ * and wire app-level controls (search, layers, settings).
+ * Exports: MapComponent(props: MapComponentProps)
+ * Props:
+ *  - keyValueStore: KeyValueInterface for persisting view state
+ *  - dataProvider: DataProvider singleton instance for map data (overlays, styles)
+ *  - eventHandler: GlobalEventHandler used by child controls to dispatch app events
+ *  - showSettings?: optional flag to render a settings button
+ * Side-effects: fetches map styles/overlays/objects from remote store and writes to local DB.
+ */
+
 import * as React from 'react';
 import {useEffect} from 'react';
 import {GeolocateControl, Map as MapLibreMap, NavigationControl} from '@vis.gl/react-maplibre';

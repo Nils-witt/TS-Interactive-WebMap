@@ -1,3 +1,11 @@
+/*
+ * SearchControl.ts
+ * ----------------
+ * Map search control that connects to DataProvider to look up named places/objects.
+ * Exports: default ReactSearchControl component which registers the control.
+ * Purpose: allow quick map navigation / zoom to named geo-referenced objects.
+ */
+
 import {type ControlPosition, Evented, type IControl, Map as MapLibreMap, Marker} from 'maplibre-gl';
 import {DataProvider, DataProviderEventType} from '../dataProviders/DataProvider';
 import type {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject';

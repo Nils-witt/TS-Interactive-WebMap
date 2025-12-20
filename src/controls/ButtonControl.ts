@@ -1,3 +1,12 @@
+/*
+ * ButtonControl.ts
+ * -----------------
+ * Small wrapper for map control buttons used inside the Map component.
+ * Purpose: provide a consistent control interface (position prop) and render icons.
+ * Exports: default ReactButtonControl component
+ * Notes: integrates with map control layout and accepts onClick handler and FontAwesome icons.
+ */
+
 import type {ControlPosition, IControl} from 'maplibre-gl';
 import {DOM} from 'maplibre-gl/src/util/dom';
 import {faGear} from '@fortawesome/free-solid-svg-icons/faGear';

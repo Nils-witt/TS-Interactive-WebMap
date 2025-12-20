@@ -1,3 +1,11 @@
+/*
+ * MapStyle.ts
+ * -----------
+ * Encapsulates a map style (MapLibre/Mapbox style) with helper to return URL.
+ * Exports: MapStyle class
+ * Purpose: provide id, name, and URL and integrate with DataProvider updates.
+ */
+
 import {type DBRecord, Entity} from './Entity.ts';
 
 

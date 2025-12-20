@@ -1,3 +1,11 @@
+/*
+ * NamedGeoReferencedObject.ts
+ * ---------------------------
+ * Represents a named, georeferenced point of interest used by the search control.
+ * Exports: NamedGeoReferencedObject class
+ * Purpose: store id, name, coordinates, optional zoom and metadata
+ */
+
 import type {INamedGeoReferencedObject} from '../types/MapEntity.ts';
 import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
 import {type DBRecord, Entity} from './Entity.ts';

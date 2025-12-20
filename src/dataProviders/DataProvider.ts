@@ -1,12 +1,9 @@
-/**
+/*
  * DataProvider.ts
- *
- * This file implements a data management system for map-related data using the Singleton pattern.
- * It provides centralized storage and event-based communication for map locations, styles, groups,
- * and overlays. The DataProvider acts as a central hub for all map data, allowing components
- * to subscribe to data changes through an event system.
- *
- * Future implementation will include BroadcastChannel communication for cross-tab synchronization.
+ * ----------------
+ * Central in-memory store and event hub for map data (styles, overlays, named locations).
+ * Exports: DataProvider singleton and DataProviderEventType enum
+ * Purpose: keep app components synchronized and provide API token & data mutation helpers.
  */
 
 import type {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject';
