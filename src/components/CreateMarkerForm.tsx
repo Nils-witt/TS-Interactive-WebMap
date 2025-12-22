@@ -5,6 +5,7 @@ import type {MapGroup} from "../enitities/MapGroup.ts";
 import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
 import {DatabaseProvider} from "../dataProviders/DatabaseProvider.ts";
 
+import './css/markerform.scss'
 
 interface CreateMarkerFormProps {
     entity?: NamedGeoReferencedObject
@@ -13,7 +14,6 @@ interface CreateMarkerFormProps {
         longitude: number;
         zoom: number;
     }
-    isOpen: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
 }
 
 export function CreateMarkerForm(props: CreateMarkerFormProps): React.JSX.Element {
@@ -26,6 +26,7 @@ export function CreateMarkerForm(props: CreateMarkerFormProps): React.JSX.Elemen
     const [availableGroups, setAvailableGroups] = React.useState<MapGroup[]>([]);
 
     useEffect(() => {
+        console.log("ENT:",props.entity);
         if (props.entity) {
             setName(props.entity.getName());
             setLatitude(props.entity.getLatitude());
@@ -43,7 +44,7 @@ export function CreateMarkerForm(props: CreateMarkerFormProps): React.JSX.Elemen
     const onSubmit = (e: React.FormEvent) => {
         const api = ApiProvider.getInstance();
         e.preventDefault();
-        // Handle form submission logic here
+
         if (props.entity) {
             const entity = props.entity;
             entity.setName(name);
@@ -52,14 +53,13 @@ export function CreateMarkerForm(props: CreateMarkerFormProps): React.JSX.Elemen
             entity.setZoomLevel(zoom || 15);
             entity.setGroupId(groupId);
             void api.saveMapItem(entity, true).then((result) => {
-                props.isOpen[1](false);
                 if (result) {
                     DataProvider.getInstance().addMapItem(result);
                     void DatabaseProvider.getInstance().then(instance => {
                         void instance.saveNamedGeoReferencedObject(result);
                     });
                 }
-            })
+            });
         } else {
             void ApiProvider.getInstance().createMapItem({
                 name: name,
@@ -74,8 +74,6 @@ export function CreateMarkerForm(props: CreateMarkerFormProps): React.JSX.Elemen
                         void instance.saveNamedGeoReferencedObject(response);
                     });
                 }
-                props.isOpen[1](false);
-
             });
         }
     }
@@ -88,36 +86,66 @@ export function CreateMarkerForm(props: CreateMarkerFormProps): React.JSX.Elemen
     }, []);
 
     return (
-        <div>
+        <div className={'marker-form-root'}>
             <h2>Edit Marker Form</h2>
+
+            <table>
+                <tbody>
+                <tr>
+                    <td>
+                        <label>Name:</label>
+                    </td>
+                    <td>
+                        <input type="text" value={name} onChange={(e) => setName(e.target.value)}/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label>latitude:</label>
+                    </td>
+                    <td>
+                        <input type="text" value={latitude} onChange={(e) => setLatitude(parseFloat(e.target.value))}/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label>longitude:</label>
+                    </td>
+                    <td>
+                        <input type="text" value={longitude}
+                               onChange={(e) => setLongitude(parseFloat(e.target.value))}/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label>zoom:</label>
+                    </td>
+                    <td>
+                        <input type="number" value={zoom} onChange={(e) => setZoom(parseInt(e.target.value))}/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label>Group</label>
+                    </td>
+                    <td>
+                        <select onChange={(e) => setGroupId(e.target.value)}>
+                            <option value="">None</option>
+                            {availableGroups.map((group) => {
+                                if (groupId === group.getID()) {
+                                    return <option key={group.getID()} value={group.getID()}
+                                                   selected>{group.getName()}</option>
+                                } else {
+                                    return <option key={group.getID()} value={group.getID()}>{group.getName()}</option>
+                                }
+                            })}
+                        </select>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
             <div>
-                <label>Name:</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)}/>
-            </div>
-            <div>
-                <label>latitude:</label>
-                <input type="text" value={latitude} onChange={(e) => setLatitude(parseFloat(e.target.value))}/>
-            </div>
-            <div>
-                <label>longitude:</label>
-                <input type="text" value={longitude} onChange={(e) => setLongitude(parseFloat(e.target.value))}/>
-            </div>
-            <div>
-                <label>zoom:</label>
-                <input type="number" value={zoom} onChange={(e) => setZoom(parseInt(e.target.value))}/>
-            </div>
-            <div>
-                <label>Group</label>
-                <select onChange={(e) => setGroupId(e.target.value)}>
-                    <option value="">None</option>
-                    {availableGroups.map((group) => {
-                        if (groupId === group.getID()) {
-                            return <option key={group.getID()} value={group.getID()} selected>{group.getName()}</option>
-                        } else {
-                            return <option key={group.getID()} value={group.getID()}>{group.getName()}</option>
-                        }
-                    })}
-                </select>
+
             </div>
             <button type={"submit"} onClick={onSubmit}>Save</button>
         </div>

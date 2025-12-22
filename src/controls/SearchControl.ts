@@ -128,13 +128,13 @@ export class SearchControl extends Evented implements IControl {
         if (!this.map) {
             return;
         }
-        if (this.shownMarkers.has(entity.getId())) {
+        if (this.shownMarkers.has(entity.getId() as string)) {
             return; // Entity is already shown, no need to add again
         }
         const marker = new Marker()
             .setLngLat([entity.getLongitude(), entity.getLatitude()])
             .addTo(this.map);
-        this.shownMarkers.set(entity.getId(), marker);
+        this.shownMarkers.set(entity.getId() as string, marker);
 
         for (const otherMarker of this.shownMarkers.keys()) {
             if (otherMarker === entity.getId()) {
@@ -146,7 +146,7 @@ export class SearchControl extends Evented implements IControl {
 
         this.internalClickAbortHandler = (): void => {
             marker.remove();
-            this.shownMarkers.delete(entity.getId());
+            this.shownMarkers.delete(entity.getId() as string);
             this.internalClickAbortHandler = undefined;
         };
 
@@ -183,7 +183,7 @@ export class SearchControl extends Evented implements IControl {
         //button.textContent = "<>";
         button.innerHTML = icon(faWrench).html[0];
         button.onclick = (): void => {
-            GlobalEventHandler.getInstance().emit('edit-marker', new DataEvent('edit-marker', entity) );;
+            GlobalEventHandler.getInstance().emit('edit-marker', new DataEvent('edit-marker', entity));
         };
         return button;
     }
