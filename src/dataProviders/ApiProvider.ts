@@ -13,7 +13,7 @@ import {GlobalEventHandler} from './GlobalEventHandler';
 import {Overlay} from '../enitities/Overlay.ts';
 import {MapStyle} from '../enitities/MapStyle.ts';
 import type {StorageInterface} from './StorageInterface.ts';
-import {MapGroup} from "../enitities/MapGroup.ts";
+import {MapGroup} from '../enitities/MapGroup.ts';
 
 
 export class ApiProviderEvent extends Event {

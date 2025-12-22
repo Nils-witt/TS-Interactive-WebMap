@@ -9,7 +9,7 @@
 import type {Overlay} from '../enitities/Overlay.ts';
 import type {MapStyle} from '../enitities/MapStyle.ts';
 import type {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject.ts';
-import type {MapGroup} from "../enitities/MapGroup.ts";
+import type {MapGroup} from '../enitities/MapGroup.ts';
 
 
 export interface StorageInterface {
