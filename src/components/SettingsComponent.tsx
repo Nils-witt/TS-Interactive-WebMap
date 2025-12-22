@@ -45,7 +45,6 @@ function LayerTableRow(props: { overlay: Overlay }): ReactElement {
         void CacheProvider.getInstance().getOverlayCacheState(props.overlay).then(res => {
             if (btnRef.current) {
                 if (res.missing.length === 0) {
-
                     btnRef.current.disabled = true;
                     btnRef.current.innerText = "Downloaded";
                 } else {

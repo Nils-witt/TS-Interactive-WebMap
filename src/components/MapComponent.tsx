@@ -30,6 +30,7 @@ import type {StorageInterface} from "../dataProviders/StorageInterface.ts";
 import {DatabaseProvider} from "../dataProviders/DatabaseProvider.ts";
 import type {KeyValueInterface} from "../dataProviders/KeyValueInterface.ts";
 import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject.ts";
+import MapContextMenu from "./MapContextMenu.tsx";
 
 interface MapComponentProps {
     keyValueStore: KeyValueInterface;
@@ -52,6 +53,16 @@ export function MapComponent(props: MapComponentProps) {
     const [mapStyle, setMapStyle] = React.useState<MapStyle | null>(null);
     const [settingsOpen, setSettingsOpen] = React.useState<boolean>(false);
 
+    const [enableContextMenu, setEnableContextMenu] = React.useState<boolean>(true);
+    const [isContextMenu, setContextMenu] = React.useState(false);
+    const [points, setPoints] = React.useState({
+        x: 0,
+        y: 0,
+        latitude: 0,
+        longitude: 0
+    });
+
+
     useEffect(() => {
         const mapStyle = DataProvider.getInstance().getMapStyle()
         if (mapStyle != undefined) {
@@ -60,6 +71,15 @@ export function MapComponent(props: MapComponentProps) {
         DataProvider.getInstance().on(DataProviderEventType.MAP_STYLE_UPDATED, (event) => {
             setMapStyle(event.data as MapStyle);
         });
+
+        try {
+            if (navigator.userAgentData.mobile) {
+                setEnableContextMenu(false);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
 
         void DatabaseProvider.getInstance().then(localStorage => {
             const remoteStorage: StorageInterface = ApiProvider.getInstance();
@@ -106,6 +126,20 @@ export function MapComponent(props: MapComponentProps) {
             mapStyle={mapStyle.getUrl()}
             attributionControl={false}
             onMoveEnd={mapMoved}
+            onContextMenu={(e) => {
+                setPoints({
+                    x: e.originalEvent.clientX,
+                    y: e.originalEvent.clientY,
+                    latitude: e.lngLat.lat,
+                    longitude: e.lngLat.lng
+                });
+
+                setContextMenu(true);
+                e.originalEvent.preventDefault();
+            }}
+            onClick={() => {
+                setContextMenu(false);
+            }}
         >
             <GeolocateControl/>
             <NavigationControl/>
@@ -115,6 +149,11 @@ export function MapComponent(props: MapComponentProps) {
                 <ReactButtonControl onClick={() => setSettingsOpen(true)} position={"bottom-left"}
                                     icon={faGear}></ReactButtonControl>}
             {settingsOpen && <MapSettings isOpen={[settingsOpen, setSettingsOpen]}/>}
+
+            {enableContextMenu && (
+                <MapContextMenu top={points.y} left={points.x} latitude={points.latitude} longitude={points.longitude}
+                                isVisible={isContextMenu}>
+                </MapContextMenu>)}
         </MapLibreMap>
     )
 }

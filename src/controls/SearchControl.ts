@@ -128,12 +128,8 @@ export class SearchControl extends Evented implements IControl {
             return;
         }
         if (this.shownMarkers.has(entity.getId())) {
-            console.log('Entity already shown:', entity.getName());
             return; // Entity is already shown, no need to add again
         }
-
-        console.log('Showing entity:', entity.getName());
-
         const marker = new Marker()
             .setLngLat([entity.getLongitude(), entity.getLatitude()])
             .addTo(this.map);
@@ -143,13 +139,11 @@ export class SearchControl extends Evented implements IControl {
             if (otherMarker === entity.getId()) {
                 continue; // Skip the current entity
             }
-            console.log('Other marker:', otherMarker);
             this.shownMarkers.get(otherMarker)?.remove();
             this.shownMarkers.delete(otherMarker);
         }
 
         this.internalClickAbortHandler = (): void => {
-            console.log('Aborting click handler');
             marker.remove();
             this.shownMarkers.delete(entity.getId());
             this.internalClickAbortHandler = undefined;

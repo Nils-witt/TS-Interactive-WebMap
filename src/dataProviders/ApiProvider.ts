@@ -146,7 +146,6 @@ export class ApiProvider implements StorageInterface {
                         url: string,
                         description: string
                     }[]) {
-                        console.log(layer.id, layer.name, layer.url, layer.description);
                         mapStyles[layer.id] = MapStyle.of({
                             id: layer.id,
                             name: layer.id,
@@ -333,19 +332,20 @@ export class ApiProvider implements StorageInterface {
         return groups;
     }
 
-    public async saveMapItem(item: NamedGeoReferencedObject, updateDataProvider = true): Promise<NamedGeoReferencedObject | null> {
-        let url = DataProvider.getInstance().getApiUrl() + `/items/${item.getId()}/`;
-        let method = 'PUT';
-
-        if (!item.getId()) {
-            url = DataProvider.getInstance().getApiUrl() + '/items/';
-            method = 'POST'; // Use POST for creating new items
-        }
+    public async createMapItem(item: {
+        name: string,
+        latitude: number,
+        longitude: number,
+        zoomLevel?: number,
+        showOnMap?: boolean,
+        groupId?: string
+    }, updateDataProvider = true): Promise<NamedGeoReferencedObject | null> {
+        const url = DataProvider.getInstance().getApiUrl() + '/items/';
+        const method = 'POST';
 
         const data = {
-            ...item,
-            group: item.getGroupId() ? DataProvider.getInstance().getApiUrl() + '/map_groups/' + item.getGroupId() + '/' : null,
-        };
+            ...item
+        }
 
         try {
             const resData = await this.callApi(url, method, new Headers(), data) as {
@@ -378,10 +378,51 @@ export class ApiProvider implements StorageInterface {
         return null;
     }
 
+    public async saveMapItem(item: NamedGeoReferencedObject, updateDataProvider = true): Promise<NamedGeoReferencedObject | null> {
+        const url = DataProvider.getInstance().getApiUrl() + `/items/${item.getId()}/`;
+        const method = 'PUT';
+
+        const data = {
+            ...item,
+            group: item.getGroupId() ? DataProvider.getInstance().getApiUrl() + '/map_groups/' + item.getGroupId() + '/' : null,
+        };
+
+        try {
+            const resData = await this.callApi(url, method, new Headers(), data) as {
+                id: string,
+                name: string,
+                latitude: number,
+                longitude: number,
+                zoom_level: number,
+                symbol: TaktischesZeichen,
+                show_on_map: boolean,
+                group_id: string | null
+            };
+            const item = new NamedGeoReferencedObject({
+                id: resData.id,
+                name: resData.name,
+                latitude: resData.latitude,
+                longitude: resData.longitude,
+                zoomLevel: resData.zoom_level,
+                symbol: resData.symbol,
+                showOnMap: resData.show_on_map,
+                groupId: resData.group_id || undefined
+            });
+            console.log('API Provider saved item:', item);
+            if (updateDataProvider) {
+                //DataProvider.getInstance().addMapItem(item);
+            }
+            return item;
+        } catch (e) {
+            console.error('Error preparing request options:', e);
+        }
+        return null;
+    }
+
     public async getOverlayTiles(overlay: Overlay): Promise<string[]> {
         let url: URL | undefined;
         if (overlay.getUrl().startsWith('http')) {
-            url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search('{z}'))); // Ensure the URL is absolute
+            url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search('{z}')));
         } else {
             url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search('{z}')), window.location.origin); // Ensure the URL is absolute
         }

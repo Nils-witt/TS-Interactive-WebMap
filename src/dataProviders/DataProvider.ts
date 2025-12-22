@@ -116,7 +116,6 @@ export class DataProvider {
      * @param data - The data to include with the event
      */
     private triggerEvent(eventType: string, data: object | string | number): void {
-        console.log('Triggering event:', eventType, data);
         GlobalEventHandler.getInstance().emit(eventType, new DataProviderEvent(eventType, data));
     }
 

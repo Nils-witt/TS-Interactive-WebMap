@@ -111,12 +111,9 @@ export class LayersControl extends Evented implements IControl {
         });
 
         this.options.dataProvider.on(DataProviderEventType.OVERLAY_ADDED, () => {
-            console.log('Event: Overlay added');
-            console.log(this.options.dataProvider.getOverlays().values());
             this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
         });
         this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
-        console.log('MAP INIT:', Array.from(this.options.dataProvider.getOverlays().values()));
     }
 
     private setOpen(open: boolean): void {
@@ -196,7 +193,6 @@ export class LayersControl extends Evented implements IControl {
             // Set visibility based on checkbox state
             const visibility = input.checked ? 'visible' : 'none';
             const layer = this.overlays.get(input.id.substring(3));
-            console.log('Checkbox changed for layer:', layer, 'Checked:', input.checked);
 
             if (layer && this.map) {
                 // Update the layer's visibility property in the map
@@ -253,8 +249,7 @@ export class LayersControl extends Evented implements IControl {
         for (const layer of overlays.filter(l => !Array.from(this.overlays.keys()).includes(l.getId()))) {
             this.overlays.set(layer.getId(), layer);
 
-            layer.on(OverlayEvent.orderChanged, (e) => {
-                console.log('Event: Layer order changed for ', layer.getName(), e);
+            layer.on(OverlayEvent.orderChanged, () => {
                 this.updateShownlayers();
             });
         }
