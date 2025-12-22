@@ -364,10 +364,8 @@ export class ApiProvider implements StorageInterface {
         const url = DataProvider.getInstance().getApiUrl() + `/items/${item.getId()}/`;
         const method = 'PUT';
 
-        const data = {
-            ...item,
-            group: item.getGroupId() ? DataProvider.getInstance().getApiUrl() + '/map_groups/' + item.getGroupId() + '/' : null,
-        };
+        const data = item.record();
+        data['group'] = item.getGroupId() ? `${DataProvider.getInstance().getApiUrl()}/map_groups/${item.getGroupId()}/` : null;
 
         try {
             const resData = await this.callApi(url, method, new Headers(), data) as {
@@ -390,7 +388,6 @@ export class ApiProvider implements StorageInterface {
                 showOnMap: resData.show_on_map,
                 groupId: resData.group_id || undefined
             });
-            console.log('API Provider saved item:', item);
             if (updateDataProvider) {
                 DataProvider.getInstance().addMapItem(item);
             }

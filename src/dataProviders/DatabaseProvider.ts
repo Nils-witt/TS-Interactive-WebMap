@@ -158,7 +158,7 @@ export class DatabaseProvider implements StorageInterface {
                     const namedGeoReferencedObjects: Record<string, NamedGeoReferencedObject> = {};
                     for (const record of result) {
                         const namedGeoReferencedObject = NamedGeoReferencedObject.of(record);
-                        namedGeoReferencedObjects[namedGeoReferencedObject.getId()] = namedGeoReferencedObject;
+                        namedGeoReferencedObjects[namedGeoReferencedObject.getId() as string] = namedGeoReferencedObject;
                     }
                     resolve(namedGeoReferencedObjects);
                 });
@@ -252,13 +252,16 @@ export class DatabaseProvider implements StorageInterface {
     }
 
     saveNamedGeoReferencedObject(namedGeoReferencedObject: NamedGeoReferencedObject): Promise<NamedGeoReferencedObject> {
-        return new Promise<NamedGeoReferencedObject>((resolve) => {
+        return new Promise<NamedGeoReferencedObject>((resolve, reject) => {
             if (!this.db) throw new Error('Database not initialized');
 
             const namedGeoReferencedObjectRecord = namedGeoReferencedObject.record();
             const tx = this.db.transaction(DB_TABLES.namedGeoReferencedObjects, 'readwrite');
 
-            void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).getKey(namedGeoReferencedObject.getId()).then(result => {
+            if (namedGeoReferencedObject.getId() == null) {
+                return reject(new Error('NamedGeoReferencedObject ID is null'));
+            }
+            void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).getKey(namedGeoReferencedObject.getId() as string).then(result => {
                 if (result) {
                     void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).put(namedGeoReferencedObjectRecord);
                 } else {
@@ -275,9 +278,7 @@ export class DatabaseProvider implements StorageInterface {
             const tx = this.db.transaction(DB_TABLES.mapStyles, 'readwrite');
             void tx.objectStore(DB_TABLES.mapStyles).getAllKeys().then(result => {
                 const existingKeys = result as string[];
-
                 const newKeys = mapStyles.map(ms => ms.getID());
-
 
                 for (const existingKey of existingKeys) {
                     if (!newKeys.includes(existingKey)) {
@@ -341,7 +342,8 @@ export class DatabaseProvider implements StorageInterface {
 
                 for (const namedGeoReferencedObject of namedGeoReferencedObjects) {
                     const namedGeoReferencedObjectRecord = namedGeoReferencedObject.record();
-                    if (existingKeys.includes(namedGeoReferencedObject.getId())) {
+                    if (namedGeoReferencedObject.getId() == null) continue;
+                    if (existingKeys.includes((namedGeoReferencedObject.getId() as string))) {
                         void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).put(namedGeoReferencedObjectRecord);
                     } else {
                         void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).add(namedGeoReferencedObjectRecord);

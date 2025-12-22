@@ -54,8 +54,8 @@ export default function MapContextMenu(props: MapContextMenuProps): React.JSX.El
                     <CreateMarkerForm
                         isOpen={[showMarkerCreate, setShowMarkerCreate]}
                         data={{
-                            longitude: props.latitude,
-                            latitude: props.longitude,
+                            longitude: props.longitude,
+                            latitude: props.latitude,
                             zoom: props.zoom
                         }}
                     />
