@@ -11,12 +11,14 @@ import type {StorageInterface} from './StorageInterface.ts';
 import {Overlay} from '../enitities/Overlay.ts';
 import {MapStyle} from '../enitities/MapStyle.ts';
 import {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject.ts';
+import {MapGroup} from '../enitities/MapGroup.ts';
 
 
 enum DB_TABLES {
     overlays = 'overlays',
     mapStyles = 'mapStyles',
-    namedGeoReferencedObjects = 'namedgeoreferencedobjects'
+    namedGeoReferencedObjects = 'namedgeoreferencedobjects',
+    mapGroups = 'mapGroups',
 }
 
 export class DatabaseProvider implements StorageInterface {
@@ -30,7 +32,7 @@ export class DatabaseProvider implements StorageInterface {
 
     public async setUp(): Promise<void> {
 
-        const dbVersion = 8;
+        const dbVersion = 9;
         this.db = await openDB(this.DB_NAME, dbVersion, {
             upgrade(db) {
                 console.log(`Upgrading database to version ${dbVersion}`);
@@ -43,6 +45,9 @@ export class DatabaseProvider implements StorageInterface {
 
                 if (!db.objectStoreNames.contains(DB_TABLES.namedGeoReferencedObjects)) {
                     db.createObjectStore(DB_TABLES.namedGeoReferencedObjects, {keyPath: 'id'});
+                }
+                if (!db.objectStoreNames.contains(DB_TABLES.mapGroups)) {
+                    db.createObjectStore(DB_TABLES.mapGroups, {keyPath: 'id'});
                 }
             }
         }) as unknown as IDBPDatabase;
@@ -343,6 +348,102 @@ export class DatabaseProvider implements StorageInterface {
                     }
                 }
                 resolve();
+            });
+        });
+    }
+
+    loadMapGroup(id: string): Promise<MapGroup | null> {
+        return new Promise<MapGroup | null>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+
+            const tx = this.db.transaction(DB_TABLES.mapGroups, 'readonly');
+
+            void tx.objectStore(DB_TABLES.mapGroups).get(id).then((result: Record<string, string | number> | undefined) => {
+                if (result) {
+                    const mapGroup = MapGroup.of(result);
+                    resolve(mapGroup);
+                } else {
+                    resolve(null);
+                }
+            });
+        });
+    }
+
+    loadAllMapGroups(): Promise<Record<string, MapGroup>> {
+        return new Promise<Record<string, MapGroup>>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.mapGroups, 'readonly');
+
+            void tx.objectStore(DB_TABLES.mapGroups).getAll()
+                .then((result: Record<string, string | number>[]) => {
+                    const mapGroups: Record<string, MapGroup> = {};
+                    for (const record of result) {
+                        const mapGroup = MapGroup.of(record);
+                        mapGroups[mapGroup.getID()] = mapGroup;
+                    }
+                    resolve(mapGroups);
+                });
+        });
+    }
+
+    saveMapGroup(mapGroup: MapGroup): Promise<MapGroup> {
+        return new Promise<MapGroup>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+
+            const mapGroupRecord = mapGroup.record();
+            const tx = this.db.transaction(DB_TABLES.mapGroups, 'readwrite');
+
+            void tx.objectStore(DB_TABLES.mapGroups).getKey(mapGroup.getID()).then(result => {
+                if (result) {
+                    void tx.objectStore(DB_TABLES.mapGroups).put(mapGroupRecord);
+                } else {
+                    void tx.objectStore(DB_TABLES.mapGroups).add(mapGroupRecord);
+                }
+                resolve(mapGroup);
+            });
+        });
+    }
+
+    replaceMapGroups(mapGroups: MapGroup[]): Promise<void> {
+        return new Promise<void>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.mapGroups, 'readwrite');
+            void tx.objectStore(DB_TABLES.mapGroups).getAllKeys().then(result => {
+                const existingKeys = result as string[];
+                const newKeys = mapGroups.map(entry => entry.getID());
+
+                for (const existingKey of existingKeys) {
+                    if (!newKeys.includes(existingKey)) {
+                        void tx.objectStore(DB_TABLES.mapGroups).delete(existingKey);
+                    }
+                }
+
+                for (const mapGroup of mapGroups) {
+                    const mapGroupRecord = mapGroup.record();
+                    if (existingKeys.includes(mapGroup.getID())) {
+                        void tx.objectStore(DB_TABLES.mapGroups).put(mapGroupRecord);
+                    } else {
+                        void tx.objectStore(DB_TABLES.mapGroups).add(mapGroupRecord);
+                    }
+                }
+                resolve();
+            });
+        });
+    }
+
+    deleteMapGroup(id: string): Promise<void> {
+        return new Promise<void>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+
+            const tx = this.db.transaction(DB_TABLES.mapGroups, 'readwrite');
+
+            void tx.objectStore(DB_TABLES.mapGroups).getKey(id).then(result => {
+                if (result) {
+                    void tx.objectStore(DB_TABLES.mapGroups).delete(id);
+                    resolve();
+                } else {
+                    throw new Error('Not Exist');
+                }
             });
         });
     }

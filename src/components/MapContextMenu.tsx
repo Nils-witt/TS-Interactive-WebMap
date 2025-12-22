@@ -8,6 +8,7 @@ interface MapContextMenuProps {
     left: number,
     latitude: number,
     longitude: number,
+    zoom: number,
 }
 
 export default function MapContextMenu(props: MapContextMenuProps): React.JSX.Element {
@@ -30,13 +31,11 @@ export default function MapContextMenu(props: MapContextMenuProps): React.JSX.El
     }, []);
 
     useEffect(() => {
-        if (props.isVisible) {
-            setIsVisible(true);
-        } else {
-            setIsVisible(false);
+        if (!props.isVisible[1]) {
             setShowMarkerCreate(false);
         }
-    }, [props.isVisible]);
+        setIsVisible(props.isVisible[0]);
+    }, [props.isVisible[0]]);
     return (
         <div>
             {isVisible && (
@@ -51,9 +50,16 @@ export default function MapContextMenu(props: MapContextMenuProps): React.JSX.El
             )}
 
             {showMarkerCreate && (
-                <div className={'createMarkerContainer'}><CreateMarkerForm
-                    isOpen={[showMarkerCreate, setShowMarkerCreate]} longitude={props.longitude}
-                    latitude={props.latitude}></CreateMarkerForm></div>
+                <div className={'createMarkerContainer'}>
+                    <CreateMarkerForm
+                        isOpen={[showMarkerCreate, setShowMarkerCreate]}
+                        data={{
+                            longitude: props.latitude,
+                            latitude: props.longitude,
+                            zoom: props.zoom
+                        }}
+                    />
+                </div>
             )}
         </div>
     );

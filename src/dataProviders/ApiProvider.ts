@@ -8,12 +8,12 @@
 
 import {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject';
 import {DataProvider} from './DataProvider';
-import type {IMapGroup} from '../types/MapEntity';
 import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
 import {GlobalEventHandler} from './GlobalEventHandler';
 import {Overlay} from '../enitities/Overlay.ts';
 import {MapStyle} from '../enitities/MapStyle.ts';
 import type {StorageInterface} from './StorageInterface.ts';
+import {MapGroup} from "../enitities/MapGroup.ts";
 
 
 export class ApiProviderEvent extends Event {
@@ -314,24 +314,6 @@ export class ApiProvider implements StorageInterface {
         return this.callApi(url, 'GET');
     }
 
-    public async getMapGroups(): Promise<IMapGroup[]> {
-        const groups: IMapGroup[] = [];
-        try {
-            const url = DataProvider.getInstance().getApiUrl() + '/map_groups/';
-
-            for (const group of (await this.fetchData(url)) as { id: string, name: string, description: string }[]) {
-                groups.push({
-                    id: group.id,
-                    name: group.name,
-                    description: group.description
-                });
-            }
-        } catch (error) {
-            console.error('Error fetching overlay layers:', error);
-        }
-        return groups;
-    }
-
     public async createMapItem(item: {
         name: string,
         latitude: number,
@@ -410,7 +392,7 @@ export class ApiProvider implements StorageInterface {
             });
             console.log('API Provider saved item:', item);
             if (updateDataProvider) {
-                //DataProvider.getInstance().addMapItem(item);
+                DataProvider.getInstance().addMapItem(item);
             }
             return item;
         } catch (e) {
@@ -471,7 +453,49 @@ export class ApiProvider implements StorageInterface {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     replaceNamedGeoReferencedObjects(_namedGeoReferencedObjects: NamedGeoReferencedObject[]): Promise<void> {
-        throw new Error('Not implemented');
+        throw new Error('replaceNamedGeoReferencedObjects not implemented');
+    }
+
+    loadMapGroup(id: string): Promise<MapGroup | null> {
+        throw new Error('loadMapGroup not implemented: ' + id);
+    }
+
+    loadAllMapGroups(): Promise<Record<string, MapGroup>> {
+        return new Promise<Record<string, MapGroup>>(resolve => {
+            const mapGroups: Record<string, MapGroup> = {};
+            const url = DataProvider.getInstance().getApiUrl() + '/map_groups/';
+
+            this.fetchData(url)
+                .then(data => {
+                    for (const rawGroup of data as {
+                        id: string,
+                        name: string,
+                        description: string
+                    }[]) {
+                        mapGroups[rawGroup.id] = MapGroup.of({
+                            id: rawGroup.id,
+                            name: rawGroup.name,
+                            description: rawGroup.description
+                        });
+                    }
+                    resolve(mapGroups);
+                })
+                .catch(e => {
+                    console.error('Error fetching overlay layers:', e);
+                });
+        });
+    }
+
+    saveMapGroup(mapGroup: MapGroup): Promise<MapGroup> {
+        throw new Error(`Method not implemented. saveMapGroup: ${mapGroup.getID()}`);
+    }
+
+    replaceMapGroups(mapGroups: MapGroup[]): Promise<void> {
+        throw new Error('Not Available on this Provider : replaceMapGroups ' + mapGroups.length);
+    }
+
+    deleteMapGroup(id: string): Promise<void> {
+        throw new Error(`Method not implemented. deleteMapGroup: ${id}`);
     }
 
 }

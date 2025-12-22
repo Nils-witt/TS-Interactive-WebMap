@@ -29,4 +29,13 @@ function App() {
     }
 }
 
+
+declare global {
+    interface Navigator {
+        userAgentData: {
+            mobile: boolean
+        }
+    }
+}
+
 export default App

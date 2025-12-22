@@ -9,6 +9,7 @@
 import type {Overlay} from '../enitities/Overlay.ts';
 import type {MapStyle} from '../enitities/MapStyle.ts';
 import type {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject.ts';
+import type {MapGroup} from "../enitities/MapGroup.ts";
 
 
 export interface StorageInterface {
@@ -44,5 +45,15 @@ export interface StorageInterface {
     loadAllNamedGeoReferencedObjects(): Promise<Record<string, NamedGeoReferencedObject>>;
 
     deleteNamedGeoReferencedObject(id: string): Promise<void>;
+
+    loadMapGroup(id: string): Promise<MapGroup | null>;
+
+    loadAllMapGroups(): Promise<Record<string, MapGroup>>;
+
+    saveMapGroup(mapGroup: MapGroup): Promise<MapGroup>;
+
+    replaceMapGroups(mapGroups: MapGroup[]): Promise<void>;
+
+    deleteMapGroup(id: string): Promise<void>;
 
 }

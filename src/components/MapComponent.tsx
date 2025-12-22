@@ -31,6 +31,7 @@ import {DatabaseProvider} from "../dataProviders/DatabaseProvider.ts";
 import type {KeyValueInterface} from "../dataProviders/KeyValueInterface.ts";
 import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject.ts";
 import MapContextMenu from "./MapContextMenu.tsx";
+import {MarkerEditor} from "./MarkerEditor.tsx";
 
 interface MapComponentProps {
     keyValueStore: KeyValueInterface;
@@ -61,6 +62,7 @@ export function MapComponent(props: MapComponentProps) {
         latitude: 0,
         longitude: 0
     });
+    const [zoom, setZoom] = React.useState<number>(14);
 
 
     useEffect(() => {
@@ -74,8 +76,7 @@ export function MapComponent(props: MapComponentProps) {
 
         try {
 
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            if (navigator.userAgentData.mobile) {
+            if ((navigator as Navigator).userAgentData.mobile) {
                 setEnableContextMenu(false);
             }
         } catch (e) {
@@ -101,7 +102,15 @@ export function MapComponent(props: MapComponentProps) {
                 void localStorage.replaceOverlays(remoteOverlays)
             });
 
-            void remoteStorage.loadAllNamedGeoReferencedObjects().then(result => {
+
+            void remoteStorage.loadAllMapGroups().then((result) => {
+                const remoteMapGroups = Object.values(result);
+                remoteMapGroups.forEach((group) => {
+                    DataProvider.getInstance().addMapGroup(group);
+                });
+                void localStorage.replaceMapGroups(remoteMapGroups);
+            });
+            void remoteStorage.loadAllNamedGeoReferencedObjects().then((result) => {
                 const remoteObjects = Object.values(result);
                 remoteObjects.forEach((item: NamedGeoReferencedObject) => {
                     DataProvider.getInstance().addMapItem(item);
@@ -135,7 +144,7 @@ export function MapComponent(props: MapComponentProps) {
                     latitude: e.lngLat.lat,
                     longitude: e.lngLat.lng
                 });
-
+                setZoom(Math.round(e.target.getZoom()));
                 setContextMenu(true);
                 e.originalEvent.preventDefault();
             }}
@@ -147,6 +156,9 @@ export function MapComponent(props: MapComponentProps) {
             <NavigationControl/>
             <ReactLayerControl position="bottom-left" dataProvider={dataProvider}/>
             <ReactSearchControl position="top-left" dataProvider={dataProvider} globalEventHandler={eventHandler}/>
+
+            <MarkerEditor/>
+
             {props.showSettings &&
                 <ReactButtonControl onClick={() => setSettingsOpen(true)} position={"bottom-left"}
                                     icon={faGear}></ReactButtonControl>}
@@ -154,7 +166,7 @@ export function MapComponent(props: MapComponentProps) {
 
             {enableContextMenu && (
                 <MapContextMenu top={points.y} left={points.x} latitude={points.latitude} longitude={points.longitude}
-                                isVisible={isContextMenu}>
+                                isVisible={[isContextMenu, setContextMenu]} zoom={zoom}>
                 </MapContextMenu>)}
         </MapLibreMap>
     )

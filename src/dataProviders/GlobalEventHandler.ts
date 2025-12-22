@@ -6,6 +6,16 @@
  * Purpose: decouple components and providers using events instead of direct references.
  */
 
+
+export class DataEvent extends Event {
+    data: unknown;
+
+    constructor(eventType: string, data: unknown) {
+        super(eventType);
+        this.data = data;
+    }
+}
+
 export class GlobalEventHandler {
 
 
@@ -19,7 +29,6 @@ export class GlobalEventHandler {
     public static getInstance(): GlobalEventHandler {
         if (!this.instance) {
             this.instance = new GlobalEventHandler();
-
         }
         return this.instance;
     }
