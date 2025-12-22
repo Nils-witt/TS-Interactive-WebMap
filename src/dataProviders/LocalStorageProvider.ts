@@ -1,3 +1,11 @@
+/*
+ * LocalStorageProvider.ts
+ * -----------------------
+ * Simple local storage backed implementation of StorageInterface for persistence.
+ * Exports: LocalStorageProvider default instance
+ * Purpose: persist map data locally (map styles, overlays, named objects)
+ */
+
 import type {KeyValueInterface} from './KeyValueInterface.ts';
 
 

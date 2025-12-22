@@ -1,3 +1,11 @@
+/*
+ * DatabaseProvider.ts
+ * --------------------
+ * Provides a local IndexedDB-backed storage with the same API as StorageInterface.
+ * Exports: DatabaseProvider singleton that resolves to an instance supporting persistence calls.
+ * Purpose: enable local offline persistence and syncing with remote ApiProvider.
+ */
+
 import {type IDBPDatabase, openDB} from 'idb';
 import type {StorageInterface} from './StorageInterface.ts';
 import {Overlay} from '../enitities/Overlay.ts';
@@ -261,7 +269,6 @@ export class DatabaseProvider implements StorageInterface {
             if (!this.db) throw new Error('Database not initialized');
             const tx = this.db.transaction(DB_TABLES.mapStyles, 'readwrite');
             void tx.objectStore(DB_TABLES.mapStyles).getAllKeys().then(result => {
-                console.log('MS',result);
                 const existingKeys = result as string[];
 
                 const newKeys = mapStyles.map(ms => ms.getID());
@@ -291,7 +298,6 @@ export class DatabaseProvider implements StorageInterface {
             if (!this.db) throw new Error('Database not initialized');
             const tx = this.db.transaction(DB_TABLES.overlays, 'readwrite');
             void tx.objectStore(DB_TABLES.overlays).getAllKeys().then(result => {
-                console.log('MS',result);
                 const existingKeys = result as string[];
                 const newKeys = overlays.map(entry => entry.getId());
 
@@ -319,7 +325,6 @@ export class DatabaseProvider implements StorageInterface {
             if (!this.db) throw new Error('Database not initialized');
             const tx = this.db.transaction(DB_TABLES.namedGeoReferencedObjects, 'readwrite');
             void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).getAllKeys().then(result => {
-                console.log('MS',result);
                 const existingKeys = result as string[];
                 const newKeys = namedGeoReferencedObjects.map(entry => entry.getId());
 

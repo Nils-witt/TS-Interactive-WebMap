@@ -1,3 +1,11 @@
+/*
+ * GlobalEventHandler.ts
+ * ---------------------
+ * Small wrapper for cross-component event dispatch using window.BroadcastChannel or simple EventTarget.
+ * Exports: GlobalEventHandler singleton
+ * Purpose: decouple components and providers using events instead of direct references.
+ */
+
 export class GlobalEventHandler {
 
 

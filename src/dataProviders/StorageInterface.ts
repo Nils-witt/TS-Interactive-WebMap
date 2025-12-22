@@ -1,3 +1,11 @@
+/*
+ * StorageInterface.ts
+ * -------------------
+ * Type definitions for storage provider interfaces used by the app.
+ * Exports: StorageInterface and KeyValueInterface types
+ * Purpose: standardize methods for local and remote storage providers.
+ */
+
 import type {Overlay} from '../enitities/Overlay.ts';
 import type {MapStyle} from '../enitities/MapStyle.ts';
 import type {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject.ts';

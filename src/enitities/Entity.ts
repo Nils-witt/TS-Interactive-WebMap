@@ -1,3 +1,11 @@
+/*
+ * Entity.ts
+ * ---------
+ * Base class for application entities that need event dispatching and record handling.
+ * Exports: Entity base class and DBRecord type
+ * Purpose: centralize common behavior used by derived entity classes.
+ */
+
 export type DBRecord = Record<string, string | number | boolean>;
 
 export class Entity {

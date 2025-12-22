@@ -1,3 +1,12 @@
+/*
+ * LoginPage.tsx
+ * ---------------
+ * Simple login page component used for authentication UI.
+ * Purpose: present login form and handle user credentials, delegate to Utilities or ApiProvider.
+ * Exports: default LoginPage component
+ * Notes: Authentication flow may be app-specific; this component focuses on UI and local validation.
+ */
+
 import {ApiProvider} from "../dataProviders/ApiProvider";
 import {type ReactElement, useEffect, useState} from "react";
 

@@ -1,3 +1,12 @@
+/*
+ * SettingsComponent.tsx
+ * ---------------------
+ * Provides a settings panel used by the Map application. Exports MapSettings.
+ * Purpose: present map and application settings (map styles, overlays management, persistence)
+ * Exports: MapSettings component which accepts an `isOpen` tuple state [boolean, setter]
+ * Notes: UI-only component that calls into DataProvider and KeyValue stores via props / global singletons.
+ */
+
 import React, {type ReactElement, useEffect, useRef} from "react";
 import '../css/settingsControl.scss'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
@@ -36,7 +45,6 @@ function LayerTableRow(props: { overlay: Overlay }): ReactElement {
         void CacheProvider.getInstance().getOverlayCacheState(props.overlay).then(res => {
             if (btnRef.current) {
                 if (res.missing.length === 0) {
-
                     btnRef.current.disabled = true;
                     btnRef.current.innerText = "Downloaded";
                 } else {

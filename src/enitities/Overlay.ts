@@ -1,3 +1,11 @@
+/*
+ * Overlay.ts
+ * ----------
+ * Represents a map overlay (raster tile layer) with metadata and events.
+ * Exports: Overlay class
+ * Purpose: encapsulate overlay id, name, URL template, order, and related events
+ */
+
 import {Entity} from './Entity.ts';
 
 

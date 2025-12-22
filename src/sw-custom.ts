@@ -1,15 +1,18 @@
+/*
+ * sw-custom.ts
+ * ----------------
+ * Custom service worker entry for the application.
+ * Purpose: register or extend service worker behavior (caching, update handling).
+ * Exports: (none) - this file is intended to be included/registered by the build
+ * side-effects: registers service worker hooks at runtime.
+ * Notes: keep the file small and idempotent; avoid importing large runtime-only
+ *       dependencies to reduce bundle size.
+ */
+
 /// <reference no-default-lib="true"/>
 /// <reference lib="esnext" />
 /// <reference lib="webworker" />
-/**
- * Custom Service Worker for MapLibre WebMap.
- * Cache strategy overview:
- * - admin: network-only (no cache)
- * - api-cache: network-first with cache fallback and backfill
- * - overlay-*: cache-first (tiles), no backfill by default
- * - vector-cache: cache-first with backfill on miss
- * - default/others: bypass (or simple fetch)
- */
+
 const sw = self as unknown as ServiceWorkerGlobalScope & typeof globalThis;
 
 sw.addEventListener('activate', () => {
@@ -24,6 +27,15 @@ sw.addEventListener('activate', () => {
     });
     void caches.delete('api-cache');
 });
+
+/**
+ * Cache strategy overview:
+ * - admin: network-only (no cache)
+ * - api-cache: network-first with cache fallback and backfill
+ * - overlay-*: cache-first (tiles), no backfill by default
+ * - vector-cache: cache-first with backfill on miss
+ * - default/others: bypass (or simple fetch)
+ */
 
 /**
  * Classify request URL into a semantic group used to select a cache.
