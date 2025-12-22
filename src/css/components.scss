@@ -16,57 +16,83 @@ body {
 .layerscontrol-root {
   padding: 5px;
 
-  > :first-child{
+  > :first-child {
     > div {
       display: flex;
       flex-direction: row;
+
       input {
         margin-right: 0.5em;
         margin-left: 0.5em;
       }
+
       > label {
         padding-right: 2em;
       }
     }
   }
+
   .hidden {
     display: none;
   }
 }
 
 
-
 .searchcontrol-root {
   padding: 0.5em;
 
-    > :first-child {
-      // Button to open
-    }
+  > :first-child {
+    // Button to open
+  }
+
   // open Container
-    > :last-child {
+  > :last-child {
+    display: flex;
+    flex-direction: column;
+    // First row
+    > :first-child {
       display: flex;
-      flex-direction: column;
-      // First row
+      flex-direction: row;
+
+      > :nth-child(n) {
+        margin-right: 0.5em;
+      }
+
+      > label {
+        align-content: center;
+        font-weight: bold;
+      }
+
+      > input {
+        flex-grow: 1;
+        border-radius: 0.5em;
+      }
+
+      > button {
+        border-radius: 0.5em;
+        border: 1px black solid;
+      }
+    }
+
+    // Table
+    > :last-child {
+      width: 100%;
+      // Head
       > :first-child {
-        display: flex;
-        flex-direction: row;
+      }
 
+      // Body
+      > :nth-child(n + 2) {
         > :nth-child(n) {
-          margin-right: 0.5em;
-        }
-        > label {
-          align-content: center;
-          font-weight: bold;
-        }
-        > input {
-          flex-grow: 1;
-          border-radius: 0.5em;
-        }
-
-        > button {
-          border-radius: 0.5em;
-          border: 1px black solid;
+          > :first-child {
+            width: 0;
+          }
+          > :nth-child(3) {
+            width: 0;
+          }
         }
       }
     }
+  }
+
 }

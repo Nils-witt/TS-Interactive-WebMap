@@ -6,31 +6,40 @@
  * Purpose: store id, name, coordinates, optional zoom and metadata
  */
 
-import type {INamedGeoReferencedObject} from '../types/MapEntity.ts';
 import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
 import {type DBRecord, Entity} from './Entity.ts';
 
+export interface INamedGeoReferencedObject {
+    id?: string;
+    latitude: number;
+    longitude: number;
+    name: string;
+    zoomLevel?: number;
+    showOnMap?: boolean;
+    symbol?: TaktischesZeichen; // Optional symbol for rendering, if applicable
+    groupId?: string | null; // Optional group ID for categorization
+}
 
 export class NamedGeoReferencedObject extends Entity {
-    private id: string;
+    private id: string | null;
     private latitude: number;
     private longitude: number;
     private name: string;
-    private zoomLevel?: number;
-    private showOnMap?: boolean;
-    private symbol?: TaktischesZeichen; // Optional symbol for rendering, if applicable
-    private groupId?: string | undefined; // Optional group ID for categorization
+    private zoomLevel: number;
+    private showOnMap: boolean;
+    private symbol: TaktischesZeichen | null;
+    private groupId: string | null;
 
     constructor(data: INamedGeoReferencedObject) {
         super();
-        this.id = data.id;
+        this.id = data.id || null;
         this.latitude = data.latitude;
         this.longitude = data.longitude;
         this.name = data.name;
-        this.zoomLevel = data.zoomLevel || 0; // Default zoom level to 0 if not provided
-        this.showOnMap = data.showOnMap;
-        this.symbol = data.symbol; // Optional symbol for rendering, if applicable
-        this.groupId = data.groupId; // Optional group ID for categorization
+        this.zoomLevel = data.zoomLevel || 14;
+        this.showOnMap = data.showOnMap || false;
+        this.groupId = data.groupId as string | null;
+        this.symbol = data.symbol || null;
     }
 
     public static of(data: DBRecord): NamedGeoReferencedObject {
@@ -41,6 +50,7 @@ export class NamedGeoReferencedObject extends Entity {
             name: data.name as string,
             zoomLevel: data.zoomLevel !== undefined ? Number(data.zoomLevel) : undefined,
             showOnMap: Boolean(data.showOnMap),
+            groupId: data.group_id as string | undefined
         });
     }
 
@@ -54,10 +64,12 @@ export class NamedGeoReferencedObject extends Entity {
             longitude: this.longitude,
             name: this.name,
             zoomLevel: this.zoomLevel || 0,
+            group_id: this.groupId || null,
+            showOnMap: this.showOnMap || false,
         };
     }
 
-    public getId(): string {
+    public getId(): string | null {
         return this.id;
     }
 
@@ -73,34 +85,24 @@ export class NamedGeoReferencedObject extends Entity {
         return this.name;
     }
 
-    public getZoomLevel(): number | undefined {
+    public getZoomLevel(): number {
         return this.zoomLevel;
     }
 
-    public getShowOnMap(): boolean | undefined {
+    public getShowOnMap(): boolean {
         return this.showOnMap;
     }
 
-    public getSymbol(): TaktischesZeichen | undefined {
-        return this.symbol;
+    public getSymbol(): TaktischesZeichen | null {
+        return this.symbol || null;
     }
 
-    public getGroupId(): string | undefined {
+    public getGroupId(): string | null {
         return this.groupId;
     }
 
-    public setGroupId(groupId: string | undefined): void {
+    public setGroupId(groupId: string | null): void {
         this.groupId = groupId;
-    }
-
-    public getGeoReferencedObject(): INamedGeoReferencedObject {
-        return {
-            id: this.id,
-            latitude: this.latitude,
-            longitude: this.longitude,
-            name: this.name,
-            zoomLevel: this.zoomLevel,
-        };
     }
 
     public setName(name: string): void {
@@ -126,6 +128,4 @@ export class NamedGeoReferencedObject extends Entity {
     public setLongitude(longitude: number): void {
         this.longitude = longitude;
     }
-
-
 }

@@ -12,8 +12,9 @@ import type {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObje
 import {icon} from '@fortawesome/fontawesome-svg-core';
 import {faMagnifyingGlass} from '@fortawesome/free-solid-svg-icons/faMagnifyingGlass';
 import {faMapLocationDot} from '@fortawesome/free-solid-svg-icons/faMapLocationDot';
+import {faWrench} from '@fortawesome/free-solid-svg-icons/faWrench';
 import {faXmark} from '@fortawesome/free-solid-svg-icons/faXmark';
-import {GlobalEventHandler} from '../dataProviders/GlobalEventHandler';
+import {DataEvent, GlobalEventHandler} from '../dataProviders/GlobalEventHandler';
 import {useControl} from '@vis.gl/react-maplibre';
 
 /**
@@ -127,13 +128,13 @@ export class SearchControl extends Evented implements IControl {
         if (!this.map) {
             return;
         }
-        if (this.shownMarkers.has(entity.getId())) {
+        if (this.shownMarkers.has(entity.getId() as string)) {
             return; // Entity is already shown, no need to add again
         }
         const marker = new Marker()
             .setLngLat([entity.getLongitude(), entity.getLatitude()])
             .addTo(this.map);
-        this.shownMarkers.set(entity.getId(), marker);
+        this.shownMarkers.set(entity.getId() as string, marker);
 
         for (const otherMarker of this.shownMarkers.keys()) {
             if (otherMarker === entity.getId()) {
@@ -145,7 +146,7 @@ export class SearchControl extends Evented implements IControl {
 
         this.internalClickAbortHandler = (): void => {
             marker.remove();
-            this.shownMarkers.delete(entity.getId());
+            this.shownMarkers.delete(entity.getId() as string);
             this.internalClickAbortHandler = undefined;
         };
 
@@ -167,8 +168,22 @@ export class SearchControl extends Evented implements IControl {
                 zoom: entity.getZoomLevel() || 15, // Adjust zoom level as needed
                 essential: true // This ensures the animation is not interrupted
             });
-            //UrlDataHandler.setSelectedMarker(entity.id);
             this.setOpen(false); // Close the search control after selecting an entity
+        };
+        return button;
+    }
+
+    /**
+     * Creates a button that, when clicked, will show the entity on the map and fly to its location.
+     * @param entity
+     */
+    private showSettingsButton(entity: NamedGeoReferencedObject): HTMLButtonElement {
+        const button = document.createElement('button');
+
+        //button.textContent = "<>";
+        button.innerHTML = icon(faWrench).html[0];
+        button.onclick = (): void => {
+            GlobalEventHandler.getInstance().emit('edit-marker', new DataEvent('edit-marker', entity));
         };
         return button;
     }
@@ -204,27 +219,18 @@ export class SearchControl extends Evented implements IControl {
         for (const entity of entries) {
             const row = this.searchResultsBody.insertRow();
 
-            row.onclick = (): void => {
-                this.showSingleEntity(entity);
-                this.map?.flyTo({
-                    center: [entity.getLongitude(), entity.getLatitude() || 0],
-                    zoom: entity.getZoomLevel() || 15,
-                    essential: true
-                });
-                this.setOpen(false);
-            };
-
             const actionCell = row.insertCell();
-            actionCell.classList.add('px-2');
             actionCell.appendChild(this.showMarkerButton(entity));
 
             const nameCell = row.insertCell();
-            nameCell.classList.add('pl-6');
             nameCell.innerText = entity.getName();
             resultCount++;
             if (resultCount >= this.resultLimit) {
                 break; // Stop after reaching the result limit
             }
+
+            const settingsCell = row.insertCell();
+            settingsCell.appendChild(this.showSettingsButton(entity));
 
         }
 
@@ -283,8 +289,6 @@ export class SearchControl extends Evented implements IControl {
      * @private
      */
     private createSearchContainer(): void {
-        this.container.classList.add('max-w-[85vw]');
-
         this.searchIconContainer = document.createElement('div');
 
 
@@ -314,7 +318,6 @@ export class SearchControl extends Evented implements IControl {
 
         const closeIconContainer = document.createElement('button');
         const closeIcon = document.createElement('span');
-        closeIcon.classList.add('p-[10px]');
         closeIcon.innerHTML = icon(faXmark).html[0];
         closeIconContainer.appendChild(closeIcon);
         containerRowOne.appendChild(closeIconContainer);
@@ -327,7 +330,6 @@ export class SearchControl extends Evented implements IControl {
         // Add filter options here in the future
 
 
-
         const table = document.createElement('table');
         this.resultsContainer = table;
         container.appendChild(table);
@@ -336,23 +338,11 @@ export class SearchControl extends Evented implements IControl {
         const headerRow = thead.insertRow();
         const cell1 = headerRow.insertCell();
         cell1.textContent = 'Action';
-        cell1.classList.add('px-2', 'py-4');
         const cell2 = headerRow.insertCell();
         cell2.textContent = 'Name';
-        cell2.classList.add('px-6', 'py-4');
 
         const tBody = table.createTBody();
         this.searchResultsBody = tBody;
-        const row = tBody.insertRow();
-        row.classList.add('border-b', 'dark:border-neutral-600');
-        const cellAction = row.insertCell();
-
-
-        cellAction.classList.add('py-4');
-
-        const cellName = row.insertCell();
-        cellName.classList.add('px-6', 'py-4');
-        cellName.textContent = 'Search for a location';
 
         this.container.innerHTML = ''; // Clear any existing content in the container
         this.container.appendChild(this.searchIconContainer);

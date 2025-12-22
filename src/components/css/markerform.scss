@@ -1,0 +1,31 @@
+
+.marker-form-root {
+  tr {
+    > :first-child {
+      padding-top: 0.5em;
+      padding-bottom: 0.5em;
+      text-align: right;
+      font-weight: bold;
+    }
+  }
+  input {
+    border: 1px solid black;
+    border-radius: 0.5em;
+    height: 1.75em;
+    text-align: center;
+  }
+
+  button {
+    background-color: lightgreen;
+    border-radius: 0.5em;
+    height: 2.5em;
+  }
+
+  select {
+    width: 100%;
+    border: 1px solid black;
+    border-radius: 0.5em;
+    height: 1.75em;
+    text-align: center;
+  }
+}

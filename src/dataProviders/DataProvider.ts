@@ -7,11 +7,11 @@
  */
 
 import type {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject';
-import type {IMapGroup} from '../types/MapEntity';
 import {GlobalEventHandler} from './GlobalEventHandler';
 import {LngLat} from 'maplibre-gl';
 import {Overlay} from '../enitities/Overlay.ts';
 import {MapStyle} from '../enitities/MapStyle.ts';
+import type {MapGroup} from '../enitities/MapGroup.ts';
 
 /**
  * Interface representing an event dispatched by the DataProvider.
@@ -79,7 +79,7 @@ export class DataProvider {
     private overlays: Map<string, Overlay> = new Map<string, Overlay>();
 
     /** Collection of map groups for organizing map elements */
-    private mapGroups: Map<string, IMapGroup> = new Map<string, IMapGroup>();
+    private mapGroups: Map<string, MapGroup> = new Map<string, MapGroup>();
 
 
     private mapCenter: LngLat = new LngLat(0.0, 0.0); // Default center of the map
@@ -161,7 +161,8 @@ export class DataProvider {
      * @param id - Unique identifier for the group
      * @param group - The map group object to store
      */
-    public addMapGroup(id: string, group: IMapGroup): void {
+    public addMapGroup(group: MapGroup): void {
+        const id = group.getID();
         if (this.mapGroups.has(id)) {
             this.mapGroups.set(id, group);
             this.triggerEvent(DataProviderEventType.MAP_GROUPS_UPDATED, group);
@@ -176,7 +177,7 @@ export class DataProvider {
      *
      * @returns Map of all group objects indexed by their IDs
      */
-    public getMapGroups(): Map<string, IMapGroup> {
+    public getMapGroups(): Map<string, MapGroup> {
         return this.mapGroups;
     }
 
