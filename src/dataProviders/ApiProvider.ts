@@ -345,7 +345,7 @@ export class ApiProvider implements StorageInterface {
 
         const data = {
             ...item
-        }
+        };
 
         try {
             const resData = await this.callApi(url, method, new Headers(), data) as {

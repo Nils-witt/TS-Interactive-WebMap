@@ -73,6 +73,8 @@ export function MapComponent(props: MapComponentProps) {
         });
 
         try {
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             if (navigator.userAgentData.mobile) {
                 setEnableContextMenu(false);
             }
