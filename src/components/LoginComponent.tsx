@@ -11,6 +11,8 @@ import {type ReactElement, useState} from "react";
 
 
 import './css/login.scss'
+import {TextField, Typography} from "@mui/material";
+import Button from "@mui/material/Button";
 
 export interface LoginComponentProps {
     handleLogin: (username: string, password: string) => void,
@@ -28,22 +30,14 @@ export function LoginComponent(props: LoginComponentProps): ReactElement {
             e.preventDefault();
             props.handleLogin(username, password);
         }}>
-            <div>
-                <h1>Login</h1>
-            </div>
-            <div className={"login-row"}>
-                <label>Username:</label>
-                <input type="text" disabled={props.locked} onChange={(e) => setUsername(e.target.value)}/>
-            </div>
-            <div className={"login-row"}>
-                <label>Password:</label>
-                <input type="password" disabled={props.locked} onChange={(e) => setPassword(e.target.value)}/>
-            </div>
-            <div className={"login-row"}>
-                <button type="submit" onClick={() => props.handleLogin(username, password)}
-                        disabled={props.locked}>Login
-                </button>
-            </div>
+            <Typography>Login</Typography>
+
+            <TextField variant={'outlined'} label={'username'} type="text" disabled={props.locked}
+                       onChange={(e) => setUsername(e.target.value)}/>
+            <TextField variant={'outlined'} label={'Password'} type="password" disabled={props.locked}
+                       onChange={(e) => setPassword(e.target.value)}/>
+            <Button variant="outlined" color="primary" type="submit"
+                    onClick={() => props.handleLogin(username, password)}>Login</Button>
             {props.error && <p className="error-message">{props.error}</p>}
         </form>
     );

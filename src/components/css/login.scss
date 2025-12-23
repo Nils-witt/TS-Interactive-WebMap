@@ -14,32 +14,7 @@
   align-content: center;
   align-items: center;
 
-  .login-row {
-    margin-top: 1em;
-    display: flex;
-    flex-direction: column;
-    align-content: center;
-    align-items: center;
-
-
-    label {
-      margin-bottom: 5px;
-      font-size: 1.2em;
-      font-weight: 500;
-    }
-
-    input {
-      border: 1px solid black;
-      text-align: center;
-      border-radius: 5px;
-    }
+  > :nth-child(n) {
+    margin-bottom: 20px;
   }
-
-  button {
-    background-color: #007bff;
-    color: white;
-    border-radius: 5px;
-    width: 8em
-  }
-
 }
