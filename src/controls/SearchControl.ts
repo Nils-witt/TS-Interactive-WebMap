@@ -17,6 +17,8 @@ import {faXmark} from '@fortawesome/free-solid-svg-icons/faXmark';
 import {DataEvent, GlobalEventHandler} from '../dataProviders/GlobalEventHandler';
 import {useControl} from '@vis.gl/react-maplibre';
 
+import './css/search.scss';
+
 /**
  * SearchControl provides a lightweight search UI for NamedGeoReferencedObject entries.
  * - Filters DataProvider.getMapLocations() by name

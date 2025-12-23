@@ -1,0 +1,27 @@
+
+.layerscontrol-root {
+  padding: 5px;
+
+  > :first-child {
+    > div {
+      display: flex;
+      flex-direction: row;
+
+      input {
+        margin-right: 0.5em;
+        margin-left: 0.5em;
+        height: 1.25em;
+        width: 1.25em;
+      }
+
+      > label {
+        padding-right: 2em;
+        font-size: 1.25em;
+      }
+    }
+  }
+
+  .hidden {
+    display: none;
+  }
+}

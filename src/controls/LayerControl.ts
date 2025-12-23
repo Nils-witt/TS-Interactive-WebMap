@@ -15,6 +15,8 @@ import {DataProvider, DataProviderEventType} from '../dataProviders/DataProvider
 import {useControl} from '@vis.gl/react-maplibre';
 import {type Overlay, OverlayEvent} from '../enitities/Overlay.ts';
 
+import './css/layer.scss';
+
 /**
  * LayersControl provides a UI to toggle overlays and open per-layer settings.
  * Features:
