@@ -14,6 +14,8 @@ import {icon} from '@fortawesome/fontawesome-svg-core';
 import {useControl} from '@vis.gl/react-maplibre';
 import type {IconDefinition} from '@fortawesome/free-brands-svg-icons';
 
+import './css/button.scss';
+
 interface ReactButtonControlProps {
     position: ControlPosition;
     onClick: () => void;

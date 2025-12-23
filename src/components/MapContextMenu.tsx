@@ -1,5 +1,5 @@
 import React, {useEffect} from "react";
-import '../css/mapContextMenu.scss'
+import './css/mapContextMenu.scss'
 import {DataEvent, GlobalEventHandler} from "../dataProviders/GlobalEventHandler.ts";
 
 interface MapContextMenuProps {

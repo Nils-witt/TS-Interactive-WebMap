@@ -8,7 +8,7 @@
  */
 
 import React, {type ReactElement, useEffect, useRef} from "react";
-import '../css/settingsControl.scss'
+import './css/settingsControl.scss'
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {faX} from '@fortawesome/free-solid-svg-icons'
 import Button from '@mui/material/Button';

@@ -4,7 +4,8 @@ import {registerSW} from "virtual:pwa-register";
 
 import App from './App'
 
-import './css/components.scss'
+import './css/index.scss'
+
 import 'maplibre-gl/dist/maplibre-gl.css'; // See notes below
 
 import '@fontsource/roboto/300.css';
