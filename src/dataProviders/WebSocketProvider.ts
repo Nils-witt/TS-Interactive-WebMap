@@ -1,9 +1,9 @@
 import {DataProvider} from './DataProvider.ts';
-import {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject.ts";
-import {MapStyle} from "../enitities/MapStyle.ts";
-import {MapGroup} from "../enitities/MapGroup.ts";
-import {Overlay} from "../enitities/Overlay.ts";
-import type {DBRecord} from "../enitities/Entity.ts";
+import {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject.ts';
+import {MapStyle} from '../enitities/MapStyle.ts';
+import {MapGroup} from '../enitities/MapGroup.ts';
+import {Overlay} from '../enitities/Overlay.ts';
+import type {DBRecord} from '../enitities/Entity.ts';
 
 
 export class WebSocketProvider {
@@ -57,6 +57,7 @@ export class WebSocketProvider {
                     this.updateModel(data.model_type, data.data);
                 }
             } catch (e) {
+                console.error('Error parsing JSON WebSocket message:', e);
                 /* empty */
             }
         };
