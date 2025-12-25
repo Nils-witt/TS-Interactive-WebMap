@@ -6,7 +6,7 @@
  * Purpose: encapsulate overlay id, name, URL template, order, and related events
  */
 
-import {Entity} from './Entity.ts';
+import {type DBRecord, Entity} from './Entity.ts';
 
 
 export enum OverlayEvent {
@@ -52,7 +52,7 @@ export class Overlay extends Entity {
     }
 
 
-    public static of(data: Record<string, string | number>): Overlay {
+    public static of(data: DBRecord): Overlay {
         const overlay = new Overlay();
         overlay.id = data.id as string;
         overlay.name = data.name as string;
@@ -63,7 +63,7 @@ export class Overlay extends Entity {
         return overlay;
     }
 
-    public record(): Record<string, string | number> {
+    public record(): DBRecord {
         return {
             id: this.id,
             name: this.name,

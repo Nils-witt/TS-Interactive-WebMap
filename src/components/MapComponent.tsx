@@ -32,6 +32,7 @@ import type {KeyValueInterface} from "../dataProviders/KeyValueInterface.ts";
 import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject.ts";
 import MapContextMenu from "./MapContextMenu.tsx";
 import {MarkerEditor} from "./MarkerEditor.tsx";
+import {WebSocketProvider} from "../dataProviders/WebSocketProvider.ts";
 
 interface MapComponentProps {
     keyValueStore: KeyValueInterface;
@@ -66,13 +67,20 @@ export function MapComponent(props: MapComponentProps) {
 
 
     useEffect(() => {
-        const mapStyle = DataProvider.getInstance().getMapStyle()
+        const provider = DataProvider.getInstance();
+
+
+
+        const mapStyle = provider.getMapStyle()
         if (mapStyle != undefined) {
             setMapStyle(mapStyle);
         }
-        DataProvider.getInstance().on(DataProviderEventType.MAP_STYLE_UPDATED, (event) => {
+        provider.on(DataProviderEventType.MAP_STYLE_UPDATED, (event) => {
             setMapStyle(event.data as MapStyle);
         });
+        const webSocketProvider = new WebSocketProvider();
+        webSocketProvider.start();
+
 
         try {
 
@@ -83,13 +91,12 @@ export function MapComponent(props: MapComponentProps) {
             console.error(e);
         }
 
-
         void DatabaseProvider.getInstance().then(localStorage => {
             const remoteStorage: StorageInterface = ApiProvider.getInstance();
             void remoteStorage.loadAllMapStyles().then((result: Record<string, MapStyle>) => {
                 const mapStyles = Object.values(result);
                 if (mapStyles.length > 0) {
-                    DataProvider.getInstance().setMapStyle(Object.values(result)[0]);
+                    provider.setMapStyle(Object.values(result)[0]);
                 }
                 void localStorage.replaceMapStyles(mapStyles);
             });
@@ -97,7 +104,7 @@ export function MapComponent(props: MapComponentProps) {
             void remoteStorage.loadAllOverlays().then((result: Record<string, Overlay>) => {
                 const remoteOverlays = Object.values(result);
                 remoteOverlays.forEach((overlay: Overlay) => {
-                    DataProvider.getInstance().addOverlay(overlay);
+                    provider.addOverlay(overlay);
                 });
                 void localStorage.replaceOverlays(remoteOverlays)
             });
@@ -106,14 +113,14 @@ export function MapComponent(props: MapComponentProps) {
             void remoteStorage.loadAllMapGroups().then((result) => {
                 const remoteMapGroups = Object.values(result);
                 remoteMapGroups.forEach((group) => {
-                    DataProvider.getInstance().addMapGroup(group);
+                    provider.addMapGroup(group);
                 });
                 void localStorage.replaceMapGroups(remoteMapGroups);
             });
             void remoteStorage.loadAllNamedGeoReferencedObjects().then((result) => {
                 const remoteObjects = Object.values(result);
                 remoteObjects.forEach((item: NamedGeoReferencedObject) => {
-                    DataProvider.getInstance().addMapItem(item);
+                    provider.addMapItem(item);
                 });
                 void localStorage.replaceNamedGeoReferencedObjects(remoteObjects);
             });
