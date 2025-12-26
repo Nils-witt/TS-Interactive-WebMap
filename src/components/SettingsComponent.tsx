@@ -16,7 +16,7 @@ import ButtonGroup from '@mui/material/ButtonGroup';
 import {Utilities} from "../Utilities";
 import {DataProvider} from "../dataProviders/DataProvider.ts";
 import CacheProvider from "../dataProviders/CacheProvider.ts";
-import {Input} from "@mui/material";
+import {Input, Table, TableBody, TableCell, TableHead, TableRow} from "@mui/material";
 import type {Overlay} from "../enitities/Overlay.ts";
 
 
@@ -64,19 +64,19 @@ function LayerTableRow(props: { overlay: Overlay }): ReactElement {
     }, [order]);
 
     return (
-        <tr key={props.overlay.getId()}>
-            <td>{props.overlay.getName()}</td>
-            <td>
+        <TableRow key={props.overlay.getId()}>
+
+            <TableCell>{props.overlay.getName()}</TableCell>
+            <TableCell>
                 <Input type={'number'} defaultValue={order}
                        onChange={(e) => setOrder(parseInt(e.target.value))}></Input>
-            </td>
-            <td>
+            </TableCell>
+            <TableCell>
                 <ButtonGroup>
                     <Button ref={btnRef} size={'small'} onClick={() => void downloadLayer()}>Download</Button>
                 </ButtonGroup>
-            </td>
-
-        </tr>
+            </TableCell>
+        </TableRow>
     )
 
 }
@@ -123,19 +123,19 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
                 </ButtonGroup>
             </div>
             <div>
-                <table>
-                    <thead>
-                    <tr>
-                        <td>Available Overlays</td>
-                        <td>Layer Order</td>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {overlays.map((overlay) => (
-                        <LayerTableRow key={overlay.getId()} overlay={overlay}></LayerTableRow>
-                    ))}
-                    </tbody>
-                </table>
+                <Table size="small" aria-label="a dense table">
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>Available Overlays</TableCell>
+                            <TableCell>Layer Order</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {overlays.map((overlay) => (
+                            <LayerTableRow key={overlay.getId()} overlay={overlay}></LayerTableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </div>
         </div>
     </div>)
