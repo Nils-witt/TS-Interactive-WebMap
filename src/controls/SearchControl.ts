@@ -18,6 +18,7 @@ import {DataEvent, GlobalEventHandler} from '../dataProviders/GlobalEventHandler
 import {useControl} from '@vis.gl/react-maplibre';
 
 import './css/search.scss';
+import {useEffect} from 'react';
 
 /**
  * SearchControl provides a lightweight search UI for NamedGeoReferencedObject entries.
@@ -39,10 +40,38 @@ interface SearchControlOptions {
 }
 
 export function ReactSearchControl(props: ReactSearchControlProps): null {
-    useControl(() => new SearchControl(props as SearchControlOptions), {
+    const shownItems: Map<string, Marker> = new Map<string, Marker>();
+    const control = useControl(() => new SearchControl(props as SearchControlOptions), {
         position: props.position
     });
 
+    useEffect(() => {
+        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, (event) => {
+            const item = event.data as NamedGeoReferencedObject;
+            if (item.getShowOnMap()) {
+                const map = control.getMap();
+                if (map) {
+                    if (!shownItems.has(item.getId() as string)) {
+                        const marker = new Marker()
+                            .setLngLat([item.getLongitude(), item.getLatitude()])
+                            .addTo(map);
+                        shownItems.set(item.getId() as string, marker);
+                    } else {
+                        const marker = shownItems.get(item.getId() as string);
+                        if (marker) {
+                            marker.setLngLat([item.getLongitude(), item.getLatitude()]);
+                        }
+                    }
+                }
+            } else if (shownItems.has(item.getId() as string)) {
+                const marker = shownItems.get(item.getId() as string);
+                if (marker) {
+                    marker.remove();
+                }
+                shownItems.delete(item.getId() as string);
+            }
+        });
+    });
     return null;
 }
 
@@ -384,5 +413,9 @@ export class SearchControl extends Evented implements IControl {
             this.searchContentContainer.style.display = 'none'; // Hide the control
             this.searchIconContainer.style.display = 'block'; // Hide the control
         }
+    }
+
+    public getMap(): MapLibreMap | undefined {
+        return this.map;
     }
 }
