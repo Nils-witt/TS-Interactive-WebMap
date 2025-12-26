@@ -19,6 +19,7 @@ import {useControl} from '@vis.gl/react-maplibre';
 
 import './css/search.scss';
 import {useEffect} from 'react';
+import {ApplicationLogger} from "../ApplicationLogger.ts";
 
 /**
  * SearchControl provides a lightweight search UI for NamedGeoReferencedObject entries.
@@ -51,6 +52,7 @@ export function ReactSearchControl(props: ReactSearchControlProps): null {
             if (item.getShowOnMap()) {
                 const map = control.getMap();
                 if (map) {
+                    ApplicationLogger.info('Showing updated item on map:' + item.getName(), {service: 'SearchControl'});
                     if (!shownItems.has(item.getId() as string)) {
                         const marker = new Marker()
                             .setLngLat([item.getLongitude(), item.getLatitude()])
