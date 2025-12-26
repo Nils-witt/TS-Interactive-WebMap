@@ -49,7 +49,7 @@ export class NamedGeoReferencedObject extends Entity {
             longitude: Number(data.longitude),
             name: data.name as string,
             zoomLevel: data.zoomLevel !== undefined ? Number(data.zoomLevel) : undefined,
-            showOnMap: Boolean(data.showOnMap),
+            showOnMap: Boolean(data.show_on_map),
             groupId: data.group_id as string | undefined
         });
     }
@@ -65,7 +65,7 @@ export class NamedGeoReferencedObject extends Entity {
             name: this.name,
             zoomLevel: this.zoomLevel || 0,
             group_id: this.groupId || null,
-            showOnMap: this.showOnMap || false,
+            show_on_map: this.showOnMap || false,
         };
     }
 
