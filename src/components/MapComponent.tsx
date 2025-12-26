@@ -67,9 +67,14 @@ export function MapComponent(props: MapComponentProps) {
 
 
     useEffect(() => {
+
+        void keyValueStore.getItem('mapZoom').then((zoomValue) => {
+            if (zoomValue) {
+                const parsedZoom = JSON.parse(zoomValue) as number;
+                setZoom(parsedZoom);
+            }
+        });
         const provider = DataProvider.getInstance();
-
-
 
         const mapStyle = provider.getMapStyle()
         if (mapStyle != undefined) {
@@ -138,7 +143,7 @@ export function MapComponent(props: MapComponentProps) {
             initialViewState={{
                 longitude: mapCenter[0],
                 latitude: mapCenter[1],
-                zoom: 14
+                zoom: zoom
             }}
             style={{width: '100vw', height: '100vh'}}
             mapStyle={mapStyle.getUrl()}
