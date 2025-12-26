@@ -46,32 +46,41 @@ export function ReactSearchControl(props: ReactSearchControlProps): null {
         position: props.position
     });
 
+
+    const updateItem = (item: NamedGeoReferencedObject) => {
+        if (item.getShowOnMap()) {
+            const map = control.getMap();
+            if (map) {
+                ApplicationLogger.info('Showing updated item on map:' + item.getName(), {service: 'SearchControl'});
+                if (!shownItems.has(item.getId() as string)) {
+                    const marker = new Marker()
+                        .setLngLat([item.getLongitude(), item.getLatitude()])
+                        .addTo(map);
+                    shownItems.set(item.getId() as string, marker);
+                } else {
+                    const marker = shownItems.get(item.getId() as string);
+                    if (marker) {
+                        marker.setLngLat([item.getLongitude(), item.getLatitude()]);
+                    }
+                }
+            }
+        } else if (shownItems.has(item.getId() as string)) {
+            const marker = shownItems.get(item.getId() as string);
+            if (marker) {
+                marker.remove();
+            }
+            shownItems.delete(item.getId() as string);
+        }
+    };
+
     useEffect(() => {
         DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, (event) => {
             const item = event.data as NamedGeoReferencedObject;
-            if (item.getShowOnMap()) {
-                const map = control.getMap();
-                if (map) {
-                    ApplicationLogger.info('Showing updated item on map:' + item.getName(), {service: 'SearchControl'});
-                    if (!shownItems.has(item.getId() as string)) {
-                        const marker = new Marker()
-                            .setLngLat([item.getLongitude(), item.getLatitude()])
-                            .addTo(map);
-                        shownItems.set(item.getId() as string, marker);
-                    } else {
-                        const marker = shownItems.get(item.getId() as string);
-                        if (marker) {
-                            marker.setLngLat([item.getLongitude(), item.getLatitude()]);
-                        }
-                    }
-                }
-            } else if (shownItems.has(item.getId() as string)) {
-                const marker = shownItems.get(item.getId() as string);
-                if (marker) {
-                    marker.remove();
-                }
-                shownItems.delete(item.getId() as string);
-            }
+            updateItem(item);
+        });
+        DataProvider.getInstance().getMapLocations().forEach((item) => {
+            updateItem(item);
+            ApplicationLogger.info('Showing existing item on map:' + JSON.stringify(item.record()), {service: 'SearchControl'});
         });
     });
     return null;
