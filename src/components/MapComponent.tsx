@@ -33,6 +33,7 @@ import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObje
 import MapContextMenu from "./MapContextMenu.tsx";
 import {MarkerEditor} from "./MarkerEditor.tsx";
 import {WebSocketProvider} from "../dataProviders/WebSocketProvider.ts";
+import {ApplicationLogger} from "../ApplicationLogger.ts";
 
 interface MapComponentProps {
     keyValueStore: KeyValueInterface;
@@ -86,7 +87,6 @@ export function MapComponent(props: MapComponentProps) {
         const webSocketProvider = new WebSocketProvider();
         webSocketProvider.start();
 
-
         try {
 
             if ((navigator as Navigator).userAgentData.mobile) {
@@ -96,42 +96,76 @@ export function MapComponent(props: MapComponentProps) {
             console.error(e);
         }
 
-        void DatabaseProvider.getInstance().then(localStorage => {
+        void (async () => {
+            ApplicationLogger.info("Loading local data from IndexedDB.", {service: "MapComponent"});
+            const runTimeProvider = DataProvider.getInstance();
+            const dbProvider = await DatabaseProvider.getInstance();
+
+            await Promise.all([
+                dbProvider.loadAllMapStyles().then((style) => {
+                    const styles = Object.values(style);
+                    if (styles.length > 0) {
+                        runTimeProvider.setMapStyle(styles[0]);
+                    }
+                }),
+                dbProvider.loadAllOverlays().then((result: Record<string, Overlay>) => {
+                    const localOverlays = Object.values(result);
+                    localOverlays.forEach((overlay: Overlay) => {
+                        runTimeProvider.addOverlay(overlay);
+                    });
+                }),
+                dbProvider.loadAllMapGroups().then((result) => {
+                    const localMapGroups = Object.values(result);
+                    localMapGroups.forEach((group) => {
+                        runTimeProvider.addMapGroup(group);
+                    });
+                }),
+                dbProvider.loadAllNamedGeoReferencedObjects().then((result) => {
+                    const localObjects = Object.values(result);
+                    localObjects.forEach((item: NamedGeoReferencedObject) => {
+                        runTimeProvider.addMapItem(item);
+                    });
+                })
+            ]);
+
+            ApplicationLogger.info(
+                "Local data loaded from IndexedDB. Starting synchronization with remote storage.",
+                {service: "MapComponent"}
+            )
             const remoteStorage: StorageInterface = ApiProvider.getInstance();
-            void remoteStorage.loadAllMapStyles().then((result: Record<string, MapStyle>) => {
-                const mapStyles = Object.values(result);
-                if (mapStyles.length > 0) {
-                    provider.setMapStyle(Object.values(result)[0]);
-                }
-                void localStorage.replaceMapStyles(mapStyles);
-            });
 
-            void remoteStorage.loadAllOverlays().then((result: Record<string, Overlay>) => {
-                const remoteOverlays = Object.values(result);
-                remoteOverlays.forEach((overlay: Overlay) => {
-                    provider.addOverlay(overlay);
-                });
-                void localStorage.replaceOverlays(remoteOverlays)
-            });
-
-
-            void remoteStorage.loadAllMapGroups().then((result) => {
-                const remoteMapGroups = Object.values(result);
-                remoteMapGroups.forEach((group) => {
-                    provider.addMapGroup(group);
-                });
-                void localStorage.replaceMapGroups(remoteMapGroups);
-            });
-            void remoteStorage.loadAllNamedGeoReferencedObjects().then((result) => {
-                const remoteObjects = Object.values(result);
-                remoteObjects.forEach((item: NamedGeoReferencedObject) => {
-                    provider.addMapItem(item);
-                });
-                void localStorage.replaceNamedGeoReferencedObjects(remoteObjects);
-            });
-        })
-
-
+            await Promise.all([
+                remoteStorage.loadAllMapStyles().then((result: Record<string, MapStyle>) => {
+                    const mapStyles = Object.values(result);
+                    if (mapStyles.length > 0) {
+                        runTimeProvider.setMapStyle(Object.values(result)[0]);
+                    }
+                    void dbProvider.replaceMapStyles(mapStyles);
+                }),
+                remoteStorage.loadAllOverlays().then((result: Record<string, Overlay>) => {
+                    const remoteOverlays = Object.values(result);
+                    remoteOverlays.forEach((overlay: Overlay) => {
+                        runTimeProvider.addOverlay(overlay);
+                    });
+                    void dbProvider.replaceOverlays(remoteOverlays)
+                }),
+                remoteStorage.loadAllMapGroups().then((result) => {
+                    const remoteMapGroups = Object.values(result);
+                    remoteMapGroups.forEach((group) => {
+                        runTimeProvider.addMapGroup(group);
+                    });
+                    void dbProvider.replaceMapGroups(remoteMapGroups);
+                }),
+                remoteStorage.loadAllNamedGeoReferencedObjects().then((result) => {
+                    const remoteObjects = Object.values(result);
+                    remoteObjects.forEach((item: NamedGeoReferencedObject) => {
+                        runTimeProvider.addMapItem(item);
+                    });
+                    void dbProvider.replaceNamedGeoReferencedObjects(remoteObjects);
+                })
+            ])
+            ApplicationLogger.info("Data synchronization complete.", {service: "MapComponent"});
+        })();
     }, []);
 
     if (!mapStyle) {
