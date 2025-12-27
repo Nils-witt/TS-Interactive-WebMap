@@ -8,6 +8,7 @@
 
 import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
 import {type DBRecord, Entity} from './Entity.ts';
+import {erzeugeTaktischesZeichen} from 'taktische-zeichen-core';
 
 export interface INamedGeoReferencedObject {
     id?: string;
@@ -40,6 +41,7 @@ export class NamedGeoReferencedObject extends Entity {
         this.showOnMap = data.showOnMap || false;
         this.groupId = data.groupId as string | null;
         this.symbol = data.symbol || null;
+
     }
 
     public static of(data: DBRecord): NamedGeoReferencedObject {
@@ -50,7 +52,8 @@ export class NamedGeoReferencedObject extends Entity {
             name: data.name as string,
             zoomLevel: data.zoomLevel !== undefined ? Number(data.zoomLevel) : undefined,
             showOnMap: Boolean(data.show_on_map),
-            groupId: data.group_id as string | undefined
+            groupId: data.group_id as string | undefined,
+            symbol: data.symbol ? (data.symbol as TaktischesZeichen) : undefined,
         });
     }
 
@@ -66,7 +69,32 @@ export class NamedGeoReferencedObject extends Entity {
             zoomLevel: this.zoomLevel || 0,
             group_id: this.groupId || null,
             show_on_map: this.showOnMap || false,
+            symbol: this.symbol ? JSON.stringify(this.symbol) : null,
         };
+    }
+
+
+    public getIconElement(size?: { height: number, width: number }): HTMLElement | undefined {
+        if (!this.symbol) {
+            return undefined;
+        }
+        const tz = erzeugeTaktischesZeichen(this.symbol);
+        if (!tz.dataUrl) {
+            return undefined;
+        }
+        const img = document.createElement('img');
+        img.src = tz.dataUrl;
+        if (size) {
+            img.width = size.width;
+            img.height = size.height;
+        } else {
+            img.width = 32;
+            img.height = 32;
+        }
+
+        const container = document.createElement('div');
+        container.appendChild(img);
+        return container;
     }
 
     public getId(): string | null {
