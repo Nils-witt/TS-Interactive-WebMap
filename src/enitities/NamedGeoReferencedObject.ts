@@ -45,6 +45,19 @@ export class NamedGeoReferencedObject extends Entity {
     }
 
     public static of(data: DBRecord): NamedGeoReferencedObject {
+        let data_symbol: TaktischesZeichen | undefined = undefined;
+        if (data && data.symbol) {
+            try {
+                if (typeof data.symbol == 'object') {
+                    data_symbol = data.symbol as TaktischesZeichen;
+                }else if (typeof data.symbol == 'string') {
+                    data_symbol = JSON.parse(data.symbol) as TaktischesZeichen;
+                }
+            } catch (e: any) {
+                /* ignore parsing errors */
+            }
+        }
+
         return new NamedGeoReferencedObject({
             id: data.id as string,
             latitude: Number(data.latitude),
@@ -53,7 +66,7 @@ export class NamedGeoReferencedObject extends Entity {
             zoomLevel: data.zoomLevel !== undefined ? Number(data.zoomLevel) : undefined,
             showOnMap: Boolean(data.show_on_map),
             groupId: data.group_id as string | undefined,
-            symbol: data.symbol ? (data.symbol as TaktischesZeichen) : undefined,
+            symbol: data_symbol,
         });
     }
 

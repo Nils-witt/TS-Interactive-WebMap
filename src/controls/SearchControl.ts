@@ -125,7 +125,6 @@ export class SearchControl extends Evented implements IControl {
             'maplibregl-ctrl-group',  // Groups the control visually
             'searchcontrol-root',         // Custom class for styling
         );
-        console.log("NRW SearchControl initialized");
         this.createSearchContainer();
 
         options.globalEventHandler.on(DataProviderEventType.MAP_ITEM_UPDATED, () => {
@@ -286,9 +285,12 @@ export class SearchControl extends Evented implements IControl {
             const item = event.data as NamedGeoReferencedObject;
             this.updateItem(item);
         });
+        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_CREATED, (event) => {
+            const item = event.data as NamedGeoReferencedObject;
+            this.updateItem(item);
+        });
         DataProvider.getInstance().getMapLocations().forEach((item) => {
             this.updateItem(item);
-            ApplicationLogger.info('Showing existing item on map:' + JSON.stringify(item.record()), {service: 'SearchControl'});
         });
 
         // Return the container element to be added to the map
