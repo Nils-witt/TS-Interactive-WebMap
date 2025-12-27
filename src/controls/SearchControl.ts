@@ -6,7 +6,14 @@
  * Purpose: allow quick map navigation / zoom to named geo-referenced objects.
  */
 
-import {type ControlPosition, Evented, type IControl, Map as MapLibreMap, Marker} from 'maplibre-gl';
+import {
+    type ControlPosition,
+    Evented,
+    type IControl,
+    Map as MapLibreMap,
+    Marker,
+    type MarkerOptions
+} from 'maplibre-gl';
 import {DataProvider, DataProviderEventType} from '../dataProviders/DataProvider';
 import type {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject';
 import {icon} from '@fortawesome/fontawesome-svg-core';
@@ -19,7 +26,7 @@ import {useControl} from '@vis.gl/react-maplibre';
 
 import './css/search.scss';
 import {useEffect} from 'react';
-import {ApplicationLogger} from "../ApplicationLogger.ts";
+import {ApplicationLogger} from '../ApplicationLogger.ts';
 
 /**
  * SearchControl provides a lightweight search UI for NamedGeoReferencedObject entries.
@@ -53,7 +60,13 @@ export function ReactSearchControl(props: ReactSearchControlProps): null {
             if (map) {
                 ApplicationLogger.info('Showing updated item on map:' + item.getName(), {service: 'SearchControl'});
                 if (!shownItems.has(item.getId() as string)) {
-                    const marker = new Marker()
+                    const markerOptions: MarkerOptions = {};
+                    if (item.getIconElement()){
+                        const container = document.createElement('div');
+                        container.appendChild(item.getIconElement({width: 50, height: 50}) as HTMLElement);
+                        markerOptions.element = container;
+                    }
+                    const marker = new Marker(markerOptions)
                         .setLngLat([item.getLongitude(), item.getLatitude()])
                         .addTo(map);
                     shownItems.set(item.getId() as string, marker);
@@ -61,6 +74,12 @@ export function ReactSearchControl(props: ReactSearchControlProps): null {
                     const marker = shownItems.get(item.getId() as string);
                     if (marker) {
                         marker.setLngLat([item.getLongitude(), item.getLatitude()]);
+                        if (item.getIconElement()){
+                            if (marker._element.children.length > 0) {
+                                marker._element.children[0].remove();
+                            }
+                            marker._element.appendChild(item.getIconElement({width: 50, height: 50}) as HTMLElement);
+                        }
                     }
                 }
             }
