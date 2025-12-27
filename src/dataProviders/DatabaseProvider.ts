@@ -12,6 +12,7 @@ import {Overlay} from '../enitities/Overlay.ts';
 import {MapStyle} from '../enitities/MapStyle.ts';
 import {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject.ts';
 import {MapGroup} from '../enitities/MapGroup.ts';
+import {ApplicationLogger} from '../ApplicationLogger.ts';
 
 
 enum DB_TABLES {
@@ -24,6 +25,8 @@ enum DB_TABLES {
 export class DatabaseProvider implements StorageInterface {
     private static instance: DatabaseProvider;
     private db: IDBPDatabase | undefined;
+    private isSetUp = false;
+    private listeners = new Map<string, (() => void)[]>();
 
     private readonly DB_NAME = 'mapDB';
 
@@ -50,13 +53,23 @@ export class DatabaseProvider implements StorageInterface {
                     db.createObjectStore(DB_TABLES.mapGroups, {keyPath: 'id'});
                 }
             }
-        }) as unknown as IDBPDatabase;
+        });
+        this.isSetUp = true;
+        ApplicationLogger.info('IndexedDB setup complete.', {service: 'DatabaseProvider'});
     }
 
     public static async getInstance(): Promise<DatabaseProvider> {
         if (!DatabaseProvider.instance) {
             DatabaseProvider.instance = new DatabaseProvider();
-            void await DatabaseProvider.instance.setUp();
+            await DatabaseProvider.instance.setUp();
+        }
+        if (!DatabaseProvider.instance.isSetUp) {
+            await new Promise<void>(resolve => {
+                if(!DatabaseProvider.instance.listeners.has('setup')) {
+                    DatabaseProvider.instance.listeners.set('setup', []);
+                }
+                DatabaseProvider.instance.listeners.get('setup')?.push(() => resolve());
+            });
         }
         return DatabaseProvider.instance;
     }

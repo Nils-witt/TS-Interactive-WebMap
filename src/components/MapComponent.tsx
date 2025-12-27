@@ -88,7 +88,6 @@ export function MapComponent(props: MapComponentProps) {
         webSocketProvider.start();
 
         try {
-
             if ((navigator as Navigator).userAgentData.mobile) {
                 setEnableContextMenu(false);
             }

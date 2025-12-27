@@ -78,23 +78,28 @@ export class NamedGeoReferencedObject extends Entity {
         if (!this.symbol) {
             return undefined;
         }
-        const tz = erzeugeTaktischesZeichen(this.symbol);
-        if (!tz.dataUrl) {
+        try {
+            const tz = erzeugeTaktischesZeichen(this.symbol);
+            if (!tz.dataUrl) {
+                return undefined;
+            }
+            const img = document.createElement('img');
+            img.src = tz.dataUrl;
+            if (size) {
+                img.width = size.width;
+                img.height = size.height;
+            } else {
+                img.width = 32;
+                img.height = 32;
+            }
+
+            const container = document.createElement('div');
+            container.appendChild(img);
+            return container;
+        } catch (e) {
             return undefined;
         }
-        const img = document.createElement('img');
-        img.src = tz.dataUrl;
-        if (size) {
-            img.width = size.width;
-            img.height = size.height;
-        } else {
-            img.width = 32;
-            img.height = 32;
-        }
 
-        const container = document.createElement('div');
-        container.appendChild(img);
-        return container;
     }
 
     public getId(): string | null {

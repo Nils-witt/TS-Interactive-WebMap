@@ -79,6 +79,9 @@ export function ReactSearchControl(props: ReactSearchControlProps): null {
                                 marker._element.children[0].remove();
                             }
                             marker._element.appendChild(item.getIconElement({width: 50, height: 50}) as HTMLElement);
+                            while (marker._element.children.length > 1) {
+                                marker._element.children[1].remove();
+                            }
                         }
                     }
                 }
