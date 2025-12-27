@@ -25,7 +25,6 @@ import {DataEvent, GlobalEventHandler} from '../dataProviders/GlobalEventHandler
 import {useControl} from '@vis.gl/react-maplibre';
 
 import './css/search.scss';
-import {useEffect} from 'react';
 import {ApplicationLogger} from '../ApplicationLogger.ts';
 
 /**
@@ -48,63 +47,10 @@ interface SearchControlOptions {
 }
 
 export function ReactSearchControl(props: ReactSearchControlProps): null {
-    const shownItems: Map<string, Marker> = new Map<string, Marker>();
-    const control = useControl(() => new SearchControl(props as SearchControlOptions), {
+    useControl(() => new SearchControl(props as SearchControlOptions), {
         position: props.position
     });
 
-
-    const updateItem = (item: NamedGeoReferencedObject) => {
-        if (item.getShowOnMap()) {
-            const map = control.getMap();
-            if (map) {
-                ApplicationLogger.info('Showing updated item on map:' + item.getName(), {service: 'SearchControl'});
-                if (!shownItems.has(item.getId() as string)) {
-                    const markerOptions: MarkerOptions = {};
-                    if (item.getIconElement()){
-                        const container = document.createElement('div');
-                        container.appendChild(item.getIconElement({width: 50, height: 50}) as HTMLElement);
-                        markerOptions.element = container;
-                    }
-                    const marker = new Marker(markerOptions)
-                        .setLngLat([item.getLongitude(), item.getLatitude()])
-                        .addTo(map);
-                    shownItems.set(item.getId() as string, marker);
-                } else {
-                    const marker = shownItems.get(item.getId() as string);
-                    if (marker) {
-                        marker.setLngLat([item.getLongitude(), item.getLatitude()]);
-                        if (item.getIconElement()){
-                            if (marker._element.children.length > 0) {
-                                marker._element.children[0].remove();
-                            }
-                            marker._element.appendChild(item.getIconElement({width: 50, height: 50}) as HTMLElement);
-                            while (marker._element.children.length > 1) {
-                                marker._element.children[1].remove();
-                            }
-                        }
-                    }
-                }
-            }
-        } else if (shownItems.has(item.getId() as string)) {
-            const marker = shownItems.get(item.getId() as string);
-            if (marker) {
-                marker.remove();
-            }
-            shownItems.delete(item.getId() as string);
-        }
-    };
-
-    useEffect(() => {
-        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, (event) => {
-            const item = event.data as NamedGeoReferencedObject;
-            updateItem(item);
-        });
-        DataProvider.getInstance().getMapLocations().forEach((item) => {
-            updateItem(item);
-            ApplicationLogger.info('Showing existing item on map:' + JSON.stringify(item.record()), {service: 'SearchControl'});
-        });
-    });
     return null;
 }
 
@@ -142,6 +88,9 @@ export class SearchControl extends Evented implements IControl {
      * @private
      */
     private shownMarkers: Map<string, Marker> = new Map<string, Marker>();
+
+    private shownItems: Map<string, Marker> = new Map<string, Marker>();
+
 
     /**
      * Flag to track if the control is currently open
@@ -329,6 +278,15 @@ export class SearchControl extends Evented implements IControl {
             }
         });
 
+        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, (event) => {
+            const item = event.data as NamedGeoReferencedObject;
+            this.updateItem(item);
+        });
+        DataProvider.getInstance().getMapLocations().forEach((item) => {
+            this.updateItem(item);
+            ApplicationLogger.info('Showing existing item on map:' + JSON.stringify(item.record()), {service: 'SearchControl'});
+        });
+
         // Return the container element to be added to the map
         return this.container;
     }
@@ -451,4 +409,46 @@ export class SearchControl extends Evented implements IControl {
     public getMap(): MapLibreMap | undefined {
         return this.map;
     }
+
+    private updateItem(item: NamedGeoReferencedObject) {
+        if (item.getShowOnMap()) {
+            if (this.map) {
+                ApplicationLogger.info('Showing updated item on map:' + item.getName(), {service: 'SearchControl'});
+                if (!this.shownItems.has(item.getId() as string)) {
+                    const markerOptions: MarkerOptions = {};
+                    this.shownItems.set(item.getId() as string, new Marker());
+                    if (item.getIconElement()) {
+                        const container = document.createElement('div');
+                        container.appendChild(item.getIconElement({width: 50, height: 50}) as HTMLElement);
+                        markerOptions.element = container;
+                    }
+                    const marker = new Marker(markerOptions)
+                        .setLngLat([item.getLongitude(), item.getLatitude()])
+                        .addTo(this.map);
+                    this.shownItems.set(item.getId() as string, marker);
+                    console.log(this.shownItems);
+                } else {
+                    const marker = this.shownItems.get(item.getId() as string);
+                    if (marker) {
+                        marker.setLngLat([item.getLongitude(), item.getLatitude()]);
+                        if (item.getIconElement()) {
+                            if (marker._element.children.length > 0) {
+                                marker._element.children[0].remove();
+                            }
+                            marker._element.appendChild(item.getIconElement({width: 50, height: 50}) as HTMLElement);
+                            while (marker._element.children.length > 1) {
+                                marker._element.children[1].remove();
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (this.shownItems.has(item.getId() as string)) {
+            const marker = this.shownItems.get(item.getId() as string);
+            if (marker) {
+                marker.remove();
+            }
+            this.shownItems.delete(item.getId() as string);
+        }
+    };
 }
