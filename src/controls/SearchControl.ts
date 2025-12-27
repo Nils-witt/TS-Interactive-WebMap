@@ -46,11 +46,15 @@ interface SearchControlOptions {
     globalEventHandler: GlobalEventHandler;
 }
 
+let searchControlInstance: SearchControl | null = null;
+
 export function ReactSearchControl(props: ReactSearchControlProps): null {
-    useControl(() => new SearchControl(props as SearchControlOptions), {
+    if (searchControlInstance === null) {
+        searchControlInstance = new SearchControl(props as SearchControlOptions);
+    }
+    useControl(() => searchControlInstance as SearchControl, {
         position: props.position
     });
-
     return null;
 }
 
@@ -121,7 +125,7 @@ export class SearchControl extends Evented implements IControl {
             'maplibregl-ctrl-group',  // Groups the control visually
             'searchcontrol-root',         // Custom class for styling
         );
-
+        console.log("NRW SearchControl initialized");
         this.createSearchContainer();
 
         options.globalEventHandler.on(DataProviderEventType.MAP_ITEM_UPDATED, () => {
