@@ -2,6 +2,7 @@
 import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
 import {type DBRecord, Entity} from './Entity.ts';
 import {erzeugeTaktischesZeichen} from 'taktische-zeichen-core';
+import {ApplicationLogger} from '../ApplicationLogger.ts';
 
 export interface IUnit {
     id?: string;
@@ -40,8 +41,8 @@ export class Unit extends Entity {
                 }else if (typeof data.symbol == 'string') {
                     data_symbol = JSON.parse(data.symbol) as TaktischesZeichen;
                 }
-            } catch (e: any) {
-                /* ignore parsing errors */
+            } catch (e) {
+                ApplicationLogger.error('Error parsing Unit symbol: ' + (e as Error).message, {service: 'Unit'});
             }
         }
 
@@ -93,6 +94,7 @@ export class Unit extends Entity {
             container.appendChild(img);
             return container;
         } catch (e) {
+            ApplicationLogger.error('Error generating icon element for Unit: ' + (e as Error).message, {service: 'Unit'});
             return undefined;
         }
 

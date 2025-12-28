@@ -4,8 +4,8 @@ import {MapStyle} from '../enitities/MapStyle.ts';
 import {MapGroup} from '../enitities/MapGroup.ts';
 import {Overlay} from '../enitities/Overlay.ts';
 import type {DBRecord} from '../enitities/Entity.ts';
-import {ApplicationLogger} from "../ApplicationLogger.ts";
-import {Unit} from "../enitities/Unit.ts";
+import {ApplicationLogger} from '../ApplicationLogger.ts';
+import {Unit} from '../enitities/Unit.ts';
 
 
 export class WebSocketProvider {

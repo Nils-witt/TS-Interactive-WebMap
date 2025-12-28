@@ -26,7 +26,7 @@ import {useControl} from '@vis.gl/react-maplibre';
 
 import './css/search.scss';
 import {ApplicationLogger} from '../ApplicationLogger.ts';
-import type {Unit} from "../enitities/Unit.ts";
+import type {Unit} from '../enitities/Unit.ts';
 
 /**
  * SearchControl provides a lightweight search UI for NamedGeoReferencedObject entries.

@@ -14,7 +14,7 @@ import {Overlay} from '../enitities/Overlay.ts';
 import {MapStyle} from '../enitities/MapStyle.ts';
 import type {StorageInterface} from './StorageInterface.ts';
 import {MapGroup} from '../enitities/MapGroup.ts';
-import {Unit} from "../enitities/Unit.ts";
+import {Unit} from '../enitities/Unit.ts';
 
 
 export class ApiProviderEvent extends Event {
