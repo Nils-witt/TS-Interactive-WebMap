@@ -43,6 +43,8 @@ interface MapComponentProps {
 }
 
 export function MapComponent(props: MapComponentProps) {
+
+
     const {keyValueStore, dataProvider, eventHandler} = props;
 
     // Use Coords from localStorage or default to Bonn, Germany if not found or invalid
@@ -124,6 +126,12 @@ export function MapComponent(props: MapComponentProps) {
                     localObjects.forEach((item: NamedGeoReferencedObject) => {
                         runTimeProvider.addMapItem(item);
                     });
+                }),
+                dbProvider.loadAllUnits().then((result) => {
+                    const localUnits = Object.values(result);
+                    localUnits.forEach((unit) => {
+                        runTimeProvider.addUnit(unit);
+                    });
                 })
             ]);
 
@@ -161,6 +169,13 @@ export function MapComponent(props: MapComponentProps) {
                         runTimeProvider.addMapItem(item);
                     });
                     void dbProvider.replaceNamedGeoReferencedObjects(remoteObjects);
+                }),
+                remoteStorage.loadAllUnits().then((result) => {
+                    const remoteUnits = Object.values(result);
+                    remoteUnits.forEach((unit) => {
+                        runTimeProvider.addUnit(unit);
+                    });
+                    void dbProvider.replaceUnits(remoteUnits);
                 })
             ])
             ApplicationLogger.info("Data synchronization complete.", {service: "MapComponent"});

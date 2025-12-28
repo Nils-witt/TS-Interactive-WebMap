@@ -6,7 +6,7 @@
  * Purpose: centralize common behavior used by derived entity classes.
  */
 
-export type DBRecord = Record<string, string | number | boolean | null>;
+export type DBRecord = Record<string, string | number | boolean | null | object>;
 
 export class Entity {
 

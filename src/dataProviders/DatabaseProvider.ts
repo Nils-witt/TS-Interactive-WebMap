@@ -13,6 +13,7 @@ import {MapStyle} from '../enitities/MapStyle.ts';
 import {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject.ts';
 import {MapGroup} from '../enitities/MapGroup.ts';
 import {ApplicationLogger} from '../ApplicationLogger.ts';
+import {Unit} from '../enitities/Unit.ts';
 
 
 enum DB_TABLES {
@@ -20,6 +21,7 @@ enum DB_TABLES {
     mapStyles = 'mapStyles',
     namedGeoReferencedObjects = 'namedgeoreferencedobjects',
     mapGroups = 'mapGroups',
+    units = 'units',
 }
 
 export class DatabaseProvider implements StorageInterface {
@@ -35,7 +37,7 @@ export class DatabaseProvider implements StorageInterface {
 
     public async setUp(): Promise<void> {
 
-        const dbVersion = 9;
+        const dbVersion = 10;
         this.db = await openDB(this.DB_NAME, dbVersion, {
             upgrade(db) {
                 console.log(`Upgrading database to version ${dbVersion}`);
@@ -51,6 +53,9 @@ export class DatabaseProvider implements StorageInterface {
                 }
                 if (!db.objectStoreNames.contains(DB_TABLES.mapGroups)) {
                     db.createObjectStore(DB_TABLES.mapGroups, {keyPath: 'id'});
+                }
+                if (!db.objectStoreNames.contains(DB_TABLES.units)) {
+                    db.createObjectStore(DB_TABLES.units, {keyPath: 'id'});
                 }
             }
         });
@@ -462,4 +467,100 @@ export class DatabaseProvider implements StorageInterface {
             });
         });
     }
+    loadUnit(id: string): Promise<Unit | null> {
+        return new Promise<Unit | null>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+
+            const tx = this.db.transaction(DB_TABLES.units, 'readonly');
+
+            void tx.objectStore(DB_TABLES.units).get(id).then((result: Record<string, string | number> | undefined) => {
+                if (result) {
+                    const unit = Unit.of(result);
+                    resolve(unit);
+                } else {
+                    resolve(null);
+                }
+            });
+        });
+    }
+
+    loadAllUnits(): Promise<Record<string, Unit>> {
+        return new Promise<Record<string, Unit>>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.units, 'readonly');
+
+            void tx.objectStore(DB_TABLES.units).getAll()
+                .then((result: Record<string, string | number>[]) => {
+                    const units: Record<string, Unit> = {};
+                    for (const record of result) {
+                        const unit = Unit.of(record);
+                        units[unit.getId() as string] = unit;
+                    }
+                    resolve(units);
+                });
+        });
+    }
+
+    saveUnit(unit: Unit): Promise<Unit> {
+        return new Promise<Unit>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            if (unit.getId() == null) throw new Error('No ID set for unit');
+            const unitRecord = unit.record();
+            const tx = this.db.transaction(DB_TABLES.units, 'readwrite');
+
+            void tx.objectStore(DB_TABLES.units).getKey(unit.getId() as string).then(result => {
+                if (result) {
+                    void tx.objectStore(DB_TABLES.units).put(unitRecord);
+                } else {
+                    void tx.objectStore(DB_TABLES.units).add(unitRecord);
+                }
+                resolve(unit);
+            });
+        });
+    }
+
+    replaceUnits(units: Unit[]): Promise<void> {
+        return new Promise<void>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.units, 'readwrite');
+            void tx.objectStore(DB_TABLES.units).getAllKeys().then(result => {
+                const existingKeys = result as string[];
+                const newKeys = units.map(entry => entry.getId());
+
+                for (const existingKey of existingKeys) {
+                    if (!newKeys.includes(existingKey)) {
+                        void tx.objectStore(DB_TABLES.units).delete(existingKey);
+                    }
+                }
+
+                for (const unit of units) {
+                    const unitRecord = unit.record();
+                    if (existingKeys.includes(unit.getId() as string)) {
+                        void tx.objectStore(DB_TABLES.units).put(unitRecord);
+                    } else {
+                        void tx.objectStore(DB_TABLES.units).add(unitRecord);
+                    }
+                }
+                resolve();
+            });
+        });
+    }
+
+    deleteUnit(id: string): Promise<void> {
+        return new Promise<void>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+
+            const tx = this.db.transaction(DB_TABLES.units, 'readwrite');
+
+            void tx.objectStore(DB_TABLES.units).getKey(id).then(result => {
+                if (result) {
+                    void tx.objectStore(DB_TABLES.units).delete(id);
+                    resolve();
+                } else {
+                    throw new Error('Not Exist');
+                }
+            });
+        });
+    }
+
 }

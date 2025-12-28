@@ -12,6 +12,7 @@ import {LngLat} from 'maplibre-gl';
 import {Overlay} from '../enitities/Overlay.ts';
 import {MapStyle} from '../enitities/MapStyle.ts';
 import type {MapGroup} from '../enitities/MapGroup.ts';
+import type {Unit} from '../enitities/Unit.ts';
 
 /**
  * Interface representing an event dispatched by the DataProvider.
@@ -56,6 +57,10 @@ export enum DataProviderEventType {
     /** Triggered when an overlay is removed **/
     OVERLAY_DELETED = 'overlay-deleted',
 
+    UNIT_ADDED = 'unit-added',
+    UNIT_UPDATED = 'unit-updated',
+    UNIT_DELETED = 'unit-deleted',
+
     MAP_CENTER_UPDATED = 'map-center-updated',
     MAP_ZOOM_UPDATED = 'map-zoom-updated',
     API_URL_UPDATED = 'api-url-updated',
@@ -81,6 +86,7 @@ export class DataProvider {
     /** Collection of map groups for organizing map elements */
     private mapGroups: Map<string, MapGroup> = new Map<string, MapGroup>();
 
+    private units: Map<string, Unit> = new Map<string, Unit>();
 
     private mapCenter: LngLat = new LngLat(0.0, 0.0); // Default center of the map
     private mapZoom: number;
@@ -234,6 +240,31 @@ export class DataProvider {
      */
     public getOverlays(): Map<string, Overlay> {
         return this.overlays;
+    }
+
+    public addUnit(unit: Unit): void {
+        if (unit.getId()) {
+            if (this.units.has(unit.getId() as string)) {
+                this.units.set(unit.getId() as string, unit);
+                this.triggerEvent(DataProviderEventType.UNIT_UPDATED, unit);
+            } else {
+                this.units.set(unit.getId() as string, unit);
+                this.triggerEvent(DataProviderEventType.UNIT_ADDED, unit);
+            }
+        }
+    }
+
+    public getUnits(): Map<string, Unit> {
+        return this.units;
+    }
+
+    public removeUnit(id: string): void {
+        if (this.units.has(id)) {
+            const unit = this.units.get(id);
+            if (!unit) return;
+            this.units.delete(id);
+            this.triggerEvent(DataProviderEventType.UNIT_DELETED, unit);
+        }
     }
 
     public getMapCenter(): LngLat {

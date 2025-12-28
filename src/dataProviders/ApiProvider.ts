@@ -14,6 +14,7 @@ import {Overlay} from '../enitities/Overlay.ts';
 import {MapStyle} from '../enitities/MapStyle.ts';
 import type {StorageInterface} from './StorageInterface.ts';
 import {MapGroup} from '../enitities/MapGroup.ts';
+import {Unit} from "../enitities/Unit.ts";
 
 
 export class ApiProviderEvent extends Event {
@@ -336,7 +337,6 @@ export class ApiProvider implements StorageInterface {
                 latitude: number,
                 longitude: number,
                 zoom_level: number,
-                symbol: TaktischesZeichen,
                 show_on_map: boolean,
                 group_id: string | null
             };
@@ -346,7 +346,6 @@ export class ApiProvider implements StorageInterface {
                 latitude: resData.latitude,
                 longitude: resData.longitude,
                 zoomLevel: resData.zoom_level,
-                symbol: resData.symbol,
                 showOnMap: resData.show_on_map,
                 groupId: resData.group_id || undefined
             });
@@ -374,7 +373,6 @@ export class ApiProvider implements StorageInterface {
                 latitude: number,
                 longitude: number,
                 zoom_level: number,
-                symbol: TaktischesZeichen,
                 show_on_map: boolean,
                 group_id: string | null
             };
@@ -384,7 +382,6 @@ export class ApiProvider implements StorageInterface {
                 latitude: resData.latitude,
                 longitude: resData.longitude,
                 zoomLevel: resData.zoom_level,
-                symbol: resData.symbol,
                 showOnMap: resData.show_on_map,
                 groupId: resData.group_id || undefined
             });
@@ -493,6 +490,54 @@ export class ApiProvider implements StorageInterface {
 
     deleteMapGroup(id: string): Promise<void> {
         throw new Error(`Method not implemented. deleteMapGroup: ${id}`);
+    }
+
+    loadUnit(id: string): Promise<Unit | null> {
+        throw new Error('loadMapGroup not implemented: ' + id);
+    }
+
+    loadAllUnits(): Promise<Record<string, Unit>> {
+        return new Promise<Record<string, Unit>>(resolve => {
+            const units: Record<string, Unit> = {};
+            const url = DataProvider.getInstance().getApiUrl() + '/units/';
+
+            this.fetchData(url)
+                .then(data => {
+                    for (const rawUnit of data as {
+                        id: string,
+                        name: string,
+                        description: string,
+                        latitude: number,
+                        longitude: number,
+                        symbol: TaktischesZeichen,
+                        group_id: string | null
+                    }[]) {
+                        units[rawUnit.id] = Unit.of({
+                            id: rawUnit.id,
+                            name: rawUnit.name,
+                            latitude: rawUnit.latitude,
+                            longitude: rawUnit.longitude,
+                            symbol: rawUnit.symbol,
+                        });
+                    }
+                    resolve(units);
+                })
+                .catch(e => {
+                    console.error('Error fetching overlay layers:', e);
+                });
+        });
+    }
+
+    saveUnit(unit: Unit): Promise<Unit> {
+        throw new Error(`Method not implemented. saveMapGroup: ${unit.getId()}`);
+    }
+
+    replaceUnits(units:Unit[]): Promise<void> {
+        throw new Error('Not Available on this Provider : replaceUnits ' + units.length);
+    }
+
+    deleteUnit(id: string): Promise<void> {
+        throw new Error(`Method not implemented. deleteUnit: ${id}`);
     }
 
 }

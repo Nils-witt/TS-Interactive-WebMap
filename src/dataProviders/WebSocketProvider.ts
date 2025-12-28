@@ -4,6 +4,8 @@ import {MapStyle} from '../enitities/MapStyle.ts';
 import {MapGroup} from '../enitities/MapGroup.ts';
 import {Overlay} from '../enitities/Overlay.ts';
 import type {DBRecord} from '../enitities/Entity.ts';
+import {ApplicationLogger} from "../ApplicationLogger.ts";
+import {Unit} from "../enitities/Unit.ts";
 
 
 export class WebSocketProvider {
@@ -21,7 +23,6 @@ export class WebSocketProvider {
 
 
     updateModel(modelType: string, data: object) {
-        console.log('WebSocket updateModel called for', modelType, data);
         const dataProvider = DataProvider.getInstance();
 
         if (modelType === 'NamedGeoReferencedItem') {
@@ -36,21 +37,24 @@ export class WebSocketProvider {
         } else if (modelType === 'MapOverlay') {
             const item = Overlay.of(data as DBRecord);
             dataProvider.addOverlay(item);
+        } else if (modelType === 'Unit') {
+            const item = Unit.of(data as DBRecord);
+            dataProvider.addUnit(item);
         } else {
             console.log('Unknown model type:', modelType);
         }
     }
 
     start() {
-        console.log('WebSocket Started');
+        ApplicationLogger.info('WebSocket Started', {service: 'WebSocket'});
 
         const socket = new WebSocket(this.getConnectionURL());
 
         socket.onopen = (event) => {
-            console.log('WebSocket connection opened', event);
+            ApplicationLogger.info('WebSocket connection opened', {service: 'WebSocket', event: event});
         };
         socket.onmessage = (event) => {
-            console.log('WebSocket message received:', event.data);
+            ApplicationLogger.debug('WebSocket message received: ' + event.data, {service: 'WebSocket', event: event});
             try {
                 const data = JSON.parse(event.data as string) as { event: string, model_type: string, data: object };
                 if (data.event === 'model.update') {

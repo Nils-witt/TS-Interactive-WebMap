@@ -26,6 +26,7 @@ import {useControl} from '@vis.gl/react-maplibre';
 
 import './css/search.scss';
 import {ApplicationLogger} from '../ApplicationLogger.ts';
+import type {Unit} from "../enitities/Unit.ts";
 
 /**
  * SearchControl provides a lightweight search UI for NamedGeoReferencedObject entries.
@@ -93,7 +94,7 @@ export class SearchControl extends Evented implements IControl {
      */
     private shownMarkers: Map<string, Marker> = new Map<string, Marker>();
 
-    private shownItems: Map<string, Marker> = new Map<string, Marker>();
+    private shownUnits: Map<string, Marker> = new Map<string, Marker>();
 
 
     /**
@@ -281,15 +282,15 @@ export class SearchControl extends Evented implements IControl {
             }
         });
 
-        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_UPDATED, (event) => {
-            const item = event.data as NamedGeoReferencedObject;
+        DataProvider.getInstance().on(DataProviderEventType.UNIT_UPDATED, (event) => {
+            const item = event.data as Unit;
             this.updateItem(item);
         });
-        DataProvider.getInstance().on(DataProviderEventType.MAP_ITEM_CREATED, (event) => {
-            const item = event.data as NamedGeoReferencedObject;
+        DataProvider.getInstance().on(DataProviderEventType.UNIT_ADDED, (event) => {
+            const item = event.data as Unit;
             this.updateItem(item);
         });
-        DataProvider.getInstance().getMapLocations().forEach((item) => {
+        DataProvider.getInstance().getUnits().forEach((item) => {
             this.updateItem(item);
         });
 
@@ -416,45 +417,36 @@ export class SearchControl extends Evented implements IControl {
         return this.map;
     }
 
-    private updateItem(item: NamedGeoReferencedObject) {
-        if (item.getShowOnMap()) {
-            if (this.map) {
-                ApplicationLogger.info('Showing updated item on map:' + item.getName(), {service: 'SearchControl'});
-                if (!this.shownItems.has(item.getId() as string)) {
-                    const markerOptions: MarkerOptions = {};
-                    this.shownItems.set(item.getId() as string, new Marker());
+    private updateItem(item: Unit) {
+        if (this.map) {
+            ApplicationLogger.debug('Showing updated unit on map:' + item.getName(), {service: 'SearchControl'});
+            if (!this.shownUnits.has(item.getId() as string)) {
+                const markerOptions: MarkerOptions = {};
+                this.shownUnits.set(item.getId() as string, new Marker());
+                if (item.getIconElement()) {
+                    const container = document.createElement('div');
+                    container.appendChild(item.getIconElement({width: 50, height: 50}) as HTMLElement);
+                    markerOptions.element = container;
+                }
+                const marker = new Marker(markerOptions)
+                    .setLngLat([item.getLongitude(), item.getLatitude()])
+                    .addTo(this.map);
+                this.shownUnits.set(item.getId() as string, marker);
+            } else {
+                const marker = this.shownUnits.get(item.getId() as string);
+                if (marker) {
+                    marker.setLngLat([item.getLongitude(), item.getLatitude()]);
                     if (item.getIconElement()) {
-                        const container = document.createElement('div');
-                        container.appendChild(item.getIconElement({width: 50, height: 50}) as HTMLElement);
-                        markerOptions.element = container;
-                    }
-                    const marker = new Marker(markerOptions)
-                        .setLngLat([item.getLongitude(), item.getLatitude()])
-                        .addTo(this.map);
-                    this.shownItems.set(item.getId() as string, marker);
-                    console.log(this.shownItems);
-                } else {
-                    const marker = this.shownItems.get(item.getId() as string);
-                    if (marker) {
-                        marker.setLngLat([item.getLongitude(), item.getLatitude()]);
-                        if (item.getIconElement()) {
-                            if (marker._element.children.length > 0) {
-                                marker._element.children[0].remove();
-                            }
-                            marker._element.appendChild(item.getIconElement({width: 50, height: 50}) as HTMLElement);
-                            while (marker._element.children.length > 1) {
-                                marker._element.children[1].remove();
-                            }
+                        if (marker._element.children.length > 0) {
+                            marker._element.children[0].remove();
+                        }
+                        marker._element.appendChild(item.getIconElement({width: 50, height: 50}) as HTMLElement);
+                        while (marker._element.children.length > 1) {
+                            marker._element.children[1].remove();
                         }
                     }
                 }
             }
-        } else if (this.shownItems.has(item.getId() as string)) {
-            const marker = this.shownItems.get(item.getId() as string);
-            if (marker) {
-                marker.remove();
-            }
-            this.shownItems.delete(item.getId() as string);
         }
     };
 }

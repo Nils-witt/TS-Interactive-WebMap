@@ -1,5 +1,10 @@
 
 .marker-form-root {
+  display: flex;
+  flex-direction: row;
+  > div {
+    width: 25em;
+  }
   tr {
     > :first-child {
       padding-top: 0.5em;

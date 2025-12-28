@@ -26,7 +26,6 @@ export function CreateMarkerForm(props: CreateMarkerFormProps): React.JSX.Elemen
     const [availableGroups, setAvailableGroups] = React.useState<MapGroup[]>([]);
 
     useEffect(() => {
-        console.log("ENT:",props.entity);
         if (props.entity) {
             setName(props.entity.getName());
             setLatitude(props.entity.getLatitude());
@@ -87,65 +86,66 @@ export function CreateMarkerForm(props: CreateMarkerFormProps): React.JSX.Elemen
 
     return (
         <div className={'marker-form-root'}>
-            <h2>Edit Marker Form</h2>
-
-            <table>
-                <tbody>
-                <tr>
-                    <td>
-                        <label>Name:</label>
-                    </td>
-                    <td>
-                        <input type="text" value={name} onChange={(e) => setName(e.target.value)}/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label>latitude:</label>
-                    </td>
-                    <td>
-                        <input type="text" value={latitude} onChange={(e) => setLatitude(parseFloat(e.target.value))}/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label>longitude:</label>
-                    </td>
-                    <td>
-                        <input type="text" value={longitude}
-                               onChange={(e) => setLongitude(parseFloat(e.target.value))}/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label>zoom:</label>
-                    </td>
-                    <td>
-                        <input type="number" value={zoom} onChange={(e) => setZoom(parseInt(e.target.value))}/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label>Group</label>
-                    </td>
-                    <td>
-                        <select onChange={(e) => setGroupId(e.target.value)}>
-                            <option value="">None</option>
-                            {availableGroups.map((group) => {
-                                if (groupId === group.getID()) {
-                                    return <option key={group.getID()} value={group.getID()}
-                                                   selected>{group.getName()}</option>
-                                } else {
-                                    return <option key={group.getID()} value={group.getID()}>{group.getName()}</option>
-                                }
-                            })}
-                        </select>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
             <div>
+                <h2>Edit Marker Form</h2>
 
+                <table>
+                    <tbody>
+                    <tr>
+                        <td>
+                            <label>Name:</label>
+                        </td>
+                        <td>
+                            <input type="text" value={name} onChange={(e) => setName(e.target.value)}/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label>latitude:</label>
+                        </td>
+                        <td>
+                            <input type="text" value={latitude}
+                                   onChange={(e) => setLatitude(parseFloat(e.target.value))}/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label>longitude:</label>
+                        </td>
+                        <td>
+                            <input type="text" value={longitude}
+                                   onChange={(e) => setLongitude(parseFloat(e.target.value))}/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label>zoom:</label>
+                        </td>
+                        <td>
+                            <input type="number" value={zoom} onChange={(e) => setZoom(parseInt(e.target.value))}/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label>Group</label>
+                        </td>
+                        <td>
+                            <select onChange={(e) => setGroupId(e.target.value)}>
+                                <option value="">None</option>
+                                {availableGroups.map((group) => {
+                                    if (groupId === group.getID()) {
+                                        return <option key={group.getID()} value={group.getID()}
+                                                       selected>{group.getName()}</option>
+                                    } else {
+                                        return <option key={group.getID()}
+                                                       value={group.getID()}>{group.getName()}</option>
+                                    }
+                                })}
+                            </select>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
             <button type={"submit"} onClick={onSubmit}>Save</button>
         </div>
