@@ -510,14 +510,18 @@ export class ApiProvider implements StorageInterface {
                         latitude: number,
                         longitude: number,
                         symbol: TaktischesZeichen,
-                        group_id: string | null
-                    }[]) {
+                        group_id: string | null,
+                        unit_status: number | null,
+                        unit_status_timestamp: string,
+                    }[]){
                         units[rawUnit.id] = Unit.of({
                             id: rawUnit.id,
                             name: rawUnit.name,
                             latitude: rawUnit.latitude,
                             longitude: rawUnit.longitude,
                             symbol: rawUnit.symbol,
+                            unit_status: rawUnit.unit_status,
+                            unit_status_timestamp: rawUnit.unit_status_timestamp,
                         });
                     }
                     resolve(units);

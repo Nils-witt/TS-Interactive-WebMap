@@ -1,4 +1,3 @@
-
 import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
 import {type DBRecord, Entity} from './Entity.ts';
 import {erzeugeTaktischesZeichen} from 'taktische-zeichen-core';
@@ -11,6 +10,8 @@ export interface IUnit {
     name: string;
     symbol?: TaktischesZeichen; // Optional symbol for rendering, if applicable
     groupId?: string | null; // Optional group ID for categorization
+    unit_status?: number | null;
+    unit_status_time?: string;
 }
 
 export class Unit extends Entity {
@@ -20,6 +21,8 @@ export class Unit extends Entity {
     private name: string;
     private symbol: TaktischesZeichen | null;
     private groupId: string | null;
+    private unit_status: number | null;
+    private unit_status_time: Date | null;
 
     constructor(data: IUnit) {
         super();
@@ -27,9 +30,10 @@ export class Unit extends Entity {
         this.latitude = data.latitude;
         this.longitude = data.longitude;
         this.name = data.name;
-        this.groupId = data.groupId as string | null;
+        this.groupId = data.groupId as string || null;
         this.symbol = data.symbol || null;
-
+        this.unit_status = data.unit_status || null;
+        this.unit_status_time = new Date(data.unit_status_time as string);
     }
 
     public static of(data: DBRecord): Unit {
@@ -38,14 +42,13 @@ export class Unit extends Entity {
             try {
                 if (typeof data.symbol == 'object') {
                     data_symbol = data.symbol as TaktischesZeichen;
-                }else if (typeof data.symbol == 'string') {
+                } else if (typeof data.symbol == 'string') {
                     data_symbol = JSON.parse(data.symbol) as TaktischesZeichen;
                 }
             } catch (e) {
                 ApplicationLogger.error('Error parsing Unit symbol: ' + (e as Error).message, {service: 'Unit'});
             }
         }
-
         return new Unit({
             id: data.id as string,
             latitude: Number(data.latitude),
@@ -53,6 +56,8 @@ export class Unit extends Entity {
             name: data.name as string,
             groupId: data.group_id as string | undefined,
             symbol: data_symbol,
+            unit_status: data.unit_status as number || null,
+            unit_status_time: data.unit_status_timestamp as string,
         });
     }
 
@@ -67,11 +72,13 @@ export class Unit extends Entity {
             name: this.name,
             group_id: this.groupId || null,
             symbol: this.symbol ? JSON.stringify(this.symbol) : null,
+            unit_status: this.unit_status,
+            unit_status_timestamp: this.unit_status_time ? this.unit_status_time.toISOString() : null,
         };
     }
 
 
-    public getIconElement(size?: { height: number, width: number }): HTMLElement | undefined {
+    public getIconElement(size?: { width: number }): HTMLElement | undefined {
         if (!this.symbol) {
             return undefined;
         }
@@ -84,20 +91,14 @@ export class Unit extends Entity {
             img.src = tz.dataUrl;
             if (size) {
                 img.width = size.width;
-                img.height = size.height;
             } else {
                 img.width = 32;
-                img.height = 32;
             }
-
-            const container = document.createElement('div');
-            container.appendChild(img);
-            return container;
+            return img;
         } catch (e) {
             ApplicationLogger.error('Error generating icon element for Unit: ' + (e as Error).message, {service: 'Unit'});
             return undefined;
         }
-
     }
 
     public getId(): string | null {
@@ -142,5 +143,17 @@ export class Unit extends Entity {
 
     public setLongitude(longitude: number): void {
         this.longitude = longitude;
+    }
+
+    public getStatus(): number | null {
+        return this.unit_status || null;
+    }
+
+    public setStatus(status: number | null): void {
+        this.unit_status = status;
+    }
+
+    public getStatusTime(): Date | null {
+        return this.unit_status_time;
     }
 }

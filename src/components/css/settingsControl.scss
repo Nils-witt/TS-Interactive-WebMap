@@ -41,3 +41,30 @@
   }
 
 }
+
+.unit-marker-container {
+  display: flex;
+  flex-direction: column;
+
+  .unit-icon-container {
+    margin: auto;
+  }
+
+  .unit-status-indicator {
+    background-color: white;
+    display: flex;
+    flex-direction: row;
+
+    > :first-child {
+      border: 2px solid black;
+      padding: 0 0.3em;
+      margin: auto;
+    }
+
+    > :nth-child(2) {
+      margin: auto;
+      padding-left: 5px;
+      padding-right: 5px;
+    }
+  }
+}
