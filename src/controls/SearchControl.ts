@@ -533,6 +533,7 @@ export class SearchControl extends Evented implements IControl {
                                 status_num_label.innerText = '-';
                             }
                         }
+                        this.updateUnitTime(unit);
                     }
                 }
             }

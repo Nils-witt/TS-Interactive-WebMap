@@ -84,11 +84,10 @@ export class Unit extends Entity {
         }
         try {
             const tz = erzeugeTaktischesZeichen(this.symbol);
-            if (!tz.dataUrl) {
-                return undefined;
-            }
+            const dataUrl = `data:image/svg+xml;base64,${btoa(tz.toString())}`;
+
             const img = document.createElement('img');
-            img.src = tz.dataUrl;
+            img.src = dataUrl;
             if (size) {
                 img.width = size.width;
             } else {
