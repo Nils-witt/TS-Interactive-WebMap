@@ -63,7 +63,7 @@ export function LoginComponent(props: LoginComponentProps): ReactElement {
                         <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
                         <span>Remember me</span>
                     </label>
-                    <a className="forgot-link" href="#">Forgot?</a>
+                    <a className="forgot-link" href="/admin">Admin</a>
                 </div>
 
                 <div className="login-actions">
