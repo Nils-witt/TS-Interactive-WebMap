@@ -23,5 +23,11 @@ export function LoginPage(): JSX.Element {
         void apiProvider.testLogin();
     }, [])
 
-    return <div className="login-container"><LoginComponent locked={locked} handleLogin={handleLogin} error={error}/></div>;
+    return <div className="login-container">
+        <div className="login-box">
+            {/* icon served from the public/ directory at root */}
+            <img src="/ts-interactive-webmap-icon.svg" className="login-icon" alt="App icon" />
+            <LoginComponent locked={locked} handleLogin={handleLogin} error={error}/>
+        </div>
+    </div>;
 }
