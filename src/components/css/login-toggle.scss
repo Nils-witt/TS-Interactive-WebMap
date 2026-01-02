@@ -1,0 +1,63 @@
+
+/* Dark toggle */
+.dark-toggle {
+  background: transparent;
+  border: none;
+  padding: 2px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  .toggle-track {
+    width: 46px;
+    height: 26px;
+    background: color-mix(in srgb, var(--muted) 8%, transparent);
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    padding: 3px;
+    box-sizing: border-box;
+
+
+    .toggle-knob {
+      width: 20px;
+      height: 20px;
+      background: var(--card);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      box-shadow: 0 2px 6px rgba(2, 6, 23, 0.12);
+      transform: translateX(0);
+      transition: transform 200ms cubic-bezier(.2, .9, .2, 1), background 200ms ease, color 200ms ease;
+    }
+  }
+
+}
+
+
+.dark-toggle.is-dark .toggle-track {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 35%, transparent), color-mix(in srgb, var(--accent) 12%, transparent));
+}
+
+.dark-toggle.is-dark .toggle-knob {
+  transform: translateX(20px);
+  color: var(--card);
+  background: var(--accent);
+}
+
+.dark-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toggle-knob {
+    transition: none;
+  }
+}

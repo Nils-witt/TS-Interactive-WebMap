@@ -4,8 +4,39 @@
  * Styles for the login page shown to users when authentication is required.
  * Purpose: provide minimal, responsive styling for the login form.
  */
+.dark {
+  .login-card {
+    background: linear-gradient(180deg, #1f2937, #111827);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
 
+    .login-card-header h1,
+    .muted,
+    .input-label,
+    .login-meta-row,
+    .remember {
+      color: var(--text-on-dark);
+    }
 
+    .text-input {
+      background: #374151;
+      border: 1px solid #4b5563;
+      color: #f9fafb;
+
+      &:focus {
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+        border-color: #3b82f6;
+      }
+    }
+
+    .forgot-link {
+      color: #60a5fa;
+    }
+
+    .error-message {
+      color: #fca5a5;
+    }
+  }
+}
 
 .login-card {
   width: 360px;
@@ -47,7 +78,6 @@
       .input-label {
         font-weight: 500;
         font-size: 0.875rem;
-        color: #374151;
       }
 
       .text-input {
@@ -76,7 +106,6 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        color: #374151;
       }
 
       .forgot-link {
@@ -123,3 +152,4 @@
 @media (max-width: 420px) {
   .login-card { width: 94%; padding: 1rem; }
 }
+
