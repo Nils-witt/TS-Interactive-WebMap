@@ -18,6 +18,18 @@ if (window.location.pathname === '/') {
     window.location.pathname = '/index.html';
 }
 
+// apply theme as early as possible to avoid flash
+(() => {
+    try {
+        const stored = localStorage.getItem('theme');
+        if (stored === 'dark') document.documentElement.classList.add('dark');
+        else if (stored === 'light') document.documentElement.classList.remove('dark');
+        else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
+    } catch {
+        // ignore
+    }
+})();
+
 navigator.serviceWorker.addEventListener("message", (event: MessageEvent<{ cmd: string }>) => {
     if (event.data.cmd === "reload") {
         console.log("Reloading page due to service worker update");

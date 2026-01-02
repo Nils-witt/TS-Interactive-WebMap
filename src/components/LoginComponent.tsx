@@ -23,7 +23,7 @@ export function LoginComponent(props: LoginComponentProps): ReactElement {
     return (
         <div className="login-card">
             <div className="login-card-header">
-                <h1>Welcome back</h1>
+                <h1>Welcome!</h1>
                 <p className="muted">Sign in to continue to the interactive map</p>
             </div>
 
