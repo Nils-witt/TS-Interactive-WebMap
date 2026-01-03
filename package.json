@@ -5,11 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run make-icons && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "make-icons": "pwa-asset-generator public/ts-interactive-webmap-icon.svg public/icons -i index.html -f",
-    "make-icons-dev": "pwa-asset-generator public/ts-interactive-webmap-icon-dev.svg public/icons -i index.html -f"
+    "make-icons": "pwa-asset-generator public/ts-interactive-webmap-icon.svg public/icons -i index.html -f"
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",
