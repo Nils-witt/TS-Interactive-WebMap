@@ -2,8 +2,8 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="TS Interactive WebMap icon">
   <defs>
     <linearGradient id="pinGrad" x1="352" y1="200" x2="672" y2="824" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#EF4444"/>
-      <stop offset="1" stop-color="#B91C1C"/>
+      <stop offset="0" stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
     </linearGradient>
     <linearGradient id="shadowGrad" x1="512" y1="760" x2="512" y2="920" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#0B1220" stop-opacity="0.25"/>

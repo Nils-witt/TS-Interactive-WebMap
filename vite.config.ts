@@ -42,14 +42,6 @@ export default defineConfig({
                 importScripts: ['./sw-custom.js'],
                 navigateFallbackDenylist: [/^\/(api|admin|vector|overlays)/]
             },
-            includeAssets: [
-                'icons/192.png',
-                'icons/64.png',
-                'icons/128.png',
-                'icons/256.png',
-                'icons/512.png',
-                'icons/1024.png',
-            ],
             devOptions: {
                 enabled: false
             },
@@ -57,38 +49,35 @@ export default defineConfig({
                 name: 'TS-Map',
                 short_name: 'TS-Map',
                 description: 'Interactive map application',
-                theme_color: '#ffffff',
-                // start_url: '/index.html',
+                theme_color: '#0B1220',
+                start_url: '/index.html',
+                display: 'fullscreen',
+                background_color: '#0B1220',
+                orientation: 'natural',
                 icons: [
                     {
-                        "src": "icons/192.png",
+                        "src": "icons/manifest-icon-192.maskable.png",
+                        "sizes": "192x192",
                         "type": "image/png",
-                        "sizes": "192x192"
+                        "purpose": "any"
                     },
                     {
-                        "src": "icons/64.png",
+                        "src": "icons/manifest-icon-192.maskable.png",
+                        "sizes": "192x192",
                         "type": "image/png",
-                        "sizes": "64x64"
+                        "purpose": "maskable"
                     },
                     {
-                        "src": "icons/128.png",
+                        "src": "icons/manifest-icon-512.maskable.png",
+                        "sizes": "512x512",
                         "type": "image/png",
-                        "sizes": "128x128"
+                        "purpose": "any"
                     },
                     {
-                        "src": "icons/256.png",
+                        "src": "icons/manifest-icon-512.maskable.png",
+                        "sizes": "512x512",
                         "type": "image/png",
-                        "sizes": "256x256"
-                    },
-                    {
-                        "src": "icons/512.png",
-                        "type": "image/png",
-                        "sizes": "512x512"
-                    },
-                    {
-                        "src": "icons/1024.png",
-                        "type": "image/png",
-                        "sizes": "1024x1024"
+                        "purpose": "maskable"
                     }
                 ]
             }

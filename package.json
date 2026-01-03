@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run make-icons && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "make-icons": "pwa-asset-generator public/ts-interactive-webmap-icon.svg public/icons -i index.html -f"
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",
@@ -22,6 +23,7 @@
     "@types/web": "^0.0.310",
     "@vis.gl/react-maplibre": "^8.1.0",
     "maplibre-gl": "^5.15.0",
+    "pwa-asset-generator": "^8.1.2",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "sass": "^1.97.1",
