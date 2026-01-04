@@ -30,7 +30,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
       - name: Copy release icon
-        run: rm public/ts-interactive-webmap-icon.svg && cp public/ts-interactive-webmap-icon-release.svg public/ts-interactive-webmap-icon.svg
+        run: rm -r public/icons && mv public/icons-release public/icons
 
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer

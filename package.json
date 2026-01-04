@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run make-icons && vite build",
+    "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "make-icons": "pwa-asset-generator public/ts-interactive-webmap-icon.svg public/icons -i index.html -f"
