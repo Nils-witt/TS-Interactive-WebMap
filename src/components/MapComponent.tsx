@@ -34,6 +34,7 @@ import MapContextMenu from "./MapContextMenu.tsx";
 import {MarkerEditor} from "./MarkerEditor.tsx";
 import {WebSocketProvider} from "../dataProviders/WebSocketProvider.ts";
 import {ApplicationLogger} from "../ApplicationLogger.ts";
+import {RouteDisplay} from "../controls/RouteDisplay.tsx";
 
 interface MapComponentProps {
     keyValueStore: KeyValueInterface;
@@ -218,6 +219,7 @@ export function MapComponent(props: MapComponentProps) {
             <ReactSearchControl position="top-left" dataProvider={dataProvider} globalEventHandler={eventHandler}/>
 
             <MarkerEditor/>
+            <RouteDisplay></RouteDisplay>
 
             {props.showSettings &&
                 <ReactButtonControl onClick={() => setSettingsOpen(true)} position={"bottom-left"}

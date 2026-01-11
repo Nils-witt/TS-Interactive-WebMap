@@ -513,6 +513,7 @@ export class ApiProvider implements StorageInterface {
                         group_id: string | null,
                         unit_status: number | null,
                         unit_status_timestamp: string,
+                        route: { latitude: number, longitude: number }[] | null,
                     }[]){
                         units[rawUnit.id] = Unit.of({
                             id: rawUnit.id,
@@ -522,6 +523,7 @@ export class ApiProvider implements StorageInterface {
                             symbol: rawUnit.symbol,
                             unit_status: rawUnit.unit_status,
                             unit_status_timestamp: rawUnit.unit_status_timestamp,
+                            route: rawUnit.route || null,
                         });
                     }
                     resolve(units);

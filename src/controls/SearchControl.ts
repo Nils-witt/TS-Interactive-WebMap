@@ -502,16 +502,22 @@ export class SearchControl extends Evented implements IControl {
                     container.appendChild(status_div);
                     markerOptions.element = container;
 
+                    container.addEventListener('click', () => {
+                        console.log('Clicked unit marker: ' + unit.getName());
+                        GlobalEventHandler.getInstance().emit('show-route', new DataEvent('show-route', unit));
+                    });
                 }
                 const marker = new Marker(markerOptions)
                     .setLngLat([unit.getLongitude(), unit.getLatitude()])
                     .addTo(this.map);
+
                 this.shownUnits.set(unit.getId() as string, marker);
                 this.updateUnitTime(unit);
             } else {
                 const marker = this.shownUnits.get(unit.getId() as string);
                 if (marker) {
                     marker.setLngLat([unit.getLongitude(), unit.getLatitude()]);
+
                     if (unit.getIconElement()) {
                         const iconContainers = marker._element.getElementsByTagName('unit-icon-container');
                         if (iconContainers) {

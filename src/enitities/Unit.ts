@@ -2,6 +2,7 @@ import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
 import {type DBRecord, Entity} from './Entity.ts';
 import {erzeugeTaktischesZeichen} from 'taktische-zeichen-core';
 import {ApplicationLogger} from '../ApplicationLogger.ts';
+import {LngLat} from "./LngLat.ts";
 
 export interface IUnit {
     id?: string;
@@ -12,6 +13,7 @@ export interface IUnit {
     groupId?: string | null; // Optional group ID for categorization
     unit_status?: number | null;
     unit_status_time?: string;
+    route?: { latitude: number, longitude: number }[];
 }
 
 export class Unit extends Entity {
@@ -23,6 +25,7 @@ export class Unit extends Entity {
     private groupId: string | null;
     private unit_status: number | null;
     private unit_status_time: Date | null;
+    private route: { latitude: number, longitude: number }[] | undefined = [];
 
     constructor(data: IUnit) {
         super();
@@ -34,6 +37,10 @@ export class Unit extends Entity {
         this.symbol = data.symbol || null;
         this.unit_status = data.unit_status || null;
         this.unit_status_time = new Date(data.unit_status_time as string);
+        this.route = [];
+        if (data.route) {
+            this.route = data.route;
+        }
     }
 
     public static of(data: DBRecord): Unit {
@@ -49,6 +56,19 @@ export class Unit extends Entity {
                 ApplicationLogger.error('Error parsing Unit symbol: ' + (e as Error).message, {service: 'Unit'});
             }
         }
+        let route: LngLat[] = [];
+        if (data && data.route) {
+            try {
+                if (typeof data.route == 'object') {
+                    route = (data.route as { latitude: number, longitude: number }[]).map(coord => new LngLat(coord.longitude,coord.latitude))
+                } else if (typeof data.route == 'string') {
+                    route = (JSON.parse(data.route) as { latitude: number, longitude: number }[]).map(coord => new LngLat(coord.longitude,coord.latitude))
+                }
+            } catch (e) {
+                ApplicationLogger.error('Error parsing Unit route: ' + (e as Error).message, {service: 'Unit'});
+            }
+        }
+
         return new Unit({
             id: data.id as string,
             latitude: Number(data.latitude),
@@ -58,6 +78,7 @@ export class Unit extends Entity {
             symbol: data_symbol,
             unit_status: data.unit_status as number || null,
             unit_status_time: data.unit_status_timestamp as string,
+            route: route,
         });
     }
 
@@ -74,6 +95,7 @@ export class Unit extends Entity {
             symbol: this.symbol ? JSON.stringify(this.symbol) : null,
             unit_status: this.unit_status,
             unit_status_timestamp: this.unit_status_time ? this.unit_status_time.toISOString() : null,
+            route: this.route ? JSON.stringify(this.route) : null,
         };
     }
 
@@ -154,5 +176,9 @@ export class Unit extends Entity {
 
     public getStatusTime(): Date | null {
         return this.unit_status_time;
+    }
+
+    public getRoute(): { latitude: number, longitude: number }[] | undefined {
+        return this.route;
     }
 }
