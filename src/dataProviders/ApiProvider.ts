@@ -8,13 +8,13 @@
 
 import {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject';
 import {DataProvider} from './DataProvider';
-import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
 import {GlobalEventHandler} from './GlobalEventHandler';
 import {Overlay} from '../enitities/Overlay.ts';
 import {MapStyle} from '../enitities/MapStyle.ts';
 import type {StorageInterface} from './StorageInterface.ts';
 import {MapGroup} from '../enitities/MapGroup.ts';
 import {Unit} from '../enitities/Unit.ts';
+import type {ApiResponseStruct, MapItemStruct} from './structs/ApiResponseStruct.ts';
 
 
 export class ApiProviderEvent extends Event {
@@ -51,35 +51,7 @@ export class ApiProvider implements StorageInterface {
     }
 
     loadOverlay(id: string): Promise<Overlay | null> {
-        return new Promise<Overlay | null>(resolve => {
-            try {
-                const url = DataProvider.getInstance().getApiUrl() + '/overlays/' + id + '/';
-
-                this.fetchData(url)
-                    .then(data => {
-                        if (data) {
-                            const overlay = Overlay.of({
-                                id: (data as { id: string }).id,
-                                name: (data as { name: string }).name,
-                                url: (data as { url: string }).url,
-                                description: (data as { description: string }).description,
-                                order: 0,
-                                opacity: 1.0
-                            });
-                            resolve(overlay);
-                        } else {
-                            resolve(null);
-                        }
-                    })
-                    .catch(e => {
-                        console.error('Error fetching overlay layer:', e);
-                        resolve(null);
-                    });
-            } catch (error) {
-                console.error('Error fetching overlay layer:', error);
-                resolve(null);
-            }
-        });
+        throw new Error('Method not implemented: loadOverlay ' + id);
     }
 
     loadAllOverlays(): Promise<Record<string, Overlay>> {
@@ -89,20 +61,19 @@ export class ApiProvider implements StorageInterface {
             const overlays: Record<string, Overlay> = {};
 
             try {
-                const url = DataProvider.getInstance().getApiUrl() + '/overlays/';
+                const url = DataProvider.getInstance().getApiUrl() + '/map/overlays';
                 this.fetchData(url)
                     .then(data => {
-                        for (const layer of data as {
-                            id: string,
-                            name: string,
-                            url: string,
-                            description: string
-                        }[]) {
+                        if (data == null || data._embedded == undefined|| data._embedded.mapOverlayList == undefined ) {
+                            resolve(overlays);
+                            return;
+                        }
+                        for (const layer of data._embedded.mapOverlayList) {
                             overlays[layer.id] = Overlay.of({
                                 id: layer.id,
                                 name: layer.name,
-                                url: layer.url,
-                                description: layer.description,
+                                url: layer.fullTileUrl,
+                                description: '',
                                 order: 0,
                                 opacity: 1.0
                             });
@@ -135,18 +106,14 @@ export class ApiProvider implements StorageInterface {
 
         return new Promise<Record<string, MapStyle>>(resolve => {
             const mapStyles: Record<string, MapStyle> = {};
-
-            const url = DataProvider.getInstance().getApiUrl() + '/styles/';
-
-
+            const url = DataProvider.getInstance().getApiUrl() + '/map/baselayers';
             this.fetchData(url)
                 .then(data => {
-                    for (const layer of data as {
-                        id: string,
-                        name: string,
-                        url: string,
-                        description: string
-                    }[]) {
+                    if (data == null || data._embedded == undefined|| data._embedded.mapBaseLayerList == undefined ) {
+                        resolve(mapStyles);
+                        return;
+                    }
+                    for (const layer of data._embedded.mapBaseLayerList) {
                         mapStyles[layer.id] = MapStyle.of({
                             id: layer.id,
                             name: layer.id,
@@ -154,12 +121,11 @@ export class ApiProvider implements StorageInterface {
                         });
                     }
                     resolve(mapStyles);
+
                 })
                 .catch(e => {
                     console.error('Error fetching overlay layers:', e);
                 });
-
-
         });
     }
 
@@ -179,28 +145,23 @@ export class ApiProvider implements StorageInterface {
         return new Promise<Record<string, NamedGeoReferencedObject>>(resolve => {
             const items: Record<string, NamedGeoReferencedObject> = {};
 
-            const url = DataProvider.getInstance().getApiUrl() + '/items/';
+            const url = DataProvider.getInstance().getApiUrl() + '/map/items';
             this.fetchData(url)
                 .then(data => {
-                    for (const item of data as {
-                        id: string,
-                        name: string,
-                        latitude: number,
-                        longitude: number,
-                        zoom_level: number,
-                        symbol: never,
-                        show_on_map: boolean,
-                        group_id: number
-                    }[]) {
+                    if (data == null || data._embedded == undefined ||data._embedded.mapItemList == undefined ) {
+                        resolve(items);
+                        return;
+                    }
+                    for (const item of data._embedded.mapItemList) {
                         items[item.id] = NamedGeoReferencedObject.of({
                             id: item.id,
                             name: item.name,
-                            latitude: item.latitude,
-                            longitude: item.longitude,
-                            zoomLevel: item.zoom_level,
-                            symbol: item.symbol,
-                            show_on_map: item.show_on_map,
-                            groupId: item.group_id
+                            latitude: item.position.latitude,
+                            longitude: item.position.longitude,
+                            zoomLevel: 18,
+                            symbol: null,
+                            show_on_map: false,
+                            groupId: null
                         });
                     }
                     resolve(items);
@@ -224,17 +185,13 @@ export class ApiProvider implements StorageInterface {
 
 
     public async testLogin(): Promise<void> {
-        const url = DataProvider.getInstance().getApiUrl() + '/token/verify/';
-        const myHeaders = new Headers();
-        myHeaders.append('Content-Type', 'application/json');
+        const url = DataProvider.getInstance().getApiUrl() + '/token';
+        const headers = new Headers();
+        headers.append('Authorization', `Bearer ${DataProvider.getInstance().getApiToken()}`);
 
-        const data = {
-            token: DataProvider.getInstance().getApiUrl()
-        };
         const requestOptions = {
-            method: 'POST',
-            headers: myHeaders,
-            body: JSON.stringify(data)
+            method: 'GET',
+            headers: headers,
         };
         try {
             const res = await fetch(url, requestOptions);
@@ -248,7 +205,7 @@ export class ApiProvider implements StorageInterface {
 
 
     public async login(username: string, password: string): Promise<void> {
-        const url = DataProvider.getInstance().getApiUrl() + '/token/';
+        const url = DataProvider.getInstance().getApiUrl() + '/token';
         const myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/json');
 
@@ -263,8 +220,8 @@ export class ApiProvider implements StorageInterface {
         try {
             const res = await fetch(url, requestOptions);
             if (res.ok) {
-                const data: { access: string } = await res.json() as { access: string };
-                DataProvider.getInstance().setApiToken(data.access); // Store the token for future requests
+                const data: { token: string } = await res.json() as { token: string };
+                DataProvider.getInstance().setApiToken(data.token); // Store the token for future requests
                 this.notifyListeners(ApiProviderEventTypes.LOGIN_SUCCESS, {message: 'Login successful'});
             } else {
                 throw new Error(`HTTP error! status: ${res.status}`);
@@ -280,7 +237,7 @@ export class ApiProvider implements StorageInterface {
         window.location.reload();
     }
 
-    private async callApi(url: string, method: string, headers: Headers = new Headers(), body?: object): Promise<object | null> {
+    private async callApi(url: string, method: string, headers: Headers = new Headers(), body?: object): Promise<ApiResponseStruct | null> {
 
         if (DataProvider.getInstance().getApiToken()) {
             headers.append('Authorization', `Bearer ${DataProvider.getInstance().getApiToken()}`);
@@ -311,7 +268,7 @@ export class ApiProvider implements StorageInterface {
         }
     }
 
-    public async fetchData(url: string): Promise<object | null> {
+    public async fetchData(url: string): Promise<ApiResponseStruct | null> {
         return this.callApi(url, 'GET');
     }
 
@@ -322,77 +279,59 @@ export class ApiProvider implements StorageInterface {
         zoomLevel?: number,
         showOnMap?: boolean,
         groupId?: string
-    }, updateDataProvider = true): Promise<NamedGeoReferencedObject | null> {
-        const url = DataProvider.getInstance().getApiUrl() + '/items/';
-        const method = 'POST';
+    }): Promise<NamedGeoReferencedObject | null> {
 
         const data = {
-            ...item
+            name: item.name,
+            position: {
+                latitude: item.latitude,
+                longitude: item.longitude
+            }
         };
 
-        try {
-            const resData = await this.callApi(url, method, new Headers(), data) as {
-                id: string,
-                name: string,
-                latitude: number,
-                longitude: number,
-                zoom_level: number,
-                show_on_map: boolean,
-                group_id: string | null
-            };
-            const item = new NamedGeoReferencedObject({
-                id: resData.id,
-                name: resData.name,
-                latitude: resData.latitude,
-                longitude: resData.longitude,
-                zoomLevel: resData.zoom_level,
-                showOnMap: resData.show_on_map,
-                groupId: resData.group_id || undefined
+        const url = DataProvider.getInstance().getApiUrl() + '/map/items';
+
+        const response = await this.callApi(url, 'POST', new Headers(), data) as never as MapItemStruct;
+        if (response != null) {
+            return NamedGeoReferencedObject.of({
+                id: response.id,
+                name: response.name,
+                latitude: response.position.latitude,
+                longitude: response.position.longitude,
+                zoomLevel: item.zoomLevel ?? 18,
+                symbol: null,
+                show_on_map: item.showOnMap ?? false,
+                groupId: item.groupId ?? null
             });
-            if (updateDataProvider) {
-                DataProvider.getInstance().addMapItem(item);
-            }
-            return item;
-        } catch (e) {
-            console.error('Error preparing request options:', e);
         }
-        return null;
+        throw Error('Failed to create map item');
     }
 
-    public async saveMapItem(item: NamedGeoReferencedObject, updateDataProvider = true): Promise<NamedGeoReferencedObject | null> {
-        const url = DataProvider.getInstance().getApiUrl() + `/items/${item.getId()}/`;
-        const method = 'PUT';
-
-        const data = item.record();
-        data['group'] = item.getGroupId() ? `${DataProvider.getInstance().getApiUrl()}/map_groups/${item.getGroupId()}/` : null;
-
-        try {
-            const resData = await this.callApi(url, method, new Headers(), data) as {
-                id: string,
-                name: string,
-                latitude: number,
-                longitude: number,
-                zoom_level: number,
-                show_on_map: boolean,
-                group_id: string | null
-            };
-            const item = new NamedGeoReferencedObject({
-                id: resData.id,
-                name: resData.name,
-                latitude: resData.latitude,
-                longitude: resData.longitude,
-                zoomLevel: resData.zoom_level,
-                showOnMap: resData.show_on_map,
-                groupId: resData.group_id || undefined
-            });
-            if (updateDataProvider) {
-                DataProvider.getInstance().addMapItem(item);
+    public async saveMapItem(item: NamedGeoReferencedObject): Promise<NamedGeoReferencedObject | null> {
+        const data = {
+            name: item.getName(),
+            position: {
+                latitude: item.getLatitude(),
+                longitude: item.getLongitude()
             }
-            return item;
-        } catch (e) {
-            console.error('Error preparing request options:', e);
+        };
+
+        const url = DataProvider.getInstance().getApiUrl() + '/map/items';
+
+        const response = await this.callApi(url, 'POST', new Headers(), data) as never as MapItemStruct;
+        if (response != null) {
+            return NamedGeoReferencedObject.of({
+                id: response.id,
+                name: response.name,
+                latitude: response.position.latitude,
+                longitude: response.position.longitude,
+                zoomLevel: 16,
+                symbol: null,
+                show_on_map: false,
+                groupId: null
+            });
         }
-        return null;
+        throw Error('Failed to create map item');
     }
 
     public async getOverlayTiles(overlay: Overlay): Promise<string[]> {
@@ -455,29 +394,7 @@ export class ApiProvider implements StorageInterface {
     }
 
     loadAllMapGroups(): Promise<Record<string, MapGroup>> {
-        return new Promise<Record<string, MapGroup>>(resolve => {
-            const mapGroups: Record<string, MapGroup> = {};
-            const url = DataProvider.getInstance().getApiUrl() + '/map_groups/';
-
-            this.fetchData(url)
-                .then(data => {
-                    for (const rawGroup of data as {
-                        id: string,
-                        name: string,
-                        description: string
-                    }[]) {
-                        mapGroups[rawGroup.id] = MapGroup.of({
-                            id: rawGroup.id,
-                            name: rawGroup.name,
-                            description: rawGroup.description
-                        });
-                    }
-                    resolve(mapGroups);
-                })
-                .catch(e => {
-                    console.error('Error fetching overlay layers:', e);
-                });
-        });
+        throw new Error('loadAllMapGroups not implemented');
     }
 
     saveMapGroup(mapGroup: MapGroup): Promise<MapGroup> {
@@ -499,31 +416,24 @@ export class ApiProvider implements StorageInterface {
     loadAllUnits(): Promise<Record<string, Unit>> {
         return new Promise<Record<string, Unit>>(resolve => {
             const units: Record<string, Unit> = {};
-            const url = DataProvider.getInstance().getApiUrl() + '/units/';
+            const url = DataProvider.getInstance().getApiUrl() + '/units';
 
             this.fetchData(url)
                 .then(data => {
-                    for (const rawUnit of data as {
-                        id: string,
-                        name: string,
-                        description: string,
-                        latitude: number,
-                        longitude: number,
-                        symbol: TaktischesZeichen,
-                        group_id: string | null,
-                        unit_status: number | null,
-                        unit_status_timestamp: string,
-                        route: { latitude: number, longitude: number }[] | null,
-                    }[]){
+                    if (data == null || data._embedded == undefined|| data._embedded.unitList == undefined ) {
+                        resolve(units);
+                        return;
+                    }
+                    for (const rawUnit of data._embedded.unitList){
                         units[rawUnit.id] = Unit.of({
                             id: rawUnit.id,
                             name: rawUnit.name,
-                            latitude: rawUnit.latitude,
-                            longitude: rawUnit.longitude,
-                            symbol: rawUnit.symbol,
-                            unit_status: rawUnit.unit_status,
-                            unit_status_timestamp: rawUnit.unit_status_timestamp,
-                            route: rawUnit.route || null,
+                            latitude: rawUnit.position.latitude,
+                            longitude: rawUnit.position.longitude,
+                            symbol: null,
+                            unit_status: rawUnit.status,
+                            unit_status_timestamp: new Date().toISOString(),
+                            route: null,
                         });
                     }
                     resolve(units);
@@ -546,4 +456,7 @@ export class ApiProvider implements StorageInterface {
         throw new Error(`Method not implemented. deleteUnit: ${id}`);
     }
 
+
+
 }
+

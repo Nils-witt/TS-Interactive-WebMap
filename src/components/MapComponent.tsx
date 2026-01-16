@@ -88,7 +88,7 @@ export function MapComponent(props: MapComponentProps) {
             setMapStyle(event.data as MapStyle);
         });
         const webSocketProvider = new WebSocketProvider();
-        webSocketProvider.start();
+        //webSocketProvider.start();
 
         try {
             if ((navigator as Navigator).userAgentData.mobile) {
@@ -156,14 +156,15 @@ export function MapComponent(props: MapComponentProps) {
                         runTimeProvider.addOverlay(overlay);
                     });
                     void dbProvider.replaceOverlays(remoteOverlays)
-                }),
+                }),/*
+,
                 remoteStorage.loadAllMapGroups().then((result) => {
                     const remoteMapGroups = Object.values(result);
                     remoteMapGroups.forEach((group) => {
                         runTimeProvider.addMapGroup(group);
                     });
                     void dbProvider.replaceMapGroups(remoteMapGroups);
-                }),
+                }),*/
                 remoteStorage.loadAllNamedGeoReferencedObjects().then((result) => {
                     const remoteObjects = Object.values(result);
                     remoteObjects.forEach((item: NamedGeoReferencedObject) => {
@@ -178,7 +179,11 @@ export function MapComponent(props: MapComponentProps) {
                     });
                     void dbProvider.replaceUnits(remoteUnits);
                 })
+                 
+
             ])
+
+
             ApplicationLogger.info("Data synchronization complete.", {service: "MapComponent"});
         })();
     }, []);

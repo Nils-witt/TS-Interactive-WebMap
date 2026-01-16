@@ -51,7 +51,7 @@ export function CreateMarkerForm(props: CreateMarkerFormProps): React.JSX.Elemen
             entity.setLongitude(longitude || 0);
             entity.setZoomLevel(zoom || 15);
             entity.setGroupId(groupId);
-            void api.saveMapItem(entity, true).then((result) => {
+            void api.saveMapItem(entity).then((result) => {
                 if (result) {
                     DataProvider.getInstance().addMapItem(result);
                     void DatabaseProvider.getInstance().then(instance => {
@@ -66,7 +66,6 @@ export function CreateMarkerForm(props: CreateMarkerFormProps): React.JSX.Elemen
                 longitude: longitude || 0,
                 zoomLevel: zoom || 15,
             }).then((response) => {
-                console.log(response);
                 if (response) {
                     DataProvider.getInstance().addMapItem(response)
                     void DatabaseProvider.getInstance().then(instance => {
