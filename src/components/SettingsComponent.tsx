@@ -17,7 +17,7 @@ import {Utilities} from "../Utilities";
 import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
 import CacheProvider from "../dataProviders/CacheProvider.ts";
 import {Input, Popover, Table, TableBody, TableCell, TableHead, TableRow, Typography} from "@mui/material";
-import type {Overlay} from "../enitities/Overlay.ts";
+import type {MapOverlay} from "../enitities/MapOverlay.ts";
 
 
 interface MapSettingsProps {
@@ -25,7 +25,7 @@ interface MapSettingsProps {
 }
 
 
-function LayerTableRow(props: { overlay: Overlay }): ReactElement {
+function LayerTableRow(props: { overlay: MapOverlay }): ReactElement {
     const btnRef = useRef<HTMLButtonElement | null>(null);
     const [order, setOrder] = React.useState<number>(props.overlay.getOrder());
     const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null);
@@ -110,7 +110,7 @@ function LayerTableRow(props: { overlay: Overlay }): ReactElement {
 
 export function MapSettings(props: MapSettingsProps): ReactElement {
 
-    const [overlays, setOverlays] = React.useState<Overlay[]>([]);
+    const [overlays, setOverlays] = React.useState<MapOverlay[]>([]);
 
     const closeMenu = () => {
         props.isOpen[1](false);

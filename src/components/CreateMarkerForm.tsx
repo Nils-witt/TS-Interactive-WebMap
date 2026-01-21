@@ -1,6 +1,6 @@
 import React, {useEffect} from "react";
 import {ApiProvider} from "../dataProviders/ApiProvider.ts";
-import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject.ts";
+import type {MapItem} from "../enitities/MapItem.ts";
 import type {MapGroup} from "../enitities/MapGroup.ts";
 import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
 import {DatabaseProvider} from "../dataProviders/DatabaseProvider.ts";
@@ -8,7 +8,7 @@ import {DatabaseProvider} from "../dataProviders/DatabaseProvider.ts";
 import './css/markerform.scss'
 
 interface CreateMarkerFormProps {
-    entity?: NamedGeoReferencedObject
+    entity?: MapItem
     data?: {
         latitude: number;
         longitude: number;

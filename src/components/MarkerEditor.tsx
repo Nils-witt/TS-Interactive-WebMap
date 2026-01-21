@@ -1,20 +1,20 @@
 import {CreateMarkerForm} from "./CreateMarkerForm.tsx";
 import {DataEvent, GlobalEventHandler} from "../dataProviders/GlobalEventHandler.ts";
 import {useEffect, useState} from "react";
-import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject.ts";
+import type {MapItem} from "../enitities/MapItem.ts";
 
 import './css/markereditor.scss'
 
 export function MarkerEditor() {
 
     const [isShown, setIsShown] = useState<boolean>(false);
-    const [entity, setEntity] = useState<NamedGeoReferencedObject | undefined>(undefined);
+    const [entity, setEntity] = useState<MapItem | undefined>(undefined);
     const [prepopulateData, setPrepopulateData] = useState<{ latitude: number; longitude: number; zoom: number } | undefined>(undefined);
 
     useEffect(() => {
         GlobalEventHandler.getInstance().on('edit-marker', (data) => {
             const eventData = data as DataEvent;
-            setEntity(eventData.data as NamedGeoReferencedObject);
+            setEntity(eventData.data as MapItem);
             setIsShown(true);
         });
 

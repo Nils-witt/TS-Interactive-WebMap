@@ -8,9 +8,9 @@
 
 import {type IDBPDatabase, openDB} from 'idb';
 import type {StorageInterface} from './StorageInterface.ts';
-import {Overlay} from '../enitities/Overlay.ts';
-import {MapStyle} from '../enitities/MapStyle.ts';
-import {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject.ts';
+import {MapOverlay} from '../enitities/MapOverlay.ts';
+import {MapBaseLayer} from '../enitities/MapBaseLayer.ts';
+import {MapItem} from '../enitities/MapItem.ts';
 import {MapGroup} from '../enitities/MapGroup.ts';
 import {ApplicationLogger} from '../ApplicationLogger.ts';
 import {Unit} from '../enitities/Unit.ts';
@@ -79,7 +79,7 @@ export class DatabaseProvider implements StorageInterface {
         return DatabaseProvider.instance;
     }
 
-    saveOverlay(overlay: Overlay): Promise<Overlay> {
+    saveOverlay(overlay: MapOverlay): Promise<MapOverlay> {
 
         return new Promise((resolve) => {
             if (!this.db) throw new Error('Database not initialized');
@@ -149,16 +149,16 @@ export class DatabaseProvider implements StorageInterface {
         });
     }
 
-    loadAllMapStyles(): Promise<Record<string, MapStyle>> {
-        return new Promise<Record<string, MapStyle>>((resolve) => {
+    loadAllMapStyles(): Promise<Record<string, MapBaseLayer>> {
+        return new Promise<Record<string, MapBaseLayer>>((resolve) => {
             if (!this.db) throw new Error('Database not initialized');
             const tx = this.db.transaction(DB_TABLES.mapStyles, 'readonly');
 
             void tx.objectStore(DB_TABLES.mapStyles).getAll()
                 .then((result: Record<string, string | number>[]) => {
-                    const mapStyles: Record<string, MapStyle> = {};
+                    const mapStyles: Record<string, MapBaseLayer> = {};
                     for (const record of result) {
-                        const mapStyle = MapStyle.of(record);
+                        const mapStyle = MapBaseLayer.of(record);
                         mapStyles[mapStyle.getID()] = mapStyle;
                     }
                     resolve(mapStyles);
@@ -166,16 +166,16 @@ export class DatabaseProvider implements StorageInterface {
         });
     }
 
-    loadAllNamedGeoReferencedObjects(): Promise<Record<string, NamedGeoReferencedObject>> {
-        return new Promise<Record<string, NamedGeoReferencedObject>>((resolve) => {
+    loadAllNamedGeoReferencedObjects(): Promise<Record<string, MapItem>> {
+        return new Promise<Record<string, MapItem>>((resolve) => {
             if (!this.db) throw new Error('Database not initialized');
             const tx = this.db.transaction(DB_TABLES.namedGeoReferencedObjects, 'readonly');
 
             void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).getAll()
                 .then((result: Record<string, string | number>[]) => {
-                    const namedGeoReferencedObjects: Record<string, NamedGeoReferencedObject> = {};
+                    const namedGeoReferencedObjects: Record<string, MapItem> = {};
                     for (const record of result) {
-                        const namedGeoReferencedObject = NamedGeoReferencedObject.of(record);
+                        const namedGeoReferencedObject = MapItem.of(record);
                         namedGeoReferencedObjects[namedGeoReferencedObject.getId() as string] = namedGeoReferencedObject;
                     }
                     resolve(namedGeoReferencedObjects);
@@ -183,16 +183,16 @@ export class DatabaseProvider implements StorageInterface {
         });
     }
 
-    loadAllOverlays(): Promise<Record<string, Overlay>> {
-        return new Promise<Record<string, Overlay>>((resolve) => {
+    loadAllOverlays(): Promise<Record<string, MapOverlay>> {
+        return new Promise<Record<string, MapOverlay>>((resolve) => {
             if (!this.db) throw new Error('Database not initialized');
             const tx = this.db.transaction(DB_TABLES.overlays, 'readonly');
 
             void tx.objectStore(DB_TABLES.overlays).getAll()
                 .then((result: Record<string, string | number>[]) => {
-                    const overlays: Record<string, Overlay> = {};
+                    const overlays: Record<string, MapOverlay> = {};
                     for (const record of result) {
-                        const overlay = Overlay.of(record);
+                        const overlay = MapOverlay.of(record);
                         overlays[overlay.getId()] = overlay;
                     }
                     resolve(overlays);
@@ -200,7 +200,7 @@ export class DatabaseProvider implements StorageInterface {
         });
     }
 
-    loadMapStyle(id: string): Promise<MapStyle | null> {
+    loadMapStyle(id: string): Promise<MapBaseLayer | null> {
         return new Promise((resolve) => {
             if (!this.db) throw new Error('Database not initialized');
 
@@ -208,7 +208,7 @@ export class DatabaseProvider implements StorageInterface {
 
             void tx.objectStore(DB_TABLES.mapStyles).get(id).then((result: Record<string, string | number> | undefined) => {
                 if (result) {
-                    const mapStyle = MapStyle.of(result);
+                    const mapStyle = MapBaseLayer.of(result);
                     resolve(mapStyle);
                 } else {
                     resolve(null);
@@ -217,15 +217,15 @@ export class DatabaseProvider implements StorageInterface {
         });
     }
 
-    loadNamedGeoReferencedObject(id: string): Promise<NamedGeoReferencedObject | null> {
-        return new Promise<NamedGeoReferencedObject | null>((resolve) => {
+    loadNamedGeoReferencedObject(id: string): Promise<MapItem | null> {
+        return new Promise<MapItem | null>((resolve) => {
             if (!this.db) throw new Error('Database not initialized');
 
             const tx = this.db.transaction(DB_TABLES.namedGeoReferencedObjects, 'readonly');
 
             void tx.objectStore(DB_TABLES.namedGeoReferencedObjects).get(id).then((result: Record<string, string | number> | undefined) => {
                 if (result) {
-                    const namedGeoReferencedObject = NamedGeoReferencedObject.of(result);
+                    const namedGeoReferencedObject = MapItem.of(result);
                     resolve(namedGeoReferencedObject);
                 } else {
                     resolve(null);
@@ -234,15 +234,15 @@ export class DatabaseProvider implements StorageInterface {
         });
     }
 
-    loadOverlay(id: string): Promise<Overlay | null> {
-        return new Promise<Overlay | null>((resolve) => {
+    loadOverlay(id: string): Promise<MapOverlay | null> {
+        return new Promise<MapOverlay | null>((resolve) => {
             if (!this.db) throw new Error('Database not initialized');
 
             const tx = this.db.transaction(DB_TABLES.overlays, 'readonly');
 
             void tx.objectStore(DB_TABLES.overlays).get(id).then((result: Record<string, string | number> | undefined) => {
                 if (result) {
-                    const overlay = Overlay.of(result);
+                    const overlay = MapOverlay.of(result);
                     resolve(overlay);
                 } else {
                     resolve(null);
@@ -251,8 +251,8 @@ export class DatabaseProvider implements StorageInterface {
         });
     }
 
-    saveMapStyle(mapStyle: MapStyle): Promise<MapStyle> {
-        return new Promise<MapStyle>((resolve) => {
+    saveMapStyle(mapStyle: MapBaseLayer): Promise<MapBaseLayer> {
+        return new Promise<MapBaseLayer>((resolve) => {
             if (!this.db) throw new Error('Database not initialized');
 
             const mapStyleRecord = mapStyle.record();
@@ -269,8 +269,8 @@ export class DatabaseProvider implements StorageInterface {
         });
     }
 
-    saveNamedGeoReferencedObject(namedGeoReferencedObject: NamedGeoReferencedObject): Promise<NamedGeoReferencedObject> {
-        return new Promise<NamedGeoReferencedObject>((resolve, reject) => {
+    saveNamedGeoReferencedObject(namedGeoReferencedObject: MapItem): Promise<MapItem> {
+        return new Promise<MapItem>((resolve, reject) => {
             if (!this.db) throw new Error('Database not initialized');
 
             const namedGeoReferencedObjectRecord = namedGeoReferencedObject.record();
@@ -290,7 +290,7 @@ export class DatabaseProvider implements StorageInterface {
         });
     }
 
-    replaceMapStyles(mapStyles: MapStyle[]): Promise<void> {
+    replaceMapStyles(mapStyles: MapBaseLayer[]): Promise<void> {
         return new Promise<void>((resolve) => {
             if (!this.db) throw new Error('Database not initialized');
             const tx = this.db.transaction(DB_TABLES.mapStyles, 'readwrite');
@@ -317,7 +317,7 @@ export class DatabaseProvider implements StorageInterface {
         });
     }
 
-    replaceOverlays(overlays: Overlay[]): Promise<void> {
+    replaceOverlays(overlays: MapOverlay[]): Promise<void> {
         return new Promise<void>((resolve) => {
             if (!this.db) throw new Error('Database not initialized');
             const tx = this.db.transaction(DB_TABLES.overlays, 'readwrite');
@@ -344,7 +344,7 @@ export class DatabaseProvider implements StorageInterface {
         });
     }
 
-    replaceNamedGeoReferencedObjects(namedGeoReferencedObjects: NamedGeoReferencedObject[]): Promise<void> {
+    replaceNamedGeoReferencedObjects(namedGeoReferencedObjects: MapItem[]): Promise<void> {
         return new Promise<void>((resolve) => {
             if (!this.db) throw new Error('Database not initialized');
             const tx = this.db.transaction(DB_TABLES.namedGeoReferencedObjects, 'readwrite');

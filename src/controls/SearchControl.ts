@@ -15,7 +15,7 @@ import {
     type MarkerOptions
 } from 'maplibre-gl';
 import {DataProvider, DataProviderEventType} from '../dataProviders/DataProvider';
-import type {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject';
+import type {MapItem} from '../enitities/MapItem.ts';
 import {icon} from '@fortawesome/fontawesome-svg-core';
 import {faMagnifyingGlass} from '@fortawesome/free-solid-svg-icons/faMagnifyingGlass';
 import {faMapLocationDot} from '@fortawesome/free-solid-svg-icons/faMapLocationDot';
@@ -140,7 +140,7 @@ export class SearchControl extends Evented implements IControl {
      * Shows a single entity on the map by creating a marker at its location.
      * @param entity
      */
-    private showSingleEntity(entity: NamedGeoReferencedObject): void {
+    private showSingleEntity(entity: MapItem): void {
 
         if (!this.map) {
             return;
@@ -173,7 +173,7 @@ export class SearchControl extends Evented implements IControl {
      * Creates a button that, when clicked, will show the entity on the map and fly to its location.
      * @param entity
      */
-    private showMarkerButton(entity: NamedGeoReferencedObject): HTMLButtonElement {
+    private showMarkerButton(entity: MapItem): HTMLButtonElement {
         const button = document.createElement('button');
 
         //button.textContent = "<>";
@@ -194,7 +194,7 @@ export class SearchControl extends Evented implements IControl {
      * Creates a button that, when clicked, will show the entity on the map and fly to its location.
      * @param entity
      */
-    private showSettingsButton(entity: NamedGeoReferencedObject): HTMLButtonElement {
+    private showSettingsButton(entity: MapItem): HTMLButtonElement {
         const button = document.createElement('button');
 
         //button.textContent = "<>";
@@ -283,14 +283,17 @@ export class SearchControl extends Evented implements IControl {
         });
 
         DataProvider.getInstance().on(DataProviderEventType.UNIT_UPDATED, (event) => {
+            ApplicationLogger.info('Unit updated, updating on map:' + (event.data as Unit).getName(), {service: 'SearchControl'});
             const item = event.data as Unit;
             this.updateUnit(item);
         });
         DataProvider.getInstance().on(DataProviderEventType.UNIT_ADDED, (event) => {
+            ApplicationLogger.info('New unit added, showing on map:' + (event.data as Unit).getName(), {service: 'SearchControl'});
             const item = event.data as Unit;
             this.updateUnit(item);
         });
         DataProvider.getInstance().getUnits().forEach((item) => {
+            ApplicationLogger.info('Showing existing unit on map:' + item.getName(), {service: 'SearchControl'});
             this.updateUnit(item);
         });
 
@@ -411,10 +414,6 @@ export class SearchControl extends Evented implements IControl {
             this.searchContentContainer.style.display = 'none'; // Hide the control
             this.searchIconContainer.style.display = 'block'; // Hide the control
         }
-    }
-
-    public getMap(): MapLibreMap | undefined {
-        return this.map;
     }
 
     private timeUpdateIntervals: Map<string, NodeJS.Timeout> = new Map<string, NodeJS.Timeout>();

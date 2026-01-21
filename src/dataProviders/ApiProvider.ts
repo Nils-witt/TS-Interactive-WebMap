@@ -6,11 +6,11 @@
  * Purpose: wrap fetch calls and present a StorageInterface-like API to the app.
  */
 
-import {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject';
+import {MapItem} from '../enitities/MapItem.ts';
 import {DataProvider} from './DataProvider';
 import {GlobalEventHandler} from './GlobalEventHandler';
-import {Overlay} from '../enitities/Overlay.ts';
-import {MapStyle} from '../enitities/MapStyle.ts';
+import {MapOverlay} from '../enitities/MapOverlay.ts';
+import {MapBaseLayer} from '../enitities/MapBaseLayer.ts';
 import type {StorageInterface} from './StorageInterface.ts';
 import {MapGroup} from '../enitities/MapGroup.ts';
 import {Unit} from '../enitities/Unit.ts';
@@ -46,19 +46,19 @@ export class ApiProvider implements StorageInterface {
         throw new Error('Method not implemented.');
     }
 
-    saveOverlay(overlay: Overlay): Promise<Overlay> {
+    saveOverlay(overlay: MapOverlay): Promise<MapOverlay> {
         throw new Error(`Method not implemented: saveOverlays ${overlay.getId()}`,);
     }
 
-    loadOverlay(id: string): Promise<Overlay | null> {
+    loadOverlay(id: string): Promise<MapOverlay | null> {
         throw new Error('Method not implemented: loadOverlay ' + id);
     }
 
-    loadAllOverlays(): Promise<Record<string, Overlay>> {
+    loadAllOverlays(): Promise<Record<string, MapOverlay>> {
 
 
-        return new Promise<Record<string, Overlay>>(resolve => {
-            const overlays: Record<string, Overlay> = {};
+        return new Promise<Record<string, MapOverlay>>(resolve => {
+            const overlays: Record<string, MapOverlay> = {};
 
             try {
                 const url = DataProvider.getInstance().getApiUrl() + '/map/overlays';
@@ -69,7 +69,7 @@ export class ApiProvider implements StorageInterface {
                             return;
                         }
                         for (const layer of data._embedded.mapOverlayList) {
-                            overlays[layer.id] = Overlay.of({
+                            overlays[layer.id] = MapOverlay.of({
                                 id: layer.id,
                                 name: layer.name,
                                 url: layer.fullTileUrl,
@@ -95,18 +95,18 @@ export class ApiProvider implements StorageInterface {
         throw new Error(`Method not implemented. deleteOverlay ${id}`);
     }
 
-    saveMapStyle(mapStyle: MapStyle): Promise<MapStyle> {
+    saveMapStyle(mapStyle: MapBaseLayer): Promise<MapBaseLayer> {
         throw new Error(`Method not implemented. saveMapStyle: ${mapStyle.getID()}`);
     }
 
-    loadMapStyle(id: string): Promise<MapStyle | null> {
+    loadMapStyle(id: string): Promise<MapBaseLayer | null> {
         throw new Error(`Method not implemented. loadMapStyle: ${id}`);
     }
 
-    loadAllMapStyles(): Promise<Record<string, MapStyle>> {
+    loadAllMapStyles(): Promise<Record<string, MapBaseLayer>> {
 
-        return new Promise<Record<string, MapStyle>>(resolve => {
-            const mapStyles: Record<string, MapStyle> = {};
+        return new Promise<Record<string, MapBaseLayer>>(resolve => {
+            const mapStyles: Record<string, MapBaseLayer> = {};
             const url = DataProvider.getInstance().getApiUrl() + '/map/baselayers';
             this.fetchData(url)
                 .then(data => {
@@ -115,7 +115,7 @@ export class ApiProvider implements StorageInterface {
                         return;
                     }
                     for (const layer of data._embedded.mapBaseLayerList) {
-                        mapStyles[layer.id] = MapStyle.of({
+                        mapStyles[layer.id] = MapBaseLayer.of({
                             id: layer.id,
                             name: layer.id,
                             url: layer.url
@@ -134,17 +134,17 @@ export class ApiProvider implements StorageInterface {
         throw new Error(`Method not implemented. deleteMapStyle: ${id}`);
     }
 
-    saveNamedGeoReferencedObject(namedGeoReferencedObject: NamedGeoReferencedObject): Promise<NamedGeoReferencedObject> {
+    saveNamedGeoReferencedObject(namedGeoReferencedObject: MapItem): Promise<MapItem> {
         throw new Error(`Method not implemented. saveNamedGeoReferencedObject: ${namedGeoReferencedObject.getId()}`);
     }
 
-    loadNamedGeoReferencedObject(id: string): Promise<NamedGeoReferencedObject | null> {
+    loadNamedGeoReferencedObject(id: string): Promise<MapItem | null> {
         throw new Error(`Method not implemented. loadNamedGeoReferencedObject: ${id}`);
     }
 
-    loadAllNamedGeoReferencedObjects(): Promise<Record<string, NamedGeoReferencedObject>> {
-        return new Promise<Record<string, NamedGeoReferencedObject>>(resolve => {
-            const items: Record<string, NamedGeoReferencedObject> = {};
+    loadAllNamedGeoReferencedObjects(): Promise<Record<string, MapItem>> {
+        return new Promise<Record<string, MapItem>>(resolve => {
+            const items: Record<string, MapItem> = {};
 
             const url = DataProvider.getInstance().getApiUrl() + '/map/items';
             this.fetchData(url)
@@ -154,7 +154,7 @@ export class ApiProvider implements StorageInterface {
                         return;
                     }
                     for (const item of data._embedded.mapItemList) {
-                        items[item.id] = NamedGeoReferencedObject.of({
+                        items[item.id] = MapItem.of({
                             id: item.id,
                             name: item.name,
                             latitude: item.position.latitude,
@@ -280,7 +280,7 @@ export class ApiProvider implements StorageInterface {
         zoomLevel?: number,
         showOnMap?: boolean,
         groupId?: string
-    }): Promise<NamedGeoReferencedObject | null> {
+    }): Promise<MapItem | null> {
 
         const data = {
             name: item.name,
@@ -294,7 +294,7 @@ export class ApiProvider implements StorageInterface {
 
         const response = await this.callApi(url, 'POST', new Headers(), data) as never as MapItemStruct;
         if (response != null) {
-            return NamedGeoReferencedObject.of({
+            return MapItem.of({
                 id: response.id,
                 name: response.name,
                 latitude: response.position.latitude,
@@ -308,7 +308,7 @@ export class ApiProvider implements StorageInterface {
         throw Error('Failed to create map item');
     }
 
-    public async saveMapItem(item: NamedGeoReferencedObject): Promise<NamedGeoReferencedObject | null> {
+    public async saveMapItem(item: MapItem): Promise<MapItem | null> {
         const data = {
             name: item.getName(),
             position: {
@@ -321,7 +321,7 @@ export class ApiProvider implements StorageInterface {
 
         const response = await this.callApi(url, 'POST', new Headers(), data) as never as MapItemStruct;
         if (response != null) {
-            return NamedGeoReferencedObject.of({
+            return MapItem.of({
                 id: response.id,
                 name: response.name,
                 latitude: response.position.latitude,
@@ -335,7 +335,7 @@ export class ApiProvider implements StorageInterface {
         throw Error('Failed to create map item');
     }
 
-    public async getOverlayTiles(overlay: Overlay): Promise<string[]> {
+    public async getOverlayTiles(overlay: MapOverlay): Promise<string[]> {
         let url: URL | undefined;
         if (overlay.getUrl().startsWith('http')) {
             url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search('{z}')));
@@ -376,17 +376,17 @@ export class ApiProvider implements StorageInterface {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    replaceOverlays(_overlays: Overlay[]): Promise<void> {
+    replaceOverlays(_overlays: MapOverlay[]): Promise<void> {
         throw new Error('Not implemented');
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    replaceMapStyles(_mapStyles: MapStyle[]): Promise<void> {
+    replaceMapStyles(_mapStyles: MapBaseLayer[]): Promise<void> {
         throw new Error('Not implemented');
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    replaceNamedGeoReferencedObjects(_namedGeoReferencedObjects: NamedGeoReferencedObject[]): Promise<void> {
+    replaceNamedGeoReferencedObjects(_namedGeoReferencedObjects: MapItem[]): Promise<void> {
         throw new Error('replaceNamedGeoReferencedObjects not implemented');
     }
 

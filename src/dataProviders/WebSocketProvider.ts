@@ -1,11 +1,10 @@
 import {DataProvider} from './DataProvider.ts';
-import {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject.ts';
-import {MapStyle} from '../enitities/MapStyle.ts';
-import {MapGroup} from '../enitities/MapGroup.ts';
-import {Overlay} from '../enitities/Overlay.ts';
-import type {DBRecord} from '../enitities/Entity.ts';
 import {ApplicationLogger} from '../ApplicationLogger.ts';
 import {Unit} from '../enitities/Unit.ts';
+import type {MapBaseLayerStruct, MapItemStruct, MapOverlayStruct, UnitStruct} from './structs/ApiResponseStruct.ts';
+import {MapOverlay} from '../enitities/MapOverlay.ts';
+import {MapBaseLayer} from '../enitities/MapBaseLayer.ts';
+import {MapItem} from '../enitities/MapItem.ts';
 
 
 export class WebSocketProvider {
@@ -22,26 +21,57 @@ export class WebSocketProvider {
     }
 
 
-    updateModel(modelType: string, data: object) {
+    updateModel(topic: string, data: { entity: never }) {
         const dataProvider = DataProvider.getInstance();
 
-        if (modelType === 'NamedGeoReferencedItem') {
-            const item = NamedGeoReferencedObject.of(data as DBRecord);
-            dataProvider.addMapItem(item);
-        } else if (modelType === 'MapStyle') {
-            const item = MapStyle.of(data as DBRecord);
-            dataProvider.setMapStyle(item);
-        } else if (modelType === 'MapGroup') {
-            const item = MapGroup.of(data as DBRecord);
-            dataProvider.addMapGroup(item);
-        } else if (modelType === 'MapOverlay') {
-            const item = Overlay.of(data as DBRecord);
-            dataProvider.addOverlay(item);
-        } else if (modelType === 'Unit') {
-            const item = Unit.of(data as DBRecord);
+        ApplicationLogger.info('received update for topic: ' + topic, {service: 'WebSocket'});
+        const modelType = topic.replace('/updates/entities/', '');
+        const parts = modelType.split('/');
+        const entityType = parts[0];
+
+        if (entityType === 'unit') {
+            const unitData = data.entity as UnitStruct;
+            const item = new Unit({
+                id: unitData.id,
+                latitude: unitData.position.latitude,
+                longitude: unitData.position.longitude,
+                name: unitData.name,
+                unit_status: unitData.status,
+                unit_status_time: unitData.updatedAt,
+            });
             dataProvider.addUnit(item);
+        } else if (entityType === 'mapoverlay') {
+            const overlayData = data.entity as MapOverlayStruct;
+            const item = new MapOverlay(
+                {
+                    id: overlayData.id,
+                    name: overlayData.name,
+                    url: overlayData.fullTileUrl,
+                    layerVersion: overlayData.layerVersion,
+                }
+            );
+            console.log(item);
+            dataProvider.addOverlay(item);
+        } else if (entityType === 'mapbaselayer') {
+            const layerData = data.entity as MapBaseLayerStruct;
+            const item = new MapBaseLayer({
+                id: layerData.id,
+                name: layerData.name,
+                url: layerData.url,
+            });
+            dataProvider.setMapStyle(item);
+        } else if (entityType === 'mapitem') {
+            const itemData = data.entity as MapItemStruct;
+            const item = new MapItem({
+                id: itemData.id,
+                name: itemData.name,
+                latitude: itemData.position.latitude,
+                longitude: itemData.position.longitude,
+            });
+            dataProvider.addMapItem(item);
+
         } else {
-            console.log('Unknown model type:', modelType);
+            console.log('Unknown entity type:', entityType);
         }
     }
 
@@ -49,20 +79,22 @@ export class WebSocketProvider {
         ApplicationLogger.info('WebSocket Started', {service: 'WebSocket'});
 
         const socket = new WebSocket(this.getConnectionURL());
-
+        const entityTypes = ['unit', 'mapoverlay', 'mapbaselayer', 'mapitem'];
         socket.onopen = (event) => {
             ApplicationLogger.info('WebSocket connection opened', {service: 'WebSocket', event: event});
+            for (const entityType of entityTypes) {
+                socket.send('SUBSCRIBE /updates/entities/' + entityType);
+            }
         };
         socket.onmessage = (event) => {
             ApplicationLogger.debug('WebSocket message received: ' + event.data, {service: 'WebSocket', event: event});
             try {
-                const data = JSON.parse(event.data as string) as { event: string, model_type: string, data: object };
-                if (data.event === 'model.update') {
-                    this.updateModel(data.model_type, data.data);
+                const data = JSON.parse(event.data as string) as { topic: string, payload: never };
+                if (data.topic.startsWith('/updates/entities/')) {
+                    this.updateModel(data.topic, data.payload);
                 }
-            } catch (e) {
-                console.error('Error parsing JSON WebSocket message:', e);
-                /* empty */
+            } catch {
+                ApplicationLogger.info('Received message: ' + event.data, {service: 'WebSocket'});
             }
         };
         socket.onclose = (event) => {

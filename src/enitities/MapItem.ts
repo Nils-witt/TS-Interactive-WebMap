@@ -6,9 +6,9 @@
  * Purpose: store id, name, coordinates, optional zoom and metadata
  */
 
-import {type DBRecord, Entity} from './Entity.ts';
+import {type DBRecord, AbstractEntity} from './AbstractEntity.ts';
 
-export interface INamedGeoReferencedObject {
+export interface IMapItem {
     id?: string;
     latitude: number;
     longitude: number;
@@ -18,7 +18,7 @@ export interface INamedGeoReferencedObject {
     groupId?: string | null; // Optional group ID for categorization
 }
 
-export class NamedGeoReferencedObject extends Entity {
+export class MapItem extends AbstractEntity {
     private id: string | null;
     private latitude: number;
     private longitude: number;
@@ -27,7 +27,7 @@ export class NamedGeoReferencedObject extends Entity {
     private showOnMap: boolean;
     private groupId: string | null;
 
-    constructor(data: INamedGeoReferencedObject) {
+    constructor(data: IMapItem) {
         super();
         this.id = data.id || null;
         this.latitude = data.latitude;
@@ -38,9 +38,9 @@ export class NamedGeoReferencedObject extends Entity {
         this.groupId = data.groupId as string | null;
     }
 
-    public static of(data: DBRecord): NamedGeoReferencedObject {
+    public static of(data: DBRecord): MapItem {
 
-        return new NamedGeoReferencedObject({
+        return new MapItem({
             id: data.id as string,
             latitude: Number(data.latitude),
             longitude: Number(data.longitude),
