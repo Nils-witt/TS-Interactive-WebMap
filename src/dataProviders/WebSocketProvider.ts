@@ -50,7 +50,6 @@ export class WebSocketProvider {
                     layerVersion: overlayData.layerVersion,
                 }
             );
-            console.log(item);
             dataProvider.addOverlay(item);
         } else if (entityType === 'mapbaselayer') {
             const layerData = data.entity as MapBaseLayerStruct;
@@ -87,6 +86,9 @@ export class WebSocketProvider {
             }
         };
         socket.onmessage = (event) => {
+            if (event.data == 'ping') {
+                return;
+            }
             ApplicationLogger.debug('WebSocket message received: ' + event.data, {service: 'WebSocket', event: event});
             try {
                 const data = JSON.parse(event.data as string) as { topic: string, payload: never };
