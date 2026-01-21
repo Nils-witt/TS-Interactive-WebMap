@@ -81,18 +81,6 @@ function transformCacheUrl(cacheName: string, url: string): URL {
 function getCacheName(url: URL): [string, boolean, boolean, boolean] {
     const reqType = getURLType(url);
 
-    if (reqType === 'admin') {
-        return ['admin', true, false, false];
-    }
-    if (reqType === 'api') {
-        return ['api-cache', true, true, true];
-    }
-    if (reqType.startsWith('overlay-')) {
-        return [reqType, false, true, false];
-    }
-    if (reqType === 'vector') {
-        return ['vector-cache', false, true, true];
-    }
     if (sw.registration.scope.startsWith(url.origin)) {
         return [reqType, true, false, false];
     }

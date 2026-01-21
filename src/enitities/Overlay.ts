@@ -20,6 +20,8 @@ export class Overlay extends Entity {
      */
     private name = '';
 
+    private layerVersion = 0;
+
     /**
      * Unique identifier for the layer, used for source and layer creation
      */
@@ -60,6 +62,7 @@ export class Overlay extends Entity {
         overlay.order = data.order as number;
         overlay.opacity = data.opacity as number;
         overlay.description = data.description as string;
+        overlay.layerVersion = data.layerVersion as number ?? 0;
         return overlay;
     }
 
@@ -70,7 +73,8 @@ export class Overlay extends Entity {
             url: this.url,
             order: this.order,
             opacity: this.opacity,
-            description: this.description
+            description: this.description,
+            layerVersion: this.layerVersion
         };
     }
 
@@ -120,4 +124,12 @@ export class Overlay extends Entity {
         this.notify(OverlayEvent.changed, {order: order});
     }
 
+
+    public getLayerVersion(): number {
+        return this.layerVersion;
+    }
+
+    public setLayerVersion(version: number): void {
+        this.layerVersion = version;
+    }
 }

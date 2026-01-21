@@ -17,7 +17,6 @@ class CacheProvider {
         return this.instance;
     }
 
-
     /**
      * Gets a list of all cached overlay IDs.
      */
@@ -36,7 +35,7 @@ class CacheProvider {
         cachedTiles: string[],
         missing: string[]
     }> {
-        const cache = await caches.open(`overlay-${overlay.getId()}`);
+        const cache = await caches.open(`overlay-${overlay.getId()}_${overlay.getLayerVersion()}`);
         const localTiles = Array.from(await cache.keys()).map(rq => rq.url);
         const remoteTiles = await ApiProvider.getInstance().getOverlayTiles(overlay);
 
@@ -103,7 +102,7 @@ class CacheProvider {
      */
     async cacheOverlay(overlay: Overlay, btn?: HTMLButtonElement): Promise<void> {
         const state = await this.getOverlayCacheState(overlay);
-        const cache = await caches.open(`overlay-${overlay.getId()}`);
+        const cache = await caches.open(`overlay-${overlay.getId()}_${overlay.getLayerVersion()}`);
         const tmpCache = await caches.open('overlay-tmp');
 
         for (let i = 0; i < state.missing.length; i = i + 10) {
@@ -136,7 +135,7 @@ class CacheProvider {
         const pendingTiles: Record<number, Record<number, number[]>> = {};
 
         for (const overlay of overlays) {
-            const cache = await caches.open(`overlay-${overlay.getId()}`);
+            const cache = await caches.open(`overlay-${overlay.getId()}_${overlay.getLayerVersion()}`);
             for (const tile of await cache.keys()) {
 
                 const {x, y, z} = Utilities.splitTileUrl(tile.url);

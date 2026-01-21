@@ -25,6 +25,7 @@ export interface MapBaseLayerStruct extends AbstractEntityStruct{
 export interface MapOverlayStruct extends AbstractEntityStruct{
     name: string
     fullTileUrl: string
+    layerVersion: number
 }
 
 export interface MapItemStruct extends AbstractEntityStruct{

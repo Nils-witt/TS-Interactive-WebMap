@@ -73,6 +73,7 @@ export class ApiProvider implements StorageInterface {
                                 id: layer.id,
                                 name: layer.name,
                                 url: layer.fullTileUrl,
+                                layerVersion: layer.layerVersion,
                                 description: '',
                                 order: 0,
                                 opacity: 1.0

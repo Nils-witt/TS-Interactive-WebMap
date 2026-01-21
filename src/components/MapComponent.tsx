@@ -88,7 +88,7 @@ export function MapComponent(props: MapComponentProps) {
             setMapStyle(event.data as MapStyle);
         });
         const webSocketProvider = new WebSocketProvider();
-        //webSocketProvider.start();
+        webSocketProvider.start();
 
         try {
             if ((navigator as Navigator).userAgentData.mobile) {
