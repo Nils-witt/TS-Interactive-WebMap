@@ -18,7 +18,7 @@ export class WebSocketProvider {
         const base = DataProvider.getInstance().getApiUrl().replace('http', 'ws');
         const token = DataProvider.getInstance().getApiToken();
 
-        return base + '/ws/?token=' + token;
+        return base + '/ws?token=' + token;
     }
 
 
