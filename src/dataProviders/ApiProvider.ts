@@ -120,9 +120,14 @@ export class ApiProvider implements StorageInterface {
                             name: layer.id,
                             url: layer.url
                         });
+                        const layerUrl = new URL(layer.url);
+                        new BroadcastChannel('setMapServicesBase').postMessage(
+                            {
+                                url: layerUrl.protocol + '//' + layerUrl.hostname
+                            }
+                        );
                     }
                     resolve(mapStyles);
-
                 })
                 .catch(e => {
                     console.error('Error fetching overlay layers:', e);

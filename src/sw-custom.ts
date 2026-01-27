@@ -15,8 +15,61 @@
 
 const sw = self as unknown as ServiceWorkerGlobalScope & typeof globalThis;
 
+var mapservicesBase = 'N/A';
+var apiBase = 'N/A';
+
+new BroadcastChannel('setMapServicesBase').addEventListener('message', (e) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const url = e.data.url as string;
+
+    if (mapservicesBase != url) {
+        mapservicesBase = url;
+        console.log(`[SW] Set mapservices base to ${mapservicesBase}`);
+        void caches.delete('mapservices').then(() => {
+            reloadClients();
+        });
+    } else {
+        console.log(`[SW] mapservices base is ${mapservicesBase}`);
+    }
+});
+
+new BroadcastChannel('setApiBase').addEventListener('message', (e) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const url = e.data.url as string;
+    if (apiBase != url) {
+        apiBase = url;
+        console.log(`[SW] Set apibase base to ${apiBase}`);
+        void caches.keys().then(keys => {
+            keys.forEach(key => {
+                void caches.open(key).then(cache => {
+                    void cache.keys().then(reqKeys => {
+                        reqKeys.forEach(req => {
+                            const reqUrl = new URL(req.url);
+                            if (reqUrl.href.startsWith(apiBase)) {
+                                void cache.delete(req).then(deleted => {
+                                    if (deleted) {
+                                        console.log(`[SW] Deleted cached API request ${req.url} from cache ${key}`);
+                                    }
+                                });
+                            }
+                        });
+                    });
+                });
+            });
+        });
+    } else {
+        console.log(`[SW] apibase base is ${apiBase}`);
+    }
+});
+
+
 sw.addEventListener('activate', () => {
     console.log('Service Worker activated');
+    void caches.delete('api-cache');
+    reloadClients();
+});
+
+function reloadClients() {
     void sw.clients.matchAll({
         includeUncontrolled: true
     }).then((clients) => {
@@ -25,8 +78,7 @@ sw.addEventListener('activate', () => {
             client.postMessage({cmd: 'reload'});
         });
     });
-    void caches.delete('api-cache');
-});
+}
 
 /**
  * Cache strategy overview:
@@ -84,62 +136,61 @@ function getCacheName(url: URL): [string, boolean, boolean, boolean] {
     if (sw.registration.scope.startsWith(url.origin)) {
         return [reqType, true, false, false];
     }
-    console.log(`[SW] Fetch ${url}; ${url.origin} == ${sw.registration.scope}`);
+    console.log('Mapservices base in SW:', mapservicesBase, url.href, url.href.startsWith(mapservicesBase));
+    if (url.href.startsWith(mapservicesBase) && !url.href.startsWith(apiBase)) {
+        return ['mapservices', true, true, true];
+    }
     return ['never', true, false, false];
 
 }
 
 
 sw.addEventListener('fetch', (event) => {
-    let url = new URL(event.request.url);
-    console.log(`[SW] Fetch ${url}`);
+    const url = new URL(event.request.url);
     if (event.request.method !== 'GET') {
         return;
     }
-    if (event.request.url == 'https://karten.bereitschaften-drk-bonn.de/') {
-        url = new URL('https://karten.bereitschaften-drk-bonn.de/index.html');
-    }
 
     const [useCacheName, networkFirst, useCache, putMissingInCache] = getCacheName(url);
+    console.log(`Fetch ${url} useCache ${useCacheName}; netForst: ${networkFirst}; useCache ${useCache}`);
     if (useCache) {
-        console.log(`Fetch ${url} useCache ${useCacheName}; netForst: ${networkFirst}; useCache ${useCache}`);
         if (networkFirst) {
             event.respondWith(new Promise((resolve, reject) => {
-                fetch(event.request, {signal: AbortSignal.timeout(2000)})
-                    .then(async response => {
-                        if (response && response.ok) {
-                            const responseToCache = response.clone();
+                    fetch(event.request, {signal: AbortSignal.timeout(2000)})
+                        .then(async response => {
+                            if (response && response.ok) {
+                                const responseToCache = response.clone();
 
-                            void caches.open(useCacheName).then((cache) => {
-                                void cache.put(event.request, responseToCache); // Cache the new response
-                            });
-                            resolve(response);
-                            return;
-                        } else if (response.status === 403) {
-                            resolve(response);
-                            return;
-                        }
-
-                        const cacheMatch = await caches.match(event.request);
-                        if (cacheMatch != undefined) {
-                            resolve(cacheMatch);
-                            return;
-                        } else {
-                            reject(new Error(`Could not fetch ${event.request.url}`));
-                        }
-                        return;
-
-                    })
-                    .catch(() => {
-                        return caches.match(event.request).then((cachedResponse) => {
-                            if (cachedResponse) {
-                                resolve(cachedResponse);
-                            } else {
-                                resolve(new Response('Not found', {status: 404}));
+                                void caches.open(useCacheName).then((cache) => {
+                                    void cache.put(event.request, responseToCache); // Cache the new response
+                                });
+                                resolve(response);
+                                return;
+                            } else if (response.status === 403) {
+                                resolve(response);
+                                return;
                             }
+
+                            const cacheMatch = await caches.match(event.request);
+                            if (cacheMatch != undefined) {
+                                resolve(cacheMatch);
+                                return;
+                            } else {
+                                reject(new Error(`Could not fetch ${event.request.url}`));
+                            }
+                            return;
+
+                        })
+                        .catch(() => {
+                            return caches.match(event.request).then((cachedResponse) => {
+                                if (cachedResponse) {
+                                    resolve(cachedResponse);
+                                } else {
+                                    resolve(new Response('Not found', {status: 404}));
+                                }
+                            });
                         });
-                    });
-            })
+                })
             );
         } else {
             event.respondWith(caches.open(useCacheName).then((cache) => {
