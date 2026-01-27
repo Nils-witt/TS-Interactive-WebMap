@@ -15,8 +15,8 @@
 
 const sw = self as unknown as ServiceWorkerGlobalScope & typeof globalThis;
 
-var mapservicesBase = 'N/A';
-var apiBase = 'N/A';
+let mapservicesBase = 'N/A';
+let apiBase = 'N/A';
 
 new BroadcastChannel('setMapServicesBase').addEventListener('message', (e) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -46,11 +46,7 @@ new BroadcastChannel('setApiBase').addEventListener('message', (e) => {
                         reqKeys.forEach(req => {
                             const reqUrl = new URL(req.url);
                             if (reqUrl.href.startsWith(apiBase)) {
-                                void cache.delete(req).then(deleted => {
-                                    if (deleted) {
-                                        console.log(`[SW] Deleted cached API request ${req.url} from cache ${key}`);
-                                    }
-                                });
+                                void cache.delete(req);
                             }
                         });
                     });
@@ -136,7 +132,6 @@ function getCacheName(url: URL): [string, boolean, boolean, boolean] {
     if (sw.registration.scope.startsWith(url.origin)) {
         return [reqType, true, false, false];
     }
-    console.log('Mapservices base in SW:', mapservicesBase, url.href, url.href.startsWith(mapservicesBase));
     if (url.href.startsWith(mapservicesBase) && !url.href.startsWith(apiBase)) {
         return ['mapservices', true, true, true];
     }
@@ -156,42 +151,41 @@ sw.addEventListener('fetch', (event) => {
     if (useCache) {
         if (networkFirst) {
             event.respondWith(new Promise((resolve, reject) => {
-                    fetch(event.request, {signal: AbortSignal.timeout(2000)})
-                        .then(async response => {
-                            if (response && response.ok) {
-                                const responseToCache = response.clone();
+                fetch(event.request, {signal: AbortSignal.timeout(2000)})
+                    .then(async response => {
+                        if (response && response.ok) {
+                            const responseToCache = response.clone();
 
-                                void caches.open(useCacheName).then((cache) => {
-                                    void cache.put(event.request, responseToCache); // Cache the new response
-                                });
-                                resolve(response);
-                                return;
-                            } else if (response.status === 403) {
-                                resolve(response);
-                                return;
-                            }
-
-                            const cacheMatch = await caches.match(event.request);
-                            if (cacheMatch != undefined) {
-                                resolve(cacheMatch);
-                                return;
-                            } else {
-                                reject(new Error(`Could not fetch ${event.request.url}`));
-                            }
-                            return;
-
-                        })
-                        .catch(() => {
-                            return caches.match(event.request).then((cachedResponse) => {
-                                if (cachedResponse) {
-                                    resolve(cachedResponse);
-                                } else {
-                                    resolve(new Response('Not found', {status: 404}));
-                                }
+                            void caches.open(useCacheName).then((cache) => {
+                                void cache.put(event.request, responseToCache); // Cache the new response
                             });
+                            resolve(response);
+                            return;
+                        } else if (response.status === 403) {
+                            resolve(response);
+                            return;
+                        }
+
+                        const cacheMatch = await caches.match(event.request);
+                        if (cacheMatch != undefined) {
+                            resolve(cacheMatch);
+                            return;
+                        } else {
+                            reject(new Error(`Could not fetch ${event.request.url}`));
+                        }
+                        return;
+
+                    })
+                    .catch(() => {
+                        return caches.match(event.request).then((cachedResponse) => {
+                            if (cachedResponse) {
+                                resolve(cachedResponse);
+                            } else {
+                                resolve(new Response('Not found', {status: 404}));
+                            }
                         });
-                })
-            );
+                    });
+            }));
         } else {
             event.respondWith(caches.open(useCacheName).then((cache) => {
                 return cache.match(transformCacheUrl(useCacheName, event.request.url)).then((cachedResponse) => {
@@ -208,7 +202,6 @@ sw.addEventListener('fetch', (event) => {
                         }
                         return fetchedResponse;
                     });
-
                 });
             }));
         }

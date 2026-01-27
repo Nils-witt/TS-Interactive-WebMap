@@ -13,7 +13,7 @@ enum LOG_LEVELS {
 }
 
 export class ApplicationLogger {
-    public static logLevel: LOG_LEVELS = LOG_LEVELS.ERROR;
+    public static logLevel: LOG_LEVELS = LOG_LEVELS.INFO;
 
     static formatMessage(level: string, message: string, meta: LoggerMetaInterface): string {
         return `${Utilities.getFormattedDate()} [${level.padEnd(6, ' ')}] [${meta.service.padEnd(20, ' ')}] ${message}`;
