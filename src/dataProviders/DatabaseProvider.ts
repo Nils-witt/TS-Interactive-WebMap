@@ -160,6 +160,12 @@ export class DatabaseProvider implements StorageInterface {
                     for (const record of result) {
                         const mapStyle = MapBaseLayer.of(record);
                         mapStyles[mapStyle.getID()] = mapStyle;
+                        const layerUrl = new URL(mapStyle.getUrl());
+                        new BroadcastChannel('setMapServicesBase').postMessage(
+                            {
+                                url: layerUrl.protocol + '//' + layerUrl.hostname
+                            }
+                        );
                     }
                     resolve(mapStyles);
                 });
