@@ -436,7 +436,7 @@ export class ApiProvider implements StorageInterface {
                             name: rawUnit.name,
                             latitude: rawUnit.position.latitude,
                             longitude: rawUnit.position.longitude,
-                            symbol: null,
+                            symbol: rawUnit.icon as never,
                             unit_status: rawUnit.status,
                             unit_status_timestamp: new Date().toISOString(),
                             route: null,

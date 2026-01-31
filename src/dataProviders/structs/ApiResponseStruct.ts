@@ -1,4 +1,5 @@
 import type {UUID} from 'node:crypto';
+import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
 
 
 export interface ApiResponseStruct {
@@ -43,4 +44,5 @@ export interface UnitStruct extends AbstractEntityStruct{
     position: PositionStruct
     status: number
     speakRequest: boolean
+    icon?: TaktischesZeichen
 }
