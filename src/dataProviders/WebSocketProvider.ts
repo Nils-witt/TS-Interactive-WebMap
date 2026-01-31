@@ -38,6 +38,7 @@ export class WebSocketProvider {
                 name: unitData.name,
                 unit_status: unitData.status,
                 unit_status_time: unitData.updatedAt,
+                symbol: unitData.icon as never
             });
             dataProvider.addUnit(item);
         } else if (entityType === 'mapoverlay') {
