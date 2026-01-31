@@ -143,6 +143,7 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
                 <Button size={'small'} onClick={() => {
                     void Utilities.clearCache()
                 }}>Clear full Cache</Button>
+                <Button size={'small'} onClick={() => window.location.reload()}>Reload</Button>
             </ButtonGroup>
             </div>
             <div>
