@@ -145,6 +145,11 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
                 }}>Clear full Cache</Button>
                 <Button size={'small'} onClick={() => window.location.reload()}>Reload</Button>
             </ButtonGroup>
+
+            </div>
+            <div>
+                Icon Size:
+                <Input defaultValue={localStorage.getItem('unit_icon_size')} onBlur={ (e) => localStorage.setItem('unit_icon_size', e.target.value)}></Input>
             </div>
             <div>
                 <Table size="small" aria-label="a dense table">

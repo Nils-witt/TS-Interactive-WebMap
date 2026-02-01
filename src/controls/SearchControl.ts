@@ -97,6 +97,7 @@ export class SearchControl extends Evented implements IControl {
     private shownUnits: Map<string, Marker> = new Map<string, Marker>();
 
 
+    private iconSize: number = localStorage.getItem('unit_icon_size') ? Number(localStorage.getItem('unit_icon_size')) : 50;
     /**
      * Flag to track if the control is currently open
      * @private
@@ -477,7 +478,7 @@ export class SearchControl extends Evented implements IControl {
                     container.className = 'unit-marker-container';
                     const imgContainer = document.createElement('div');
                     imgContainer.className = 'unit-icon-container';
-                    imgContainer.appendChild(unit.getIconElement({width: 50}) as HTMLElement);
+                    imgContainer.appendChild(unit.getIconElement({width: this.iconSize}) as HTMLElement);
                     container.appendChild(imgContainer);
                     const status_div = document.createElement('div');
                     status_div.className = 'unit-status-indicator';
@@ -526,7 +527,7 @@ export class SearchControl extends Evented implements IControl {
                             if (iconContainers[0]) {
                                 const iconContainer = iconContainers[0];
                                 iconContainer.innerHTML = '';
-                                iconContainer.appendChild(unit.getIconElement({width: 50}) as HTMLElement);
+                                iconContainer.appendChild(unit.getIconElement({width: this.iconSize}) as HTMLElement);
                             }
                         }
                         const status_num_labels = marker._element.getElementsByClassName('unit-status-num-label');
