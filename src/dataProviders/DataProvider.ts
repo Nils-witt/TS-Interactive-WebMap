@@ -6,11 +6,11 @@
  * Purpose: keep app components synchronized and provide API token & data mutation helpers.
  */
 
-import type {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject';
+import type {MapItem} from '../enitities/MapItem.ts';
 import {GlobalEventHandler} from './GlobalEventHandler';
 import {LngLat} from 'maplibre-gl';
-import {Overlay} from '../enitities/Overlay.ts';
-import {MapStyle} from '../enitities/MapStyle.ts';
+import {MapOverlay} from '../enitities/MapOverlay.ts';
+import {MapBaseLayer} from '../enitities/MapBaseLayer.ts';
 import type {MapGroup} from '../enitities/MapGroup.ts';
 import type {Unit} from '../enitities/Unit.ts';
 
@@ -75,13 +75,13 @@ export enum DataProviderEventType {
  */
 export class DataProvider {
     /** Storage for map location objects, indexed by their IDs */
-    private mapLocations = new Map<string, NamedGeoReferencedObject>();
+    private mapLocations = new Map<string, MapItem>();
 
     /** Current map style configuration */
-    private mapStyle: MapStyle | undefined;
+    private mapStyle: MapBaseLayer | undefined;
 
     /** Collection of overlay layers that can be added to the map */
-    private overlays: Map<string, Overlay> = new Map<string, Overlay>();
+    private overlays: Map<string, MapOverlay> = new Map<string, MapOverlay>();
 
     /** Collection of map groups for organizing map elements */
     private mapGroups: Map<string, MapGroup> = new Map<string, MapGroup>();
@@ -131,7 +131,7 @@ export class DataProvider {
      * @param id - Unique identifier for the location
      * @param item - The location object to store
      */
-    public addMapItem(item: NamedGeoReferencedObject): void {
+    public addMapItem(item: MapItem): void {
         if (this.mapLocations.has(item.getId() as string)) {
             this.mapLocations.set(item.getId() as string, item);
             this.triggerEvent(DataProviderEventType.MAP_ITEM_UPDATED, item);
@@ -146,7 +146,7 @@ export class DataProvider {
      *
      * @returns Map of all location objects indexed by their IDs
      */
-    public getMapLocations(): Map<string, NamedGeoReferencedObject> {
+    public getMapLocations(): Map<string, MapItem> {
         return this.mapLocations;
     }
 
@@ -192,7 +192,7 @@ export class DataProvider {
      *
      * @param style - The map style configuration to use
      */
-    public setMapStyle(style: MapStyle): void {
+    public setMapStyle(style: MapBaseLayer): void {
         this.mapStyle = style;
         this.triggerEvent(DataProviderEventType.MAP_STYLE_UPDATED, style);
     }
@@ -202,7 +202,7 @@ export class DataProvider {
      *
      * @returns The current map style or undefined if not set
      */
-    public getMapStyle(): MapStyle | undefined {
+    public getMapStyle(): MapBaseLayer | undefined {
         return this.mapStyle;
     }
 
@@ -212,7 +212,7 @@ export class DataProvider {
      * @param id - Unique identifier for the overlay
      * @param overlay - The overlay configuration to store
      */
-    public addOverlay(overlay: Overlay): void {
+    public addOverlay(overlay: MapOverlay): void {
         if (this.overlays.has(overlay.getId())) {
             this.overlays.set(overlay.getId(), overlay);
             this.triggerEvent(DataProviderEventType.OVERLAY_UPDATED, overlay);
@@ -238,7 +238,7 @@ export class DataProvider {
      *
      * @returns Map of all overlay configurations indexed by their IDs
      */
-    public getOverlays(): Map<string, Overlay> {
+    public getOverlays(): Map<string, MapOverlay> {
         return this.overlays;
     }
 

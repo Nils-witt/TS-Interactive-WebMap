@@ -6,19 +6,29 @@
  * Purpose: encapsulate overlay id, name, URL template, order, and related events
  */
 
-import {type DBRecord, Entity} from './Entity.ts';
+import {type DBRecord, AbstractEntity, type IAbstractEntity} from './AbstractEntity.ts';
 
+
+export interface IOverlay extends IAbstractEntity {
+    name: string;
+    url: string;
+    opacity?: number;
+    order?: number;
+    layerVersion: number;
+}
 
 export enum OverlayEvent {
     changed = 'overlayChanged',
     orderChanged = 'overlayOrderChanged'
 }
 
-export class Overlay extends Entity {
+export class MapOverlay extends AbstractEntity {
     /**
      * The display name of the layer shown in the layer control
      */
     private name = '';
+
+    private layerVersion = 0;
 
     /**
      * Unique identifier for the layer, used for source and layer creation
@@ -47,20 +57,28 @@ export class Overlay extends Entity {
     private order = 0;
 
 
-    constructor() {
+    constructor(data: IOverlay) {
         super();
+        this.id = data.id;
+        this.name = data.name;
+        this.url = data.url;
+        this.order = data.order || 0;
+        this.opacity = data.opacity || 1.0;
+        this.layerVersion = data.layerVersion;
     }
 
 
-    public static of(data: DBRecord): Overlay {
-        const overlay = new Overlay();
-        overlay.id = data.id as string;
-        overlay.name = data.name as string;
-        overlay.url = data.url as string;
-        overlay.order = data.order as number;
-        overlay.opacity = data.opacity as number;
-        overlay.description = data.description as string;
-        return overlay;
+    public static of(data: DBRecord): MapOverlay {
+        return new MapOverlay(
+            {
+                id: data.id as string,
+                name: data.name as string,
+                url: data.url as string,
+                order: data.order as number,
+                opacity: data.opacity as number,
+                layerVersion: data.layerVersion as number ?? 0,
+            }
+        );
     }
 
     public record(): DBRecord {
@@ -70,7 +88,8 @@ export class Overlay extends Entity {
             url: this.url,
             order: this.order,
             opacity: this.opacity,
-            description: this.description
+            description: this.description,
+            layerVersion: this.layerVersion
         };
     }
 
@@ -120,4 +139,12 @@ export class Overlay extends Entity {
         this.notify(OverlayEvent.changed, {order: order});
     }
 
+
+    public getLayerVersion(): number {
+        return this.layerVersion;
+    }
+
+    public setLayerVersion(version: number): void {
+        this.layerVersion = version;
+    }
 }

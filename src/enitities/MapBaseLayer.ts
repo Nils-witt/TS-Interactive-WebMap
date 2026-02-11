@@ -6,28 +6,33 @@
  * Purpose: provide id, name, and URL and integrate with DataProvider updates.
  */
 
-import {type DBRecord, Entity} from './Entity.ts';
+import {type DBRecord, AbstractEntity, type IAbstractEntity} from './AbstractEntity.ts';
 
 
-export class MapStyle extends Entity {
+export interface IMapStyle extends IAbstractEntity{
+    name: string;
+    url: string;
+}
+
+export class MapBaseLayer extends AbstractEntity {
     private id: string;
     private name: string;
     private url: string;
 
 
-    constructor() {
+    constructor(data: IMapStyle) {
         super();
-        this.id = '';
-        this.name = '';
-        this.url = '';
+        this.id = data.id;
+        this.name = data.name;
+        this.url = data.url;
     }
 
-    public static of(data: DBRecord): MapStyle {
-        const style = new MapStyle();
-        style.id = data.id as string;
-        style.name = data.name as string;
-        style.url = data.url as string;
-        return style;
+    public static of(data: DBRecord): MapBaseLayer {
+        return new MapBaseLayer({
+            id: data.id as string,
+            name: data.name as string,
+            url: data.url as string
+        });
     }
 
     public record(): DBRecord {

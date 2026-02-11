@@ -1,10 +1,10 @@
 
 
 
-import {type DBRecord, Entity} from './Entity.ts';
+import {type DBRecord, AbstractEntity} from './AbstractEntity.ts';
 
 
-export class MapGroup extends Entity {
+export class MapGroup extends AbstractEntity {
     private name: string;
     private description: string;
     private id: string;

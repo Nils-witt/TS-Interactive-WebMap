@@ -1,6 +1,6 @@
 import React, {useEffect} from "react";
 import {ApiProvider} from "../dataProviders/ApiProvider.ts";
-import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject.ts";
+import type {MapItem} from "../enitities/MapItem.ts";
 import type {MapGroup} from "../enitities/MapGroup.ts";
 import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
 import {DatabaseProvider} from "../dataProviders/DatabaseProvider.ts";
@@ -8,7 +8,7 @@ import {DatabaseProvider} from "../dataProviders/DatabaseProvider.ts";
 import './css/markerform.scss'
 
 interface CreateMarkerFormProps {
-    entity?: NamedGeoReferencedObject
+    entity?: MapItem
     data?: {
         latitude: number;
         longitude: number;
@@ -51,7 +51,7 @@ export function CreateMarkerForm(props: CreateMarkerFormProps): React.JSX.Elemen
             entity.setLongitude(longitude || 0);
             entity.setZoomLevel(zoom || 15);
             entity.setGroupId(groupId);
-            void api.saveMapItem(entity, true).then((result) => {
+            void api.saveMapItem(entity).then((result) => {
                 if (result) {
                     DataProvider.getInstance().addMapItem(result);
                     void DatabaseProvider.getInstance().then(instance => {
@@ -66,7 +66,6 @@ export function CreateMarkerForm(props: CreateMarkerFormProps): React.JSX.Elemen
                 longitude: longitude || 0,
                 zoomLevel: zoom || 15,
             }).then((response) => {
-                console.log(response);
                 if (response) {
                     DataProvider.getInstance().addMapItem(response)
                     void DatabaseProvider.getInstance().then(instance => {

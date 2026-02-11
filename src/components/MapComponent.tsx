@@ -24,12 +24,12 @@ import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
 import {MapSettings} from "./SettingsComponent";
 import ReactButtonControl from "../controls/ButtonControl";
 import {faGear} from "@fortawesome/free-solid-svg-icons/faGear";
-import type {MapStyle} from "../enitities/MapStyle.ts";
-import type {Overlay} from "../enitities/Overlay.ts";
+import type {MapBaseLayer} from "../enitities/MapBaseLayer.ts";
+import type {MapOverlay} from "../enitities/MapOverlay.ts";
 import type {StorageInterface} from "../dataProviders/StorageInterface.ts";
 import {DatabaseProvider} from "../dataProviders/DatabaseProvider.ts";
 import type {KeyValueInterface} from "../dataProviders/KeyValueInterface.ts";
-import type {NamedGeoReferencedObject} from "../enitities/NamedGeoReferencedObject.ts";
+import type {MapItem} from "../enitities/MapItem.ts";
 import MapContextMenu from "./MapContextMenu.tsx";
 import {MarkerEditor} from "./MarkerEditor.tsx";
 import {WebSocketProvider} from "../dataProviders/WebSocketProvider.ts";
@@ -56,7 +56,7 @@ export function MapComponent(props: MapComponentProps) {
         void keyValueStore.setItem('mapZoom', JSON.stringify(e.viewState.zoom));
     }
 
-    const [mapStyle, setMapStyle] = React.useState<MapStyle | null>(null);
+    const [mapStyle, setMapStyle] = React.useState<MapBaseLayer | null>(null);
     const [settingsOpen, setSettingsOpen] = React.useState<boolean>(false);
 
     const [enableContextMenu, setEnableContextMenu] = React.useState<boolean>(true);
@@ -85,7 +85,7 @@ export function MapComponent(props: MapComponentProps) {
             setMapStyle(mapStyle);
         }
         provider.on(DataProviderEventType.MAP_STYLE_UPDATED, (event) => {
-            setMapStyle(event.data as MapStyle);
+            setMapStyle(event.data as MapBaseLayer);
         });
         const webSocketProvider = new WebSocketProvider();
         webSocketProvider.start();
@@ -110,9 +110,9 @@ export function MapComponent(props: MapComponentProps) {
                         runTimeProvider.setMapStyle(styles[0]);
                     }
                 }),
-                dbProvider.loadAllOverlays().then((result: Record<string, Overlay>) => {
+                dbProvider.loadAllOverlays().then((result: Record<string, MapOverlay>) => {
                     const localOverlays = Object.values(result);
-                    localOverlays.forEach((overlay: Overlay) => {
+                    localOverlays.forEach((overlay: MapOverlay) => {
                         runTimeProvider.addOverlay(overlay);
                     });
                 }),
@@ -124,7 +124,7 @@ export function MapComponent(props: MapComponentProps) {
                 }),
                 dbProvider.loadAllNamedGeoReferencedObjects().then((result) => {
                     const localObjects = Object.values(result);
-                    localObjects.forEach((item: NamedGeoReferencedObject) => {
+                    localObjects.forEach((item: MapItem) => {
                         runTimeProvider.addMapItem(item);
                     });
                 }),
@@ -143,30 +143,31 @@ export function MapComponent(props: MapComponentProps) {
             const remoteStorage: StorageInterface = ApiProvider.getInstance();
 
             await Promise.all([
-                remoteStorage.loadAllMapStyles().then((result: Record<string, MapStyle>) => {
+                remoteStorage.loadAllMapStyles().then((result: Record<string, MapBaseLayer>) => {
                     const mapStyles = Object.values(result);
                     if (mapStyles.length > 0) {
                         runTimeProvider.setMapStyle(Object.values(result)[0]);
                     }
                     void dbProvider.replaceMapStyles(mapStyles);
                 }),
-                remoteStorage.loadAllOverlays().then((result: Record<string, Overlay>) => {
+                remoteStorage.loadAllOverlays().then((result: Record<string, MapOverlay>) => {
                     const remoteOverlays = Object.values(result);
-                    remoteOverlays.forEach((overlay: Overlay) => {
+                    remoteOverlays.forEach((overlay: MapOverlay) => {
                         runTimeProvider.addOverlay(overlay);
                     });
                     void dbProvider.replaceOverlays(remoteOverlays)
-                }),
+                }),/*
+,
                 remoteStorage.loadAllMapGroups().then((result) => {
                     const remoteMapGroups = Object.values(result);
                     remoteMapGroups.forEach((group) => {
                         runTimeProvider.addMapGroup(group);
                     });
                     void dbProvider.replaceMapGroups(remoteMapGroups);
-                }),
+                }),*/
                 remoteStorage.loadAllNamedGeoReferencedObjects().then((result) => {
                     const remoteObjects = Object.values(result);
-                    remoteObjects.forEach((item: NamedGeoReferencedObject) => {
+                    remoteObjects.forEach((item: MapItem) => {
                         runTimeProvider.addMapItem(item);
                     });
                     void dbProvider.replaceNamedGeoReferencedObjects(remoteObjects);
@@ -178,7 +179,11 @@ export function MapComponent(props: MapComponentProps) {
                     });
                     void dbProvider.replaceUnits(remoteUnits);
                 })
+                 
+
             ])
+
+
             ApplicationLogger.info("Data synchronization complete.", {service: "MapComponent"});
         })();
     }, []);

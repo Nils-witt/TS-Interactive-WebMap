@@ -31,7 +31,12 @@ jobs:
         uses: actions/checkout@v6
       - name: Copy release icon
         run: rm -r public/icons && rm -r public/ts-interactive-webmap-icon.svg && mv public/icons-release public/icons && mv public/ts-interactive-webmap-icon-release.svg public/ts-interactive-webmap-icon.svg
-
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install
+      - run: npm run build
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer
       - name: Install cosign

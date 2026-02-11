@@ -1,0 +1,48 @@
+import type {UUID} from 'node:crypto';
+import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
+
+
+export interface ApiResponseStruct {
+
+    _embedded?: {
+        mapBaseLayerList?: MapBaseLayerStruct[]
+        mapOverlayList?: MapOverlayStruct[]
+        mapItemList?: MapItemStruct[]
+        unitList?: UnitStruct[]
+    }
+    _links: unknown
+}
+
+export interface AbstractEntityStruct {
+    id: UUID
+    createdAt: string
+    updatedAt: string
+}
+
+export interface MapBaseLayerStruct extends AbstractEntityStruct{
+    name: string
+    url: string
+}
+export interface MapOverlayStruct extends AbstractEntityStruct{
+    name: string
+    fullTileUrl: string
+    layerVersion: number
+}
+
+export interface MapItemStruct extends AbstractEntityStruct{
+    name: string
+    position: PositionStruct
+}
+
+export interface PositionStruct {
+    latitude: number
+    longitude: number
+}
+
+export interface UnitStruct extends AbstractEntityStruct{
+    name: string
+    position: PositionStruct
+    status: number
+    speakRequest: boolean
+    icon?: TaktischesZeichen
+}

@@ -24,7 +24,7 @@ export function LoginComponent(props: LoginComponentProps): ReactElement {
         <div className="login-card">
             <div className="login-card-header">
                 <h1>Welcome!</h1>
-                <p className="muted">Sign in to continue to the interactive map</p>
+                <p className="muted">Sign in to continue</p>
             </div>
 
             <form className="login-form" onSubmit={(e) => {
@@ -74,7 +74,7 @@ export function LoginComponent(props: LoginComponentProps): ReactElement {
             </form>
 
             <div className="login-card-footer">
-                <small className="muted">By continuing you agree to the terms of use.</small>
+                <small className="muted">&#169; 2025 - 2026 Nils Witt <a href={'https://github.com/Nils-witt/TS-Interactive-WebMap'}>GitHub</a></small>
             </div>
         </div>
     );

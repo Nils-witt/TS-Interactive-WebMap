@@ -8,7 +8,12 @@
 
 export type DBRecord = Record<string, string | number | boolean | null | object>;
 
-export class Entity {
+export interface IAbstractEntity {
+    id: string;
+}
+
+
+export class AbstractEntity {
 
 
     private listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
@@ -38,7 +43,7 @@ export class Entity {
         return {};
     }
 
-    public of(data: DBRecord): Entity {
+    public of(data: DBRecord): AbstractEntity {
         throw new Error(`Method not implemented. Must be overridden in subclass. ${Object.entries(data).length}`);
     }
 }

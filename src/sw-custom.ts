@@ -15,8 +15,57 @@
 
 const sw = self as unknown as ServiceWorkerGlobalScope & typeof globalThis;
 
+let mapservicesBase = 'N/A';
+let apiBase = 'N/A';
+
+new BroadcastChannel('setMapServicesBase').addEventListener('message', (e) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const url = e.data.url as string;
+
+    if (mapservicesBase != url) {
+        mapservicesBase = url;
+        console.log(`[SW] Set mapservices base to ${mapservicesBase}`);
+        void caches.delete('mapservices').then(() => {
+            reloadClients();
+        });
+    } else {
+        console.log(`[SW] mapservices base is ${mapservicesBase}`);
+    }
+});
+
+new BroadcastChannel('setApiBase').addEventListener('message', (e) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const url = e.data.url as string;
+    if (apiBase != url) {
+        apiBase = url;
+        console.log(`[SW] Set apibase base to ${apiBase}`);
+        void caches.keys().then(keys => {
+            keys.forEach(key => {
+                void caches.open(key).then(cache => {
+                    void cache.keys().then(reqKeys => {
+                        reqKeys.forEach(req => {
+                            const reqUrl = new URL(req.url);
+                            if (reqUrl.href.startsWith(apiBase)) {
+                                void cache.delete(req);
+                            }
+                        });
+                    });
+                });
+            });
+        });
+    } else {
+        console.log(`[SW] apibase base is ${apiBase}`);
+    }
+});
+
+
 sw.addEventListener('activate', () => {
     console.log('Service Worker activated');
+    void caches.delete('api-cache');
+    reloadClients();
+});
+
+function reloadClients() {
     void sw.clients.matchAll({
         includeUncontrolled: true
     }).then((clients) => {
@@ -25,8 +74,7 @@ sw.addEventListener('activate', () => {
             client.postMessage({cmd: 'reload'});
         });
     });
-    void caches.delete('api-cache');
-});
+}
 
 /**
  * Cache strategy overview:
@@ -81,40 +129,26 @@ function transformCacheUrl(cacheName: string, url: string): URL {
 function getCacheName(url: URL): [string, boolean, boolean, boolean] {
     const reqType = getURLType(url);
 
-    if (reqType === 'admin') {
-        return ['admin', true, false, false];
-    }
-    if (reqType === 'api') {
-        return ['api-cache', true, true, true];
-    }
-    if (reqType.startsWith('overlay-')) {
-        return [reqType, false, true, false];
-    }
-    if (reqType === 'vector') {
-        return ['vector-cache', false, true, true];
-    }
     if (sw.registration.scope.startsWith(url.origin)) {
         return [reqType, true, false, false];
     }
-    console.log(`[SW] Fetch ${url}; ${url.origin} == ${sw.registration.scope}`);
+    if (url.href.startsWith(mapservicesBase) && !url.href.startsWith(apiBase)) {
+        return ['mapservices', true, true, true];
+    }
     return ['never', true, false, false];
 
 }
 
 
 sw.addEventListener('fetch', (event) => {
-    let url = new URL(event.request.url);
-    console.log(`[SW] Fetch ${url}`);
+    const url = new URL(event.request.url);
     if (event.request.method !== 'GET') {
         return;
     }
-    if (event.request.url == 'https://karten.bereitschaften-drk-bonn.de/') {
-        url = new URL('https://karten.bereitschaften-drk-bonn.de/index.html');
-    }
 
     const [useCacheName, networkFirst, useCache, putMissingInCache] = getCacheName(url);
+    console.log(`Fetch ${url} useCache ${useCacheName}; netForst: ${networkFirst}; useCache ${useCache}`);
     if (useCache) {
-        console.log(`Fetch ${url} useCache ${useCacheName}; netForst: ${networkFirst}; useCache ${useCache}`);
         if (networkFirst) {
             event.respondWith(new Promise((resolve, reject) => {
                 fetch(event.request, {signal: AbortSignal.timeout(2000)})
@@ -151,8 +185,7 @@ sw.addEventListener('fetch', (event) => {
                             }
                         });
                     });
-            })
-            );
+            }));
         } else {
             event.respondWith(caches.open(useCacheName).then((cache) => {
                 return cache.match(transformCacheUrl(useCacheName, event.request.url)).then((cachedResponse) => {
@@ -169,7 +202,6 @@ sw.addEventListener('fetch', (event) => {
                         }
                         return fetchedResponse;
                     });
-
                 });
             }));
         }

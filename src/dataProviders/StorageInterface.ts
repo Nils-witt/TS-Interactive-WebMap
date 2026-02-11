@@ -6,9 +6,9 @@
  * Purpose: standardize methods for local and remote storage providers.
  */
 
-import type {Overlay} from '../enitities/Overlay.ts';
-import type {MapStyle} from '../enitities/MapStyle.ts';
-import type {NamedGeoReferencedObject} from '../enitities/NamedGeoReferencedObject.ts';
+import type {MapOverlay} from '../enitities/MapOverlay.ts';
+import type {MapBaseLayer} from '../enitities/MapBaseLayer.ts';
+import type {MapItem} from '../enitities/MapItem.ts';
 import type {MapGroup} from '../enitities/MapGroup.ts';
 import type {Unit} from '../enitities/Unit.ts';
 
@@ -17,33 +17,33 @@ export interface StorageInterface {
 
     setUp(): Promise<void>;
 
-    saveOverlay(overlay: Overlay): Promise<Overlay>;
+    saveOverlay(overlay: MapOverlay): Promise<MapOverlay>;
 
-    replaceOverlays(overlays: Overlay[]): Promise<void>;
+    replaceOverlays(overlays: MapOverlay[]): Promise<void>;
 
-    loadOverlay(id: string): Promise<Overlay | null>;
+    loadOverlay(id: string): Promise<MapOverlay | null>;
 
-    loadAllOverlays(): Promise<Record<string, Overlay>>;
+    loadAllOverlays(): Promise<Record<string, MapOverlay>>;
 
     deleteOverlay(id: string): Promise<boolean>;
 
-    saveMapStyle(mapStyle: MapStyle): Promise<MapStyle>;
+    saveMapStyle(mapStyle: MapBaseLayer): Promise<MapBaseLayer>;
 
-    replaceMapStyles(mapStyles: MapStyle[]): Promise<void>;
+    replaceMapStyles(mapStyles: MapBaseLayer[]): Promise<void>;
 
-    loadMapStyle(id: string): Promise<MapStyle | null>;
+    loadMapStyle(id: string): Promise<MapBaseLayer | null>;
 
-    loadAllMapStyles(): Promise<Record<string, MapStyle>>;
+    loadAllMapStyles(): Promise<Record<string, MapBaseLayer>>;
 
     deleteMapStyle(id: string): Promise<void>;
 
-    saveNamedGeoReferencedObject(namedGeoReferencedObject: NamedGeoReferencedObject): Promise<NamedGeoReferencedObject>;
+    saveNamedGeoReferencedObject(namedGeoReferencedObject: MapItem): Promise<MapItem>;
 
-    replaceNamedGeoReferencedObjects(namedGeoReferencedObjects: NamedGeoReferencedObject[]): Promise<void>;
+    replaceNamedGeoReferencedObjects(namedGeoReferencedObjects: MapItem[]): Promise<void>;
 
-    loadNamedGeoReferencedObject(id: string): Promise<NamedGeoReferencedObject | null>;
+    loadNamedGeoReferencedObject(id: string): Promise<MapItem | null>;
 
-    loadAllNamedGeoReferencedObjects(): Promise<Record<string, NamedGeoReferencedObject>>;
+    loadAllNamedGeoReferencedObjects(): Promise<Record<string, MapItem>>;
 
     deleteNamedGeoReferencedObject(id: string): Promise<void>;
 

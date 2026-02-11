@@ -1,5 +1,5 @@
 import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
-import {type DBRecord, Entity} from './Entity.ts';
+import {type DBRecord, AbstractEntity} from './AbstractEntity.ts';
 import {erzeugeTaktischesZeichen} from 'taktische-zeichen-core';
 import {ApplicationLogger} from '../ApplicationLogger.ts';
 import {LngLat} from "./LngLat.ts";
@@ -16,7 +16,7 @@ export interface IUnit {
     route?: { latitude: number, longitude: number }[];
 }
 
-export class Unit extends Entity {
+export class Unit extends AbstractEntity {
     private id: string | null;
     private latitude: number;
     private longitude: number;

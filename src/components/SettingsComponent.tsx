@@ -14,10 +14,10 @@ import {faX} from '@fortawesome/free-solid-svg-icons'
 import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';
 import {Utilities} from "../Utilities";
-import {DataProvider} from "../dataProviders/DataProvider.ts";
+import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
 import CacheProvider from "../dataProviders/CacheProvider.ts";
-import {Input, Table, TableBody, TableCell, TableHead, TableRow} from "@mui/material";
-import type {Overlay} from "../enitities/Overlay.ts";
+import {Input, Popover, Table, TableBody, TableCell, TableHead, TableRow, Typography} from "@mui/material";
+import type {MapOverlay} from "../enitities/MapOverlay.ts";
 
 
 interface MapSettingsProps {
@@ -25,9 +25,10 @@ interface MapSettingsProps {
 }
 
 
-function LayerTableRow(props: { overlay: Overlay }): ReactElement {
+function LayerTableRow(props: { overlay: MapOverlay }): ReactElement {
     const btnRef = useRef<HTMLButtonElement | null>(null);
     const [order, setOrder] = React.useState<number>(props.overlay.getOrder());
+    const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null);
 
     const downloadLayer = async () => {
         if (btnRef.current) {
@@ -63,10 +64,19 @@ function LayerTableRow(props: { overlay: Overlay }): ReactElement {
         }
     }, [order]);
 
+    const openInfo = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+    const open = Boolean(anchorEl);
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+    const id = open ? 'simple-popover' : undefined;
+
     return (
         <TableRow key={props.overlay.getId()}>
 
-            <TableCell>{props.overlay.getName()}</TableCell>
+            <TableCell>{props.overlay.getName()} ({props.overlay.getLayerVersion()})</TableCell>
             <TableCell>
                 <Input type={'number'} defaultValue={order}
                        onChange={(e) => setOrder(parseInt(e.target.value))}></Input>
@@ -74,6 +84,23 @@ function LayerTableRow(props: { overlay: Overlay }): ReactElement {
             <TableCell>
                 <ButtonGroup>
                     <Button ref={btnRef} size={'small'} onClick={() => void downloadLayer()}>Download</Button>
+                    <Button size={'small'} onClick={openInfo}>Info</Button>
+                    <Popover
+                        id={id}
+                        open={open}
+                        anchorEl={anchorEl}
+                        onClose={handleClose}
+                        anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'center',
+                        }}
+                        transformOrigin={{
+                            vertical: 'top',
+                            horizontal: 'center',
+                        }}
+                    >
+                        <Typography sx={{ p: 2 }}>{props.overlay.getUrl()}</Typography>
+                    </Popover>
                 </ButtonGroup>
             </TableCell>
         </TableRow>
@@ -83,16 +110,22 @@ function LayerTableRow(props: { overlay: Overlay }): ReactElement {
 
 export function MapSettings(props: MapSettingsProps): ReactElement {
 
-    const [overlays, setOverlays] = React.useState<Overlay[]>([]);
+    const [overlays, setOverlays] = React.useState<MapOverlay[]>([]);
 
     const closeMenu = () => {
         props.isOpen[1](false);
     }
-
-    useEffect(() => {
+    const updateOverlays = () => {
         const overlays = Array.from(DataProvider.getInstance().getOverlays().values());
         setOverlays(overlays)
+    }
+
+    useEffect(() => {
+        DataProvider.getInstance().on(DataProviderEventType.OVERLAY_ADDED, updateOverlays);
+        DataProvider.getInstance().on(DataProviderEventType.OVERLAY_UPDATED, updateOverlays);
+        updateOverlays();
     }, [])
+
 
     return (<div className={'settings-container-background'}>
         <div className={'settings-container'}>
@@ -102,25 +135,21 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
                 </div>
             </div>
 
-            <div>
+            <div><ButtonGroup variant={'outlined'} color={'warning'}>
                 <Button variant={'outlined'} size={'small'} onClick={() => Utilities.logout()}>Logout</Button>
+                <Button size={'small'} onClick={() => {
+                    void Utilities.clearMapCache()
+                }}>Clear Map Cache</Button>
+                <Button size={'small'} onClick={() => {
+                    void Utilities.clearCache()
+                }}>Clear full Cache</Button>
+                <Button size={'small'} onClick={() => window.location.reload()}>Reload</Button>
+            </ButtonGroup>
+
             </div>
             <div>
-                <ButtonGroup variant={'outlined'} color={'warning'}>
-                    <Button size={'small'} onClick={() => {
-                        void Utilities.clearMapCache()
-                    }}>Clear Map Cache</Button>
-                    <Button size={'small'} onClick={() => {
-                        void Utilities.clearCache()
-                    }}>Clear full Cache</Button>
-                </ButtonGroup>
-            </div>
-            <div>
-                <ButtonGroup variant={'outlined'}>
-                    <Button size={'small'} onClick={() => {
-                        void CacheProvider.getInstance().cacheVectorForOverlays()
-                    }}>Download Vector Tiles</Button>
-                </ButtonGroup>
+                Icon Size:
+                <Input defaultValue={localStorage.getItem('unit_icon_size')} onBlur={ (e) => localStorage.setItem('unit_icon_size', e.target.value)}></Input>
             </div>
             <div>
                 <Table size="small" aria-label="a dense table">

@@ -13,7 +13,7 @@ import {faXmark} from '@fortawesome/free-solid-svg-icons/faXmark';
 import {DOM} from 'maplibre-gl/src/util/dom';
 import {DataProvider, DataProviderEventType} from '../dataProviders/DataProvider';
 import {useControl} from '@vis.gl/react-maplibre';
-import {type Overlay, OverlayEvent} from '../enitities/Overlay.ts';
+import {type MapOverlay, OverlayEvent} from '../enitities/MapOverlay.ts';
 
 import './css/layer.scss';
 
@@ -71,7 +71,7 @@ export class LayersControl extends Evented implements IControl {
     /**
      * Map of layer IDs to their corresponding LayerInfo objects for quick lookup
      */
-    private overlays = new Map<string, Overlay>();
+    private overlays = new Map<string, MapOverlay>();
 
     /**
      * Map to track active overlays by their IDs
@@ -115,6 +115,9 @@ export class LayersControl extends Evented implements IControl {
         this.options.dataProvider.on(DataProviderEventType.OVERLAY_ADDED, () => {
             this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
         });
+        this.options.dataProvider.on(DataProviderEventType.OVERLAY_UPDATED, () => {
+            this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
+        });
         this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
     }
 
@@ -131,7 +134,7 @@ export class LayersControl extends Evented implements IControl {
 
     private updateShownlayers(): void {
         if (this.map == undefined) return;
-        const layersToAdd: Overlay[] = Array.from(this.overlays.values()).sort((a, b) => {
+        const layersToAdd: MapOverlay[] = Array.from(this.overlays.values()).sort((a, b) => {
             if (a.getOrder() != b.getOrder()) {
                 return a.getOrder() - b.getOrder();
             }
@@ -177,7 +180,7 @@ export class LayersControl extends Evented implements IControl {
      * @param layer - The layer information object
      * @returns A label element containing a checkbox and the layer name
      */
-    private createLabeledCheckbox(layer: Overlay): HTMLDivElement {
+    private createLabeledCheckbox(layer: MapOverlay): HTMLDivElement {
         const container = document.createElement('div');
 
 
@@ -239,7 +242,7 @@ export class LayersControl extends Evented implements IControl {
         this.updateShownlayers();
     }
 
-    public setOverlays(overlays: Overlay[]): void {
+    public setOverlays(overlays: MapOverlay[]): void {
 
         for (const layer of Array.from(this.overlays.keys())) {
             if (!overlays.find(l => l.getId() === layer)) {
