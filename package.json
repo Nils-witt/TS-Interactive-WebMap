@@ -21,7 +21,7 @@
     "@mui/material": "^7.3.7",
     "@rollup/plugin-typescript": "^12.3.0",
     "@types/utm": "^1.1.4",
-    "@types/web": "^0.0.316",
+    "@types/web": "^0.0.317",
     "@vis.gl/react-maplibre": "^8.1.0",
     "maplibre-gl": "^5.15.0",
     "mgrs": "^2.1.0",
