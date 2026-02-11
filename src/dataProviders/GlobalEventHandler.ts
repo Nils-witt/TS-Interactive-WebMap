@@ -7,7 +7,7 @@
  */
 
 
-import {ApplicationLogger} from "../ApplicationLogger.ts";
+import {ApplicationLogger} from '../ApplicationLogger.ts';
 
 export class DataEvent extends Event {
     data: unknown;

@@ -2,7 +2,7 @@ import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
 import {type DBRecord, AbstractEntity} from './AbstractEntity.ts';
 import {erzeugeTaktischesZeichen} from 'taktische-zeichen-core';
 import {ApplicationLogger} from '../ApplicationLogger.ts';
-import {LngLat} from "./LngLat.ts";
+import {LngLat} from './LngLat.ts';
 
 export interface IUnit {
     id?: string;
@@ -60,9 +60,9 @@ export class Unit extends AbstractEntity {
         if (data && data.route) {
             try {
                 if (typeof data.route == 'object') {
-                    route = (data.route as { latitude: number, longitude: number }[]).map(coord => new LngLat(coord.longitude,coord.latitude))
+                    route = (data.route as { latitude: number, longitude: number }[]).map(coord => new LngLat(coord.longitude,coord.latitude));
                 } else if (typeof data.route == 'string') {
-                    route = (JSON.parse(data.route) as { latitude: number, longitude: number }[]).map(coord => new LngLat(coord.longitude,coord.latitude))
+                    route = (JSON.parse(data.route) as { latitude: number, longitude: number }[]).map(coord => new LngLat(coord.longitude,coord.latitude));
                 }
             } catch (e) {
                 ApplicationLogger.error('Error parsing Unit route: ' + (e as Error).message, {service: 'Unit'});
