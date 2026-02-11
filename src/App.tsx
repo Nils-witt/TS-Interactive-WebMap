@@ -25,13 +25,13 @@ function App() {
                 const res = await fetch('/config.json')
                 const config = await res.json() as { apiUrl?: string };
                 console.log(config)
-                if(config.apiUrl){
+                if (config.apiUrl) {
                     if (localStorage.getItem('apiUrl') != config.apiUrl) {
                         localStorage.setItem('apiUrl', config.apiUrl);
                         window.location.reload();
                     }
                 }
-            }catch (e) {
+            } catch {
                 ApplicationLogger.info("No config.json found, using defaults", {service: 'App'});
             }
 
