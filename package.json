@@ -11,7 +11,7 @@
     "make-icons": "pwa-asset-generator public/ts-interactive-webmap-icon.svg public/icons -i index.html -f"
   },
   "dependencies": {
-    "@base-ui/react": "^1.0.0",
+    "@base-ui/react": "^1.2.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@fontsource/roboto": "^5.2.9",
