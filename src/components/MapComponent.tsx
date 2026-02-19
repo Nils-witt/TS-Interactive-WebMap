@@ -32,9 +32,10 @@ import type {KeyValueInterface} from "../dataProviders/KeyValueInterface.ts";
 import type {MapItem} from "../enitities/MapItem.ts";
 import MapContextMenu from "./MapContextMenu.tsx";
 import {MarkerEditor} from "./MarkerEditor.tsx";
-import {WebSocketProvider} from "../dataProviders/WebSocketProvider.ts";
 import {ApplicationLogger} from "../ApplicationLogger.ts";
 import {RouteDisplay} from "../controls/RouteDisplay.tsx";
+import {UnitDisplay} from "../controls/UnitDisplay.tsx";
+import {WebSocketProvider} from "../dataProviders/WebSocketProvider.ts";
 
 interface MapComponentProps {
     keyValueStore: KeyValueInterface;
@@ -225,6 +226,7 @@ export function MapComponent(props: MapComponentProps) {
 
             <MarkerEditor/>
             <RouteDisplay></RouteDisplay>
+            <UnitDisplay/>
 
             {props.showSettings &&
                 <ReactButtonControl onClick={() => setSettingsOpen(true)} position={"bottom-left"}
