@@ -18,6 +18,7 @@ import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider
 import CacheProvider from "../dataProviders/CacheProvider.ts";
 import {Input, Popover, Table, TableBody, TableCell, TableHead, TableRow, Typography} from "@mui/material";
 import type {MapOverlay} from "../enitities/MapOverlay.ts";
+import {MapConfig} from "../enitities/MapConfig.ts";
 
 
 interface MapSettingsProps {
@@ -111,6 +112,8 @@ function LayerTableRow(props: { overlay: MapOverlay }): ReactElement {
 export function MapSettings(props: MapSettingsProps): ReactElement {
 
     const [overlays, setOverlays] = React.useState<MapOverlay[]>([]);
+    const [unitIconSize, setUnitIconSizeState] = React.useState<string>();
+    const [mapConfig, setMapConfig] = React.useState<MapConfig>();
 
     const closeMenu = () => {
         props.isOpen[1](false);
@@ -124,7 +127,23 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
         DataProvider.getInstance().on(DataProviderEventType.OVERLAY_ADDED, updateOverlays);
         DataProvider.getInstance().on(DataProviderEventType.OVERLAY_UPDATED, updateOverlays);
         updateOverlays();
-    }, [])
+        const lcConfig = DataProvider.getInstance().getMapConfig()
+        setMapConfig(lcConfig)
+        setUnitIconSizeState(lcConfig.getUnitIconSize().toString());
+        DataProvider.getInstance().on(DataProviderEventType.MAP_CONFIG_UPDATED, (event) => {
+            const config: MapConfig = event.data as MapConfig;
+            setMapConfig(config);
+            setUnitIconSizeState(config.getUnitIconSize().toString());
+        });
+    }, []);
+
+    useEffect(() => {
+        if (mapConfig) {
+            mapConfig.setUnitIconSize(parseInt(unitIconSize || "0"));
+            setMapConfig(mapConfig);
+            DataProvider.getInstance().setMapConfig(mapConfig);
+        }
+    }, [unitIconSize]);
 
 
     return (<div className={'settings-container-background'}>
@@ -149,7 +168,7 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
             </div>
             <div>
                 Icon Size:
-                <Input defaultValue={localStorage.getItem('unit_icon_size')} onBlur={ (e) => localStorage.setItem('unit_icon_size', e.target.value)}></Input>
+                <Input value={unitIconSize} onChange={event => setUnitIconSizeState(event.target.value)}></Input>
             </div>
             <div>
                 <Table size="small" aria-label="a dense table">

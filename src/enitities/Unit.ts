@@ -3,40 +3,35 @@ import {type DBRecord, AbstractEntity} from './AbstractEntity.ts';
 import {erzeugeTaktischesZeichen} from 'taktische-zeichen-core';
 import {ApplicationLogger} from '../ApplicationLogger.ts';
 import {LngLat} from './LngLat.ts';
+import {EmbeddablePosition} from './embeddables/EmbeddablePosition.ts';
 
 export interface IUnit {
     id?: string;
-    latitude: number;
-    longitude: number;
+    position: { latitude: number, longitude: number, accuracy: number, timestamp: string };
     name: string;
     symbol?: TaktischesZeichen; // Optional symbol for rendering, if applicable
     groupId?: string | null; // Optional group ID for categorization
     unit_status?: number | null;
-    unit_status_time?: string;
     route?: { latitude: number, longitude: number }[];
 }
 
 export class Unit extends AbstractEntity {
     private id: string | null;
-    private latitude: number;
-    private longitude: number;
+    private position: EmbeddablePosition | null = null;
     private name: string;
     private symbol: TaktischesZeichen | null;
     private groupId: string | null;
     private unit_status: number | null;
-    private unit_status_time: Date | null;
     private route: { latitude: number, longitude: number }[] | undefined = [];
 
     constructor(data: IUnit) {
         super();
         this.id = data.id || null;
-        this.latitude = data.latitude;
-        this.longitude = data.longitude;
+        this.position = EmbeddablePosition.of(data.position);
         this.name = data.name;
         this.groupId = data.groupId as string || null;
         this.symbol = data.symbol || null;
         this.unit_status = data.unit_status || null;
-        this.unit_status_time = new Date(data.unit_status_time as string);
         this.route = [];
         if (data.route) {
             this.route = data.route;
@@ -71,13 +66,16 @@ export class Unit extends AbstractEntity {
 
         return new Unit({
             id: data.id as string,
-            latitude: Number(data.latitude),
-            longitude: Number(data.longitude),
+            position: {
+                latitude: data.pos_latitude as number,
+                longitude: data.pos_longitude as number,
+                accuracy: data.pos_accuracy as number,
+                timestamp: data.pos_timestamp as string,
+            },
             name: data.name as string,
             groupId: data.group_id as string | undefined,
             symbol: data_symbol,
             unit_status: data.unit_status as number || null,
-            unit_status_time: data.unit_status_timestamp as string,
             route: route,
         });
     }
@@ -88,13 +86,14 @@ export class Unit extends AbstractEntity {
         record['id'] = this.id;
         return {
             id: this.id,
-            latitude: this.latitude,
-            longitude: this.longitude,
+            pos_latitude: this.position ? this.position.latitude : 0,
+            pos_longitude: this.position ? this.position.longitude : 0,
+            pos_accuracy: this.position ? this.position.accuracy : -1,
+            pos_timestamp: this.position ? this.position.timestamp.toISOString() : new Date().toISOString(),
             name: this.name,
             group_id: this.groupId || null,
             symbol: this.symbol ? JSON.stringify(this.symbol) : null,
             unit_status: this.unit_status,
-            unit_status_timestamp: this.unit_status_time ? this.unit_status_time.toISOString() : null,
             route: this.route ? JSON.stringify(this.route) : null,
         };
     }
@@ -126,12 +125,8 @@ export class Unit extends AbstractEntity {
         return this.id;
     }
 
-    public getLatitude(): number {
-        return this.latitude;
-    }
-
-    public getLongitude(): number {
-        return this.longitude;
+    public getPosition(): EmbeddablePosition | null {
+        return this.position;
     }
 
     public getName(): string {
@@ -158,12 +153,8 @@ export class Unit extends AbstractEntity {
         this.symbol = symbol;
     }
 
-    public setLatitude(latitude: number): void {
-        this.latitude = latitude;
-    }
-
-    public setLongitude(longitude: number): void {
-        this.longitude = longitude;
+    public setPosition(position: EmbeddablePosition): void {
+        this.position = position;
     }
 
     public getStatus(): number | null {
@@ -174,9 +165,6 @@ export class Unit extends AbstractEntity {
         this.unit_status = status;
     }
 
-    public getStatusTime(): Date | null {
-        return this.unit_status_time;
-    }
 
     public getRoute(): { latitude: number, longitude: number }[] | undefined {
         return this.route;

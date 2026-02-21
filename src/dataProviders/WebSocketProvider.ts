@@ -5,6 +5,7 @@ import type {MapBaseLayerStruct, MapItemStruct, MapOverlayStruct, UnitStruct} fr
 import {MapOverlay} from '../enitities/MapOverlay.ts';
 import {MapBaseLayer} from '../enitities/MapBaseLayer.ts';
 import {MapItem} from '../enitities/MapItem.ts';
+import {DatabaseProvider} from './DatabaseProvider.ts';
 
 
 export class WebSocketProvider {
@@ -23,24 +24,29 @@ export class WebSocketProvider {
 
     updateModel(topic: string, data: { entity: never }) {
         const dataProvider = DataProvider.getInstance();
-
         ApplicationLogger.info('received update for topic: ' + topic, {service: 'WebSocket'});
         const modelType = topic.replace('/updates/entities/', '');
         const parts = modelType.split('/');
-        const entityType = parts[0];
+        const entityType = parts[0].toLowerCase();
 
         if (entityType === 'unit') {
             const unitData = data.entity as UnitStruct;
             const item = new Unit({
                 id: unitData.id,
-                latitude: unitData.position.latitude,
-                longitude: unitData.position.longitude,
+                position: {
+                    latitude: unitData.position.latitude,
+                    longitude: unitData.position.longitude,
+                    accuracy: unitData.position.accuracy,
+                    timestamp: unitData.position.timestamp
+                },
                 name: unitData.name,
                 unit_status: unitData.status,
-                unit_status_time: unitData.updatedAt,
                 symbol: unitData.icon as never
             });
             dataProvider.addUnit(item);
+            void DatabaseProvider.getInstance().then(instance => {
+                void instance.saveUnit(item);
+            });
         } else if (entityType === 'mapoverlay') {
             const overlayData = data.entity as MapOverlayStruct;
             const item = new MapOverlay(
@@ -96,7 +102,8 @@ export class WebSocketProvider {
                 if (data.topic.startsWith('/updates/entities/')) {
                     this.updateModel(data.topic, data.payload);
                 }
-            } catch {
+            } catch (e) {
+                console.error(e);
                 ApplicationLogger.info('Received message: ' + event.data, {service: 'WebSocket'});
             }
         };
