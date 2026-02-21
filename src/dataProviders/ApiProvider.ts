@@ -64,11 +64,11 @@ export class ApiProvider implements StorageInterface {
                 const url = DataProvider.getInstance().getApiUrl() + '/map/overlays';
                 this.fetchData(url)
                     .then(data => {
-                        if (data == null || data._embedded == undefined|| data._embedded.mapOverlayList == undefined ) {
+                        if (data == null || data._embedded == undefined || data._embedded.mapOverlayDtoList == undefined) {
                             resolve(overlays);
                             return;
                         }
-                        for (const layer of data._embedded.mapOverlayList) {
+                        for (const layer of data._embedded.mapOverlayDtoList) {
                             overlays[layer.id] = MapOverlay.of({
                                 id: layer.id,
                                 name: layer.name,
@@ -110,11 +110,11 @@ export class ApiProvider implements StorageInterface {
             const url = DataProvider.getInstance().getApiUrl() + '/map/baselayers';
             this.fetchData(url)
                 .then(data => {
-                    if (data == null || data._embedded == undefined|| data._embedded.mapBaseLayerList == undefined ) {
+                    if (data == null || data._embedded == undefined || data._embedded.mapBaseLayerDtoList == undefined) {
                         resolve(mapStyles);
                         return;
                     }
-                    for (const layer of data._embedded.mapBaseLayerList) {
+                    for (const layer of data._embedded.mapBaseLayerDtoList) {
                         mapStyles[layer.id] = MapBaseLayer.of({
                             id: layer.id,
                             name: layer.id,
@@ -154,11 +154,11 @@ export class ApiProvider implements StorageInterface {
             const url = DataProvider.getInstance().getApiUrl() + '/map/items';
             this.fetchData(url)
                 .then(data => {
-                    if (data == null || data._embedded == undefined ||data._embedded.mapItemList == undefined ) {
+                    if (data == null || data._embedded == undefined || data._embedded.mapItemDtoList == undefined) {
                         resolve(items);
                         return;
                     }
-                    for (const item of data._embedded.mapItemList) {
+                    for (const item of data._embedded.mapItemDtoList) {
                         items[item.id] = MapItem.of({
                             id: item.id,
                             name: item.name,
@@ -426,16 +426,18 @@ export class ApiProvider implements StorageInterface {
 
             this.fetchData(url)
                 .then(data => {
-                    if (data == null || data._embedded == undefined|| data._embedded.unitList == undefined ) {
+                    if (data == null || data._embedded == undefined || data._embedded.unitDtoList == undefined) {
                         resolve(units);
                         return;
                     }
-                    for (const rawUnit of data._embedded.unitList){
+                    for (const rawUnit of data._embedded.unitDtoList) {
                         units[rawUnit.id] = Unit.of({
                             id: rawUnit.id,
                             name: rawUnit.name,
-                            latitude: rawUnit.position.latitude,
-                            longitude: rawUnit.position.longitude,
+                            pos_latitude: rawUnit.position.latitude,
+                            pos_longitude: rawUnit.position.longitude,
+                            pos_accuracy: rawUnit.position.accuracy,
+                            pos_timestamp: rawUnit.position.timestamp,
                             symbol: rawUnit.icon as never,
                             unit_status: rawUnit.status,
                             unit_status_timestamp: new Date().toISOString(),
