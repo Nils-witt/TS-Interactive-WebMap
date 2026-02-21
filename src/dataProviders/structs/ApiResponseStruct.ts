@@ -5,10 +5,10 @@ import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
 export interface ApiResponseStruct {
 
     _embedded?: {
-        mapBaseLayerList?: MapBaseLayerStruct[]
-        mapOverlayList?: MapOverlayStruct[]
-        mapItemList?: MapItemStruct[]
-        unitList?: UnitStruct[]
+        mapBaseLayerDtoList?: MapBaseLayerStruct[]
+        mapOverlayDtoList?: MapOverlayStruct[]
+        mapItemDtoList?: MapItemStruct[]
+        unitDtoList?: UnitStruct[]
     }
     _links: unknown
 }
@@ -37,6 +37,8 @@ export interface MapItemStruct extends AbstractEntityStruct{
 export interface PositionStruct {
     latitude: number
     longitude: number
+    accuracy: number
+    timestamp: string
 }
 
 export interface UnitStruct extends AbstractEntityStruct{

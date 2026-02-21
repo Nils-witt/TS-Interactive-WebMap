@@ -6,14 +6,7 @@
  * Purpose: allow quick map navigation / zoom to named geo-referenced objects.
  */
 
-import {
-    type ControlPosition,
-    Evented,
-    type IControl,
-    Map as MapLibreMap,
-    Marker,
-    type MarkerOptions
-} from 'maplibre-gl';
+import {type ControlPosition, Evented, type IControl, Map as MapLibreMap, Marker} from 'maplibre-gl';
 import {DataProvider, DataProviderEventType} from '../dataProviders/DataProvider';
 import type {MapItem} from '../enitities/MapItem.ts';
 import {icon} from '@fortawesome/fontawesome-svg-core';
@@ -25,8 +18,6 @@ import {DataEvent, GlobalEventHandler} from '../dataProviders/GlobalEventHandler
 import {useControl} from '@vis.gl/react-maplibre';
 
 import './css/search.scss';
-import {ApplicationLogger} from '../ApplicationLogger.ts';
-import type {Unit} from '../enitities/Unit.ts';
 
 /**
  * SearchControl provides a lightweight search UI for NamedGeoReferencedObject entries.
@@ -94,10 +85,6 @@ export class SearchControl extends Evented implements IControl {
      */
     private shownMarkers: Map<string, Marker> = new Map<string, Marker>();
 
-    private shownUnits: Map<string, Marker> = new Map<string, Marker>();
-
-
-    private iconSize: number = localStorage.getItem('unit_icon_size') ? Number(localStorage.getItem('unit_icon_size')) : 50;
     /**
      * Flag to track if the control is currently open
      * @private
@@ -283,21 +270,6 @@ export class SearchControl extends Evented implements IControl {
             }
         });
 
-        DataProvider.getInstance().on(DataProviderEventType.UNIT_UPDATED, (event) => {
-            ApplicationLogger.info('Unit updated, updating on map:' + (event.data as Unit).getName(), {service: 'SearchControl'});
-            const item = event.data as Unit;
-            this.updateUnit(item);
-        });
-        DataProvider.getInstance().on(DataProviderEventType.UNIT_ADDED, (event) => {
-            ApplicationLogger.info('New unit added, showing on map:' + (event.data as Unit).getName(), {service: 'SearchControl'});
-            const item = event.data as Unit;
-            this.updateUnit(item);
-        });
-        DataProvider.getInstance().getUnits().forEach((item) => {
-            ApplicationLogger.info('Showing existing unit on map:' + item.getName(), {service: 'SearchControl'});
-            this.updateUnit(item);
-        });
-
         // Return the container element to be added to the map
         return this.container;
     }
@@ -416,133 +388,4 @@ export class SearchControl extends Evented implements IControl {
             this.searchIconContainer.style.display = 'block'; // Hide the control
         }
     }
-
-    private timeUpdateIntervals: Map<string, NodeJS.Timeout> = new Map<string, NodeJS.Timeout>();
-
-    private updateUnitTime(unit: Unit) {
-        if (this.shownUnits.has(unit.getId() as string)) {
-            const marker = this.shownUnits.get(unit.getId() as string);
-            const status_time_labels = marker?._element.getElementsByClassName('unit-status-time-label');
-            if (status_time_labels && status_time_labels.length > 0) {
-                const status_time_label = status_time_labels[0] as HTMLElement;
-                if (unit.getStatusTime()) {
-                    const diffSeconds = Math.floor((Date.now() - unit.getStatusTime()!.getTime()) / 1000);
-                    if (diffSeconds < 60) {
-                        status_time_label.innerText = `${diffSeconds}s ago`;
-                        if (this.timeUpdateIntervals.has(unit.getId() as string)) {
-                            clearInterval(this.timeUpdateIntervals.get(unit.getId() as string));
-                        }
-                        const status_int = setInterval(() => {
-                            const count = Math.floor((Date.now() - unit.getStatusTime()!.getTime()) / 1000);
-                            status_time_label.innerText = `${count}s ago`;
-                            if (count >= 60) {
-                                this.updateUnitTime(unit);
-                            }
-                        }, 2 * 1000);
-                        this.timeUpdateIntervals.set(unit.getId() as string, status_int);
-
-                    } else if (diffSeconds < 3600) {
-                        const minutes = Math.floor(diffSeconds / 60);
-                        status_time_label.innerText = `${minutes}m ago`;
-                        if (this.timeUpdateIntervals.has(unit.getId() as string)) {
-                            clearInterval(this.timeUpdateIntervals.get(unit.getId() as string));
-                        }
-                        const status_int = setInterval(() => {
-                            const count = Math.floor(((Date.now() - unit.getStatusTime()!.getTime()) / 1000) / 60);
-                            status_time_label.innerText = `${count}m ago`;
-                            if (count >= 60) {
-                                this.updateUnitTime(unit);
-                            }
-                        }, 60 * 1000);
-                        this.timeUpdateIntervals.set(unit.getId() as string, status_int);
-                    } else if (diffSeconds < 86400) {
-                        const hours = Math.floor(diffSeconds / 3600);
-                        status_time_label.innerText = `${hours}h ago`;
-                    }
-                } else {
-                    status_time_label.innerText = 'N/A';
-                }
-            }
-        }
-
-    }
-
-    private updateUnit(unit: Unit) {
-        if (this.map) {
-            ApplicationLogger.debug('Showing updated unit on map:' + unit.getName(), {service: 'SearchControl'});
-            if (!this.shownUnits.has(unit.getId() as string)) {
-                const markerOptions: MarkerOptions = {};
-                this.shownUnits.set(unit.getId() as string, new Marker());
-                if (unit.getIconElement()) {
-                    const container = document.createElement('div');
-                    container.className = 'unit-marker-container';
-                    const imgContainer = document.createElement('div');
-                    imgContainer.className = 'unit-icon-container';
-                    imgContainer.appendChild(unit.getIconElement({width: this.iconSize}) as HTMLElement);
-                    container.appendChild(imgContainer);
-                    const status_div = document.createElement('div');
-                    status_div.className = 'unit-status-indicator';
-
-                    const status_num_div = document.createElement('div');
-                    const status_num_label = document.createElement('label');
-                    status_num_label.className = 'unit-status-num-label';
-                    if (unit.getStatus() && unit.getStatus() != null) {
-                        status_num_label.innerText = (unit.getStatus() as number).toString();
-                    } else {
-                        status_num_label.innerText = '-';
-                    }
-                    status_num_div.appendChild(status_num_label);
-                    status_div.appendChild(status_num_div);
-
-                    const status_time_div = document.createElement('div');
-                    const status_time_label = document.createElement('label');
-                    status_time_label.className = 'unit-status-time-label';
-                    status_time_div.appendChild(status_time_label);
-                    status_div.appendChild(status_time_div);
-                    container.appendChild(status_div);
-                    markerOptions.element = container;
-
-                    container.addEventListener('click', () => {
-                        console.log('Clicked unit marker: ' + unit.getName());
-                        GlobalEventHandler.getInstance().emit('show-route', new DataEvent('show-route', unit));
-                    });
-                }
-                const marker = new Marker(markerOptions)
-                    .setLngLat([unit.getLongitude(), unit.getLatitude()])
-                    .addTo(this.map);
-
-                this.shownUnits.set(unit.getId() as string, marker);
-                this.updateUnitTime(unit);
-            } else {
-                const marker = this.shownUnits.get(unit.getId() as string);
-                if (marker) {
-                    marker.setLngLat([unit.getLongitude(), unit.getLatitude()]);
-
-                    if (unit.getIconElement()) {
-                        const iconContainers = marker._element.getElementsByTagName('unit-icon-container');
-                        if (iconContainers) {
-                            while (iconContainers.length > 1) {
-                                iconContainers[1].remove();
-                            }
-                            if (iconContainers[0]) {
-                                const iconContainer = iconContainers[0];
-                                iconContainer.innerHTML = '';
-                                iconContainer.appendChild(unit.getIconElement({width: this.iconSize}) as HTMLElement);
-                            }
-                        }
-                        const status_num_labels = marker._element.getElementsByClassName('unit-status-num-label');
-                        if (status_num_labels && status_num_labels.length > 0) {
-                            const status_num_label = status_num_labels[0] as HTMLElement;
-                            if (unit.getStatus() && unit.getStatus() != null) {
-                                status_num_label.innerText = (unit.getStatus() as number).toString();
-                            } else {
-                                status_num_label.innerText = '-';
-                            }
-                        }
-                        this.updateUnitTime(unit);
-                    }
-                }
-            }
-        }
-    };
 }
