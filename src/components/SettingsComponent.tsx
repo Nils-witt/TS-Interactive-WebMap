@@ -16,8 +16,9 @@ import ButtonGroup from '@mui/material/ButtonGroup';
 import {Utilities} from "../Utilities";
 import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
 import CacheProvider from "../dataProviders/CacheProvider.ts";
-import {Input, Popover, Table, TableBody, TableCell, TableHead, TableRow, Typography} from "@mui/material";
+import {Checkbox, Input, Popover, Table, TableBody, TableCell, TableHead, TableRow, Typography} from "@mui/material";
 import type {MapOverlay} from "../enitities/MapOverlay.ts";
+import {MapConfig} from "../enitities/MapConfig.ts";
 
 
 interface MapSettingsProps {
@@ -111,6 +112,11 @@ function LayerTableRow(props: { overlay: MapOverlay }): ReactElement {
 export function MapSettings(props: MapSettingsProps): ReactElement {
 
     const [overlays, setOverlays] = React.useState<MapOverlay[]>([]);
+    const [unitIconSize, setUnitIconSizeState] = React.useState<string>();
+    const [mapConfig, setMapConfig] = React.useState<MapConfig>();
+
+    const [excludeStatus6, setExcludeStatus6] = React.useState<boolean>(mapConfig?.getExcludeStatuses().includes(6) || false);
+    const [hideUnitsAfterPositionUpdate, setHideUnitsAfterPositionUpdate] = React.useState<number>(mapConfig?.getHideUnitsAfterPositionUpdate() || 21600);
 
     const closeMenu = () => {
         props.isOpen[1](false);
@@ -124,8 +130,47 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
         DataProvider.getInstance().on(DataProviderEventType.OVERLAY_ADDED, updateOverlays);
         DataProvider.getInstance().on(DataProviderEventType.OVERLAY_UPDATED, updateOverlays);
         updateOverlays();
-    }, [])
+        const lcConfig = DataProvider.getInstance().getMapConfig()
+        setMapConfig(lcConfig)
+        setUnitIconSizeState(lcConfig.getUnitIconSize().toString());
+        DataProvider.getInstance().on(DataProviderEventType.MAP_CONFIG_UPDATED, (event) => {
+            const config: MapConfig = event.data as MapConfig;
+            setMapConfig(config);
+            setUnitIconSizeState(config.getUnitIconSize().toString());
+            setExcludeStatus6(config.getExcludeStatuses().includes(6));
+            setHideUnitsAfterPositionUpdate(config.getHideUnitsAfterPositionUpdate());
+        });
+    }, []);
 
+    useEffect(() => {
+        if (mapConfig) {
+            mapConfig.setUnitIconSize(parseInt(unitIconSize || "0"));
+            setMapConfig(mapConfig);
+            DataProvider.getInstance().setMapConfig(mapConfig);
+        }
+    }, [unitIconSize]);
+    useEffect(() => {
+        if (mapConfig) {
+            if (!excludeStatus6){
+                mapConfig.setExcludeStatuses(mapConfig.getExcludeStatuses().filter(s => s !== 6));
+            }else {
+                if (!mapConfig.getExcludeStatuses().includes(6)) {
+                    mapConfig.setExcludeStatuses([...mapConfig.getExcludeStatuses(), 6]);
+                }
+            }
+            setMapConfig(mapConfig);
+            DataProvider.getInstance().setMapConfig(mapConfig);
+        }
+    }, [excludeStatus6]);
+    useEffect(() => {
+        if (mapConfig) {
+            if (!isNaN(hideUnitsAfterPositionUpdate)){
+                mapConfig.setHideUnitsAfterPositionUpdate(hideUnitsAfterPositionUpdate);
+            }
+            setMapConfig(mapConfig);
+            DataProvider.getInstance().setMapConfig(mapConfig);
+        }
+    }, [hideUnitsAfterPositionUpdate]);
 
     return (<div className={'settings-container-background'}>
         <div className={'settings-container'}>
@@ -149,7 +194,14 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
             </div>
             <div>
                 Icon Size:
-                <Input defaultValue={localStorage.getItem('unit_icon_size')} onBlur={ (e) => localStorage.setItem('unit_icon_size', e.target.value)}></Input>
+                <Input value={unitIconSize} onChange={event => setUnitIconSizeState(event.target.value)}></Input>
+            </div>
+            <div>
+                <Checkbox checked={excludeStatus6} onChange={e => setExcludeStatus6(e.target.checked)}/> Exclude units with status "6"
+            </div>
+            <div>
+                Hide units after no new position update (seconds):
+                <Input type={'number'} value={hideUnitsAfterPositionUpdate} onChange={event => setHideUnitsAfterPositionUpdate(parseInt(event.target.value))}/>
             </div>
             <div>
                 <Table size="small" aria-label="a dense table">
