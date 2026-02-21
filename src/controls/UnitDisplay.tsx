@@ -23,6 +23,7 @@ export function UnitDisplay() {
             const config: MapConfig = event.data as MapConfig;
             setMapConfig(config);
             setIconSize(config.getUnitIconSize())
+            updateAllUnits();
         });
         setMapConfig(DataProvider.getInstance().getMapConfig());
         setIconSize(mapConfig.getUnitIconSize());
@@ -83,7 +84,11 @@ export function UnitDisplay() {
     const updateUnit = (unit: Unit) => {
         if (mapRef.current) {
             ApplicationLogger.debug('Updated unit on map:' + unit.getName(), {service: 'UnitDisplay'});
-            if (unit.getStatus() != null && mapConfig.getExcludeStatuses().indexOf(unit.getStatus() || 6) < 0 && unit.getPosition() != null) {
+            if (
+                unit.getStatus() != null && // Only display if status is not null
+                mapConfig.getExcludeStatuses().indexOf(unit.getStatus() || 6) < 0 && // not in exclude list
+                unit.getPosition() != null && (mapConfig.getHideUnitsAfterPositionUpdate() <= 0 || (Date.now() - unit.getPosition()!.getTimestamp().getTime()) / 1000 < mapConfig.getHideUnitsAfterPositionUpdate()) // not hidden due to old position
+            ) {
                 if (!unitMarkers.has(unit.getId() as string)) {
                     const markerOptions: MarkerOptions = {};
                     unitMarkers.set(unit.getId() as string, new Marker());
