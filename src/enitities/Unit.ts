@@ -99,25 +99,18 @@ export class Unit extends AbstractEntity {
     }
 
 
-    public getIconElement(size?: { width: number }): HTMLElement | undefined {
+    public getImgSrc(): string {
         if (!this.symbol) {
-            return undefined;
+            return '';
         }
         try {
             const tz = erzeugeTaktischesZeichen(this.symbol);
             const dataUrl = `data:image/svg+xml;base64,${btoa(tz.toString())}`;
 
-            const img = document.createElement('img');
-            img.src = dataUrl;
-            if (size) {
-                img.width = size.width;
-            } else {
-                img.width = 32;
-            }
-            return img;
+            return dataUrl;
         } catch (e) {
             ApplicationLogger.error('Error generating icon element for Unit: ' + (e as Error).message, {service: 'Unit'});
-            return undefined;
+            return 'error';
         }
     }
 

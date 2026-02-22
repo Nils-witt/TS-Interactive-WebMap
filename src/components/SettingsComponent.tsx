@@ -14,11 +14,12 @@ import {faX} from '@fortawesome/free-solid-svg-icons'
 import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';
 import {Utilities} from "../Utilities";
-import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
+import {DataProvider, DataProviderEvent, DataProviderEventType} from "../dataProviders/DataProvider.ts";
 import CacheProvider from "../dataProviders/CacheProvider.ts";
 import {Checkbox, Input, Popover, Table, TableBody, TableCell, TableHead, TableRow, Typography} from "@mui/material";
 import type {MapOverlay} from "../enitities/MapOverlay.ts";
-import {MapConfig} from "../enitities/MapConfig.ts";
+import {MapConfig, MapConfigEvents} from "../enitities/MapConfig.ts";
+import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler.ts";
 
 
 interface MapSettingsProps {
@@ -117,6 +118,7 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
 
     const [excludeStatus6, setExcludeStatus6] = React.useState<boolean>(mapConfig?.getExcludeStatuses().includes(6) || false);
     const [hideUnitsAfterPositionUpdate, setHideUnitsAfterPositionUpdate] = React.useState<number>(mapConfig?.getHideUnitsAfterPositionUpdate() || 21600);
+    const [showUnitStatus, setShowUnitStatus] = React.useState<boolean>(mapConfig?.getShowUnitStatus() || false);
 
     const closeMenu = () => {
         props.isOpen[1](false);
@@ -139,6 +141,7 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
             setUnitIconSizeState(config.getUnitIconSize().toString());
             setExcludeStatus6(config.getExcludeStatuses().includes(6));
             setHideUnitsAfterPositionUpdate(config.getHideUnitsAfterPositionUpdate());
+            setShowUnitStatus(config.getShowUnitStatus());
         });
     }, []);
 
@@ -147,6 +150,7 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
             mapConfig.setUnitIconSize(parseInt(unitIconSize || "0"));
             setMapConfig(mapConfig);
             DataProvider.getInstance().setMapConfig(mapConfig);
+            GlobalEventHandler.getInstance().emit(MapConfigEvents.UnitIconSizeChanged, new DataProviderEvent(MapConfigEvents.UnitIconSizeChanged,mapConfig.getUnitIconSize()))
         }
     }, [unitIconSize]);
     useEffect(() => {
@@ -160,6 +164,7 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
             }
             setMapConfig(mapConfig);
             DataProvider.getInstance().setMapConfig(mapConfig);
+            GlobalEventHandler.getInstance().emit(MapConfigEvents.ExcludeStatusesChanged, new DataProviderEvent(MapConfigEvents.ExcludeStatusesChanged,mapConfig.getExcludeStatuses()))
         }
     }, [excludeStatus6]);
     useEffect(() => {
@@ -169,8 +174,17 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
             }
             setMapConfig(mapConfig);
             DataProvider.getInstance().setMapConfig(mapConfig);
+            GlobalEventHandler.getInstance().emit(MapConfigEvents.HideUnitsAfterPositionUpdateChanged, new DataProviderEvent(MapConfigEvents.UnitIconSizeChanged,mapConfig.getHideUnitsAfterPositionUpdate()))
         }
     }, [hideUnitsAfterPositionUpdate]);
+    useEffect(() => {
+        if (mapConfig) {
+            mapConfig.setShowUnitStatus(showUnitStatus);
+            setMapConfig(mapConfig);
+            DataProvider.getInstance().setMapConfig(mapConfig);
+            GlobalEventHandler.getInstance().emit(MapConfigEvents.ShowUnitStatusChanged, new DataProviderEvent(MapConfigEvents.UnitIconSizeChanged,mapConfig.getShowUnitStatus()))
+        }
+    }, [showUnitStatus]);
 
     return (<div className={'settings-container-background'}>
         <div className={'settings-container'}>
@@ -202,6 +216,10 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
             <div>
                 Hide units after no new position update (seconds):
                 <Input type={'number'} value={hideUnitsAfterPositionUpdate} onChange={event => setHideUnitsAfterPositionUpdate(parseInt(event.target.value))}/>
+            </div>
+            <div>
+                Show unit status:
+                <Checkbox checked={showUnitStatus} onChange={event => setShowUnitStatus(event.target.checked)}/>
             </div>
             <div>
                 <Table size="small" aria-label="a dense table">
