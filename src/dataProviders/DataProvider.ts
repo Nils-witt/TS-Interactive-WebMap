@@ -23,9 +23,9 @@ export class DataProviderEvent extends Event {
     /** Event type identifier, corresponds to DataProviderEventType values */
     eventType: string;
     /** Data payload associated with the event */
-    data: number | object | string;
+    data: number | object | string | boolean;
 
-    constructor(eventType: string, data: string | object | number) {
+    constructor(eventType: string, data: string | object | number | boolean) {
         super(eventType);
         this.eventType = eventType;
         this.data = data;
