@@ -32,6 +32,7 @@ export interface MapOverlayStruct extends AbstractEntityStruct{
 export interface MapItemStruct extends AbstractEntityStruct{
     name: string
     position: PositionStruct
+    zoomLevel: number
 }
 
 export interface PositionStruct {

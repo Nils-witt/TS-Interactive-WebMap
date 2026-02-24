@@ -1,6 +1,7 @@
 import {StrictMode} from 'react'
 import {createRoot} from 'react-dom/client'
 import {registerSW} from "virtual:pwa-register";
+import {BrowserRouter} from 'react-router-dom';
 
 import App from './App'
 
@@ -14,10 +15,6 @@ import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
 
-if (window.location.pathname === '/') {
-    window.location.pathname = '/index.html';
-}
-
 // apply theme as early as possible to avoid flash
 (() => {
     try {
@@ -29,13 +26,16 @@ if (window.location.pathname === '/') {
         // ignore
     }
 })();
-
+try {
 navigator.serviceWorker.addEventListener("message", (event: MessageEvent<{ cmd: string }>) => {
     if (event.data.cmd === "reload") {
         console.log("Reloading page due to service worker update");
         window.location.reload();
     }
 });
+} catch (e) {
+    console.warn(e);
+}
 
 const intervalMS = 60 * 60 * 1000
 
@@ -70,6 +70,8 @@ try {
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        <App/>
+        <BrowserRouter>
+            <App/>
+        </BrowserRouter>
     </StrictMode>,
 )
