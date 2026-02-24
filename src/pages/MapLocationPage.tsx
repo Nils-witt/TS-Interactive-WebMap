@@ -16,9 +16,13 @@ import {
     TableRow,
     TableSortLabel,
     TextField,
+    Tooltip,
     Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import IconButton from '@mui/material/IconButton';
+import MapIcon from '@mui/icons-material/Map';
+import {useNavigate} from 'react-router-dom';
 import {DataProvider, DataProviderEventType} from '../dataProviders/DataProvider.ts';
 import {type MapItem} from '../enitities/MapItem.ts';
 import {type MapGroup} from '../enitities/MapGroup.ts';
@@ -28,6 +32,7 @@ type SortField = 'name' | 'groupId' | 'latitude' | 'longitude' | 'zoomLevel';
 type SortOrder = 'asc' | 'desc';
 
 export function MapLocationPage(): JSX.Element {
+    const navigate = useNavigate();
     const dp = DataProvider.getInstance();
     console.log('Initial map locations:', Array.from(dp.getMapLocations().values()));
     const [items, setItems] = useState<MapItem[]>(() => Array.from(dp.getMapLocations().values()));
@@ -111,6 +116,13 @@ export function MapLocationPage(): JSX.Element {
             setSortField(field);
             setSortOrder('asc');
         }
+    };
+
+    const openOnMap = (item: MapItem) => {
+        const params = new URLSearchParams({
+            mapItemId: String(item.getId()),
+        });
+        navigate(`/map?${params.toString()}`);
     };
 
     return (
@@ -206,12 +218,13 @@ export function MapLocationPage(): JSX.Element {
                                 </TableSortLabel>
                             </TableCell>
                             <TableCell align="center">On Map</TableCell>
+                            <TableCell align="center">Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {filtered.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{color: 'text.secondary', py: 4}}>
+                                <TableCell colSpan={7} align="center" sx={{color: 'text.secondary', py: 4}}>
                                     No map locations match the current filters.
                                 </TableCell>
                             </TableRow>
@@ -233,6 +246,13 @@ export function MapLocationPage(): JSX.Element {
                                             color={item.getShowOnMap() ? 'success' : 'default'}
                                             size="small"
                                         />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        <Tooltip title="Open on Map">
+                                            <IconButton size="small" onClick={() => openOnMap(item)}>
+                                                <MapIcon fontSize="small"/>
+                                            </IconButton>
+                                        </Tooltip>
                                     </TableCell>
                                 </TableRow>
                             ))

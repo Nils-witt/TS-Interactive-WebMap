@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 
 import typescript from '@rollup/plugin-typescript'
 import {defineConfig} from "vite";
-
+import svgr from "vite-plugin-svgr";
 /**
  * Vite configuration with Tailwind and PWA plugin.
  * Additionally compiles the TypeScript service worker (src/sw-custom.ts) via Rollup
@@ -33,7 +33,7 @@ const CompileTsServiceWorker = () => ({
 
 
 export default defineConfig({
-    plugins: [
+    plugins: [svgr(),
         CompileTsServiceWorker(),
         react(),
         VitePWA({

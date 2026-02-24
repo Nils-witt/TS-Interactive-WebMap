@@ -164,7 +164,7 @@ export class ApiProvider implements StorageInterface {
                             name: item.name,
                             latitude: item.position.latitude,
                             longitude: item.position.longitude,
-                            zoomLevel: 18,
+                            zoomLevel: item.zoomLevel,
                             symbol: null,
                             show_on_map: false,
                             groupId: null

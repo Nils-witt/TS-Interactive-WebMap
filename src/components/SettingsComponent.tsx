@@ -195,7 +195,6 @@ export function MapSettings(props: MapSettingsProps): ReactElement {
             </div>
 
             <div><ButtonGroup variant={'outlined'} color={'warning'}>
-                <Button variant={'outlined'} size={'small'} onClick={() => Utilities.logout()}>Logout</Button>
                 <Button size={'small'} onClick={() => {
                     void Utilities.clearMapCache()
                 }}>Clear Map Cache</Button>

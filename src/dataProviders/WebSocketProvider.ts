@@ -124,7 +124,7 @@ export class WebSocketProvider {
                     this.updateModel(data.topic, data.payload);
                 }
             } catch (e) {
-                console.error(e);
+                //console.error(e);
                 ApplicationLogger.info('Received message: ' + event.data, {service: 'WebSocket'});
             }
         };

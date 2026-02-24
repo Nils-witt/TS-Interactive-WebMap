@@ -26,13 +26,16 @@ import '@fontsource/roboto/700.css';
         // ignore
     }
 })();
-
+try {
 navigator.serviceWorker.addEventListener("message", (event: MessageEvent<{ cmd: string }>) => {
     if (event.data.cmd === "reload") {
         console.log("Reloading page due to service worker update");
         window.location.reload();
     }
 });
+} catch (e) {
+    console.warn(e);
+}
 
 const intervalMS = 60 * 60 * 1000
 
