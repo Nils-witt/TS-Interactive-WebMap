@@ -42,6 +42,13 @@ export class GlobalEventHandler {
         this.listeners.get(eventName)?.push(callback);
     }
 
+    off(eventName: string, callback: (event: Event) => void): void {
+        const cbs = this.listeners.get(eventName);
+        if (cbs) {
+            this.listeners.set(eventName, cbs.filter(cb => cb !== callback));
+        }
+    }
+
     emit(eventName: string, event: Event): void {
         ApplicationLogger.info(`Emitting event: ${eventName}`, {service: 'GlobalEventHandler'});
         this.listeners.get(eventName)?.forEach(callback => {

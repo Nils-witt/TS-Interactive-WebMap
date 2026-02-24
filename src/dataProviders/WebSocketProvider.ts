@@ -14,6 +14,10 @@ export class WebSocketProvider {
     constructor() { /* empty */
     }
 
+    private lastMessageRecived: number | null = null;
+    private socket: WebSocket | null = null;
+    private pingInterval: NodeJS.Timeout | null = null;
+
     getConnectionURL() {
         const base = DataProvider.getInstance().getApiUrl().replace('http', 'ws');
         const token = DataProvider.getInstance().getApiToken();
@@ -84,19 +88,36 @@ export class WebSocketProvider {
     start() {
         ApplicationLogger.info('WebSocket Started', {service: 'WebSocket'});
 
-        const socket = new WebSocket(this.getConnectionURL());
+        this.socket = new WebSocket(this.getConnectionURL());
         const entityTypes = ['unit', 'mapoverlay', 'mapbaselayer', 'mapitem'];
-        socket.onopen = (event) => {
+        this.socket.onopen = (event) => {
             ApplicationLogger.info('WebSocket connection opened', {service: 'WebSocket', event: event});
             for (const entityType of entityTypes) {
-                socket.send('SUBSCRIBE /updates/entities/' + entityType);
+                this.socket!.send('SUBSCRIBE /updates/entities/' + entityType);
             }
+            if (this.lastMessageRecived != null) {
+                ApplicationLogger.info('Requesting updates since last message received: ' + new Date(this.lastMessageRecived).toISOString(), {service: 'WebSocket'});
+                this.socket!.send('REQUEST_UPDATES_SINCE ' + this.lastMessageRecived);
+            }
+            if (this.pingInterval) {
+                clearInterval(this.pingInterval);
+            }
+            this.pingInterval = setInterval(() => {
+                if (this.socket?.readyState === WebSocket.OPEN) {
+                    this.socket.send('ping');
+                }
+            }, 3000);
         };
-        socket.onmessage = (event) => {
+        this.socket.onmessage = (event) => {
             if (event.data == 'ping') {
                 return;
             }
+            this.lastMessageRecived = Date.now();
             ApplicationLogger.debug('WebSocket message received: ' + event.data, {service: 'WebSocket', event: event});
+            if ((event.data as string).startsWith('Subscribed') || (event.data as string).startsWith('REQUEST_UPDATES_SINCE')) {
+                ApplicationLogger.info('WebSocket subscription confirmed: ' + event.data, {service: 'WebSocket'});
+                return;
+            }
             try {
                 const data = JSON.parse(event.data as string) as { topic: string, payload: never };
                 if (data.topic.startsWith('/updates/entities/')) {
@@ -107,13 +128,13 @@ export class WebSocketProvider {
                 ApplicationLogger.info('Received message: ' + event.data, {service: 'WebSocket'});
             }
         };
-        socket.onclose = (event) => {
+        this.socket.onclose = (event) => {
             this.start();
             setTimeout(() => {
                 console.log('Reconnecting WebSocket...', event);
             }, 1000);
         };
-        socket.onerror = (event) => {
+        this.socket.onerror = (event) => {
             console.error('WebSocket error:', event);
         };
     }

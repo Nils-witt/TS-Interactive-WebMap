@@ -1,6 +1,7 @@
 import {StrictMode} from 'react'
 import {createRoot} from 'react-dom/client'
 import {registerSW} from "virtual:pwa-register";
+import {BrowserRouter} from 'react-router-dom';
 
 import App from './App'
 
@@ -13,10 +14,6 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
-
-if (window.location.pathname === '/') {
-    window.location.pathname = '/index.html';
-}
 
 // apply theme as early as possible to avoid flash
 (() => {
@@ -70,6 +67,8 @@ try {
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        <App/>
+        <BrowserRouter>
+            <App/>
+        </BrowserRouter>
     </StrictMode>,
 )
