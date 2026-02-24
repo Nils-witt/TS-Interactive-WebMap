@@ -16,13 +16,9 @@ import {
     TableRow,
     TableSortLabel,
     TextField,
-    Toolbar,
     Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import {useNavigate} from 'react-router-dom';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import IconButton from '@mui/material/IconButton';
 import {DataProvider, DataProviderEventType} from '../dataProviders/DataProvider.ts';
 import {type MapItem} from '../enitities/MapItem.ts';
 import {type MapGroup} from '../enitities/MapGroup.ts';
@@ -32,7 +28,6 @@ type SortField = 'name' | 'groupId' | 'latitude' | 'longitude' | 'zoomLevel';
 type SortOrder = 'asc' | 'desc';
 
 export function MapLocationPage(): JSX.Element {
-    const navigate = useNavigate();
     const dp = DataProvider.getInstance();
     console.log('Initial map locations:', Array.from(dp.getMapLocations().values()));
     const [items, setItems] = useState<MapItem[]>(() => Array.from(dp.getMapLocations().values()));
@@ -119,16 +114,11 @@ export function MapLocationPage(): JSX.Element {
     };
 
     return (
-        <Box sx={{display: 'flex', flexDirection: 'column', height: '100vh', p: 2, gap: 2}}>
-            <Toolbar disableGutters sx={{gap: 1}}>
-                <IconButton onClick={() => navigate(-1)} size="small">
-                    <ArrowBackIcon/>
-                </IconButton>
-                <Typography variant="h6" sx={{flexGrow: 1}}>
-                    Map Locations
-                </Typography>
+        <Box sx={{display: 'flex', flexDirection: 'column', height: '100%', p: 2, gap: 2}}>
+            <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                <Typography variant="h6" sx={{flexGrow: 1}}>Map Locations</Typography>
                 <Chip label={`${filtered.length} / ${items.length}`} size="small" variant="outlined"/>
-            </Toolbar>
+            </Box>
 
             <Box sx={{display: 'flex', gap: 2, flexWrap: 'wrap'}}>
                 <TextField

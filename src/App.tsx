@@ -8,6 +8,7 @@ import {ApplicationLogger} from "./ApplicationLogger.ts";
 import {DataProvider} from "./dataProviders/DataProvider.ts";
 import {PhotoPage} from './pages/PhotoPage.tsx';
 import {MapLocationPage} from './pages/MapLocationPage.tsx';
+import {NavLayout} from './components/NavLayout.tsx';
 import { DatabaseProvider } from './dataProviders/DatabaseProvider.ts';
 import { MapOverlay } from './enitities/MapOverlay.ts';
 import { MapItem } from './enitities/MapItem.ts';
@@ -142,15 +143,17 @@ function App() {
     return (
         <Routes>
             <Route path="/login" element={loggedin ? <Navigate to="/map" replace/> : <LoginPage/>}/>
-            <Route path="/map" element={
-                <ProtectedRoute loggedin={loggedin}><MapPage/></ProtectedRoute>
-            }/>
-            <Route path="/photo" element={
-                <ProtectedRoute loggedin={loggedin}><PhotoPage/></ProtectedRoute>
-            }/>
-            <Route path="/map-locations" element={
-                <ProtectedRoute loggedin={loggedin}><MapLocationPage/></ProtectedRoute>
-            }/>
+            <Route element={<NavLayout/>}>
+                <Route path="/map" element={
+                    <ProtectedRoute loggedin={loggedin}><MapPage/></ProtectedRoute>
+                }/>
+                <Route path="/photo" element={
+                    <ProtectedRoute loggedin={loggedin}><PhotoPage/></ProtectedRoute>
+                }/>
+                <Route path="/locations" element={
+                    <ProtectedRoute loggedin={loggedin}><MapLocationPage/></ProtectedRoute>
+                }/>
+            </Route>
             <Route path="*" element={<Navigate to="/map" replace/>}/>
         </Routes>
     );

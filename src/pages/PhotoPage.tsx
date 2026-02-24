@@ -1,6 +1,5 @@
-import {Button, Input} from "@mui/material";
+import {Button} from "@mui/material";
 import {type JSX} from "react";
-import {useNavigate} from "react-router-dom";
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { styled } from '@mui/material/styles';
 const VisuallyHiddenInput = styled('input')({
@@ -16,10 +15,7 @@ const VisuallyHiddenInput = styled('input')({
 });
 
 export function PhotoPage(): JSX.Element {
-    const navigate = useNavigate();
-
     return <>
-        <Button onClick={() => navigate(-1)}>Back</Button>
         <Button
   component="label"
   role={undefined}

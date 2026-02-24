@@ -111,7 +111,7 @@ export function MapComponent(props: MapComponentProps) {
                 latitude: mapCenter[1],
                 zoom: zoom
             }}
-            style={{width: '100vw', height: '100vh'}}
+            style={{width: '100%', height: '100%'}}
             mapStyle={mapStyle.getUrl()}
             attributionControl={false}
             onMoveEnd={mapMoved}
