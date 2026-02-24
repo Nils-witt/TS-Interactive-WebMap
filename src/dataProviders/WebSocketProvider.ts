@@ -123,8 +123,7 @@ export class WebSocketProvider {
                 if (data.topic.startsWith('/updates/entities/')) {
                     this.updateModel(data.topic, data.payload);
                 }
-            } catch (e) {
-                //console.error(e);
+            } catch {
                 ApplicationLogger.info('Received message: ' + event.data, {service: 'WebSocket'});
             }
         };

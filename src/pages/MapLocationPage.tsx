@@ -122,7 +122,7 @@ export function MapLocationPage(): JSX.Element {
         const params = new URLSearchParams({
             mapItemId: String(item.getId()),
         });
-        navigate(`/map?${params.toString()}`);
+        void navigate(`/map?${params.toString()}`);
     };
 
     return (
