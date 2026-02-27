@@ -16,7 +16,7 @@
 import * as React from 'react';
 import {useEffect} from 'react';
 import {useSearchParams} from 'react-router-dom';
-import {GeolocateControl, Map as MapLibreMap, NavigationControl} from '@vis.gl/react-maplibre';
+import {GeolocateControl, Map as MapLibreMap, Marker, NavigationControl, Popup} from '@vis.gl/react-maplibre';
 import ReactLayerControl from "../controls/LayerControl";
 import ReactSearchControl from "../controls/SearchControl";
 import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider";
@@ -78,6 +78,8 @@ export function MapComponent(props: MapComponentProps) {
         latitude: 0,
         longitude: 0
     });
+    const [showItemPopup, setShowItemPopup] = React.useState<boolean>(true);
+
     const [zoom, setZoom] = React.useState<number>(() => {
         if (resolvedItem) return resolvedItem.getZoomLevel();
         if (qZoom) return parseFloat(qZoom);
@@ -155,6 +157,21 @@ export function MapComponent(props: MapComponentProps) {
             <MarkerEditor/>
             <RouteDisplay></RouteDisplay>
             <UnitDisplay/>
+
+            {resolvedItem && (
+                <Marker longitude={resolvedItem.getLongitude()} latitude={resolvedItem.getLatitude()}/>
+            )}
+            {resolvedItem && showItemPopup && (
+                <Popup
+                    longitude={resolvedItem.getLongitude()}
+                    latitude={resolvedItem.getLatitude()}
+                    anchor="bottom"
+                    offset={[0, -35] as [number, number]}
+                    onClose={() => setShowItemPopup(false)}
+                >
+                    {resolvedItem.getName()}
+                </Popup>
+            )}
 
             {props.showSettings &&
                 <ReactButtonControl onClick={() => setSettingsOpen(true)} position={"bottom-left"}
