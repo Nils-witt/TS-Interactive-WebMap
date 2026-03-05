@@ -23,7 +23,7 @@
     "@types/utm": "^1.1.4",
     "@types/web": "^0.0.337",
     "@vis.gl/react-maplibre": "^8.1.0",
-    "maplibre-gl": "^5.18.0",
+    "maplibre-gl": "^5.19.0",
     "mgrs": "^2.1.0",
     "pwa-asset-generator": "^8.1.2",
     "react": "^19.2.4",
