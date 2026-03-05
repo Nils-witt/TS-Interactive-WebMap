@@ -62,6 +62,9 @@ export class WebSocketProvider {
                 }
             );
             dataProvider.addOverlay(item);
+            void DatabaseProvider.getInstance().then(instance => {
+                void instance.saveOverlay(item);
+            });
         } else if (entityType === 'mapbaselayer') {
             const layerData = data.entity as MapBaseLayerStruct;
             const item = new MapBaseLayer({
@@ -70,6 +73,9 @@ export class WebSocketProvider {
                 url: layerData.url,
             });
             dataProvider.setMapStyle(item);
+            void DatabaseProvider.getInstance().then(instance => {
+                void instance.saveMapStyle(item);
+            });
         } else if (entityType === 'mapitem') {
             const itemData = data.entity as MapItemStruct;
             const item = new MapItem({
@@ -77,9 +83,13 @@ export class WebSocketProvider {
                 name: itemData.name,
                 latitude: itemData.position.latitude,
                 longitude: itemData.position.longitude,
+                zoomLevel: itemData.zoomLevel,
             });
-            dataProvider.addMapItem(item);
 
+            dataProvider.addMapItem(item);
+            void DatabaseProvider.getInstance().then(instance => {
+                void instance.saveNamedGeoReferencedObject(item);
+            });
         } else {
             console.log('Unknown entity type:', entityType);
         }
@@ -109,7 +119,7 @@ export class WebSocketProvider {
             }, 3000);
         };
         this.socket.onmessage = (event) => {
-            if (event.data == 'ping') {
+            if (event.data == 'ping' || event.data == 'pong') {
                 return;
             }
             this.lastMessageRecived = Date.now();

@@ -34,7 +34,6 @@ type SortOrder = 'asc' | 'desc';
 export function MapLocationPage(): JSX.Element {
     const navigate = useNavigate();
     const dp = DataProvider.getInstance();
-    console.log('Initial map locations:', Array.from(dp.getMapLocations().values()));
     const [items, setItems] = useState<MapItem[]>(() => Array.from(dp.getMapLocations().values()));
     const [groups, setGroups] = useState<MapGroup[]>(() => Array.from(dp.getMapGroups().values()));
 

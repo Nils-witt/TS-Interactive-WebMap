@@ -104,8 +104,6 @@ export function MapComponent(props: MapComponentProps) {
             setMapStyle(event.data as MapBaseLayer);
         };
         provider.on(DataProviderEventType.MAP_STYLE_UPDATED, onMapStyleUpdated);
-        const webSocketProvider = new WebSocketProvider();
-        webSocketProvider.start();
 
         try {
             if ((navigator as Navigator).userAgentData.mobile) {

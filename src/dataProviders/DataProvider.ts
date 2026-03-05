@@ -67,6 +67,8 @@ export enum DataProviderEventType {
     API_URL_UPDATED = 'api-url-updated',
     API_TOKEN_UPDATED = 'api-token-updated',
     MAP_CONFIG_UPDATED = 'map-config-updated',
+    /** Triggered when the set of active (visible) overlay IDs changes */
+    ACTIVE_OVERLAYS_UPDATED = 'active-overlays-updated',
 }
 
 /**
@@ -94,6 +96,11 @@ export class DataProvider {
     private mapZoom: number;
 
     private mapConfig: MapConfig = new MapConfig();
+
+    /** Set of overlay IDs that are currently visible, persisted to localStorage */
+    private activeOverlays: Set<string> = new Set(
+        JSON.parse(localStorage.getItem('activeOverlays') ?? '[]') as string[]
+    );
 
     /** Singleton instance reference */
     private static instance: DataProvider;
@@ -316,6 +323,22 @@ export class DataProvider {
     public setMapConfig(value: MapConfig) {
         this.mapConfig = value;
         this.triggerEvent(DataProviderEventType.MAP_CONFIG_UPDATED, value);
+    }
+
+    /** Returns the set of overlay IDs that are currently marked as visible. */
+    public getActiveOverlays(): Set<string> {
+        return this.activeOverlays;
+    }
+
+    /**
+     * Replaces the active overlay set, persists to localStorage and emits an event.
+     *
+     * @param ids - Set of overlay IDs that should be visible
+     */
+    public setActiveOverlays(ids: Set<string>): void {
+        this.activeOverlays = ids;
+        localStorage.setItem('activeOverlays', JSON.stringify(Array.from(ids)));
+        this.triggerEvent(DataProviderEventType.ACTIVE_OVERLAYS_UPDATED, Array.from(ids));
     }
 
     public on(eventType: string, listener: (event: DataProviderEvent) => void): void {
