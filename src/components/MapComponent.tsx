@@ -27,7 +27,6 @@ import MapContextMenu from "./MapContextMenu.tsx";
 import {MarkerEditor} from "./MarkerEditor.tsx";
 import {RouteDisplay} from "../controls/RouteDisplay.tsx";
 import {UnitDisplay} from "../controls/UnitDisplay.tsx";
-import {WebSocketProvider} from "../dataProviders/WebSocketProvider.ts";
 
 interface MapComponentProps {
     keyValueStore: KeyValueInterface;
@@ -104,8 +103,6 @@ export function MapComponent(props: MapComponentProps) {
             setMapStyle(event.data as MapBaseLayer);
         };
         provider.on(DataProviderEventType.MAP_STYLE_UPDATED, onMapStyleUpdated);
-        const webSocketProvider = new WebSocketProvider();
-        webSocketProvider.start();
 
         try {
             if ((navigator as Navigator).userAgentData.mobile) {

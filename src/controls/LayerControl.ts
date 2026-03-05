@@ -112,6 +112,11 @@ export class LayersControl extends Evented implements IControl {
             this.setOpen(!this.isOpen);
         });
 
+        // Restore previously active overlays from DataProvider (backed by localStorage)
+        for (const id of this.options.dataProvider.getActiveOverlays()) {
+            this.activeOverlays.set(id, true);
+        }
+
         this.options.dataProvider.on(DataProviderEventType.OVERLAY_ADDED, () => {
             this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
         });
@@ -207,7 +212,10 @@ export class LayersControl extends Evented implements IControl {
                 } else {
                     this.activeOverlays.delete(layer.getId());
                 }
-                localStorage.setItem('activeOverlays', JSON.stringify(Array.from(this.activeOverlays.keys())));
+                // Persist the updated active-overlay set via DataProvider
+                this.options.dataProvider.setActiveOverlays(
+                    new Set(Array.from(this.activeOverlays.entries()).filter(([, v]) => v).map(([k]) => k))
+                );
             }
         });
 
