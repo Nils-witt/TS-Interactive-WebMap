@@ -26,8 +26,8 @@ const NAV_ROUTES: NavRoute[] = [
     { path: '/photo', label: 'Photo' },
 ];
 
-const USER_ACTIONS: { label: string, onClick: () => void }[] = [
-    { label: 'Settings', onClick: () => console.log('Open settings') },
+const USER_ACTIONS: { label: string, path?: string, onClick?: () => void }[] = [
+    { label: 'Settings', path: '/settings' },
     { label: 'Logout', onClick: () => Utilities.logout() },
 ];
 
@@ -167,7 +167,7 @@ export function NavLayout(): JSX.Element {
                             >
 
                                 {USER_ACTIONS.map(r => (
-                                    <MenuItem key={r.label} onClick={() => { r.onClick(); handleCloseUserMenu(); }}>
+                                    <MenuItem key={r.label} onClick={() => { if (r.path) { void navigate(r.path); } else { r.onClick?.(); } handleCloseUserMenu(); }}>
                                         <Typography sx={{ textAlign: 'center' }}>{r.label}</Typography>
                                     </MenuItem>
                                 ))}
