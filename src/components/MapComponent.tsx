@@ -19,7 +19,7 @@ import {useSearchParams} from 'react-router-dom';
 import {GeolocateControl, Map as MapLibreMap, Marker, NavigationControl, Popup} from '@vis.gl/react-maplibre';
 import ReactLayerControl from "../controls/LayerControl";
 import ReactSearchControl from "../controls/SearchControl";
-import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider";
+import {DataProvider, DataProviderEvent, DataProviderEventType} from "../dataProviders/DataProvider";
 import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
 import type {MapBaseLayer} from "../enitities/MapBaseLayer.ts";
 import type {KeyValueInterface} from "../dataProviders/KeyValueInterface.ts";
@@ -100,9 +100,10 @@ export function MapComponent(props: MapComponentProps) {
         if (mapStyle != undefined) {
             setMapStyle(mapStyle);
         }
-        provider.on(DataProviderEventType.MAP_STYLE_UPDATED, (event) => {
+        const onMapStyleUpdated = (event: DataProviderEvent) => {
             setMapStyle(event.data as MapBaseLayer);
-        });
+        };
+        provider.on(DataProviderEventType.MAP_STYLE_UPDATED, onMapStyleUpdated);
         const webSocketProvider = new WebSocketProvider();
         webSocketProvider.start();
 
@@ -113,6 +114,10 @@ export function MapComponent(props: MapComponentProps) {
         } catch (e) {
             console.log(e);
         }
+
+        return () => {
+            provider.off(DataProviderEventType.MAP_STYLE_UPDATED, onMapStyleUpdated);
+        };
     }, []);
 
     if (!mapStyle) {

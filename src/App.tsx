@@ -118,12 +118,10 @@ function App() {
     useEffect(() => {
         new BroadcastChannel('setApiBase').postMessage({'url': DataProvider.getInstance().getApiUrl()});
 
-        GlobalEventHandler.getInstance().on(ApiProviderEventTypes.UNAUTHORIZED, () => {
-            setLoggedin(false);
-        });
-        GlobalEventHandler.getInstance().on(ApiProviderEventTypes.LOGIN_SUCCESS, () => {
-            setLoggedin(true);
-        });
+        const onUnauthorized = () => { setLoggedin(false); };
+        const onLoginSuccess = () => { setLoggedin(true); };
+        GlobalEventHandler.getInstance().on(ApiProviderEventTypes.UNAUTHORIZED, onUnauthorized);
+        GlobalEventHandler.getInstance().on(ApiProviderEventTypes.LOGIN_SUCCESS, onLoginSuccess);
         void (async () => {
             try {
                 const res = await fetch('/config.json');
@@ -139,6 +137,11 @@ function App() {
                 ApplicationLogger.info("No config.json found, using defaults", {service: 'App'});
             }
         })();
+
+        return () => {
+            GlobalEventHandler.getInstance().off(ApiProviderEventTypes.UNAUTHORIZED, onUnauthorized);
+            GlobalEventHandler.getInstance().off(ApiProviderEventTypes.LOGIN_SUCCESS, onLoginSuccess);
+        };
     }, []);
 
     return (
