@@ -25,38 +25,52 @@ export function UnitDisplay() {
         setHideUnitsAfterPositionUpdate(tmpConf.getHideUnitsAfterPositionUpdate());
         setShowUnitStatus(tmpConf.getShowUnitStatus());
 
-        GlobalEventHandler.getInstance().on(MapConfigEvents.UnitIconSizeChanged, (event: Event) => {
+        const onUnitIconSizeChanged = (event: Event) => {
             const newSize = (event as DataProviderEvent).data as number;
             setIconSize(newSize);
-        });
-        GlobalEventHandler.getInstance().on(MapConfigEvents.ShowUnitStatusChanged, (event: Event) => {
+        };
+        const onShowUnitStatusChanged = (event: Event) => {
             const newSize = (event as DataProviderEvent).data as boolean;
             setShowUnitStatus(newSize);
             updateHiddenState(newSize);
-        });
-        GlobalEventHandler.getInstance().on(MapConfigEvents.ExcludeStatusesChanged, (event: Event) => {
+        };
+        const onExcludeStatusesChanged = (event: Event) => {
             const newSize = (event as DataProviderEvent).data as number[];
             setExcludeStatuses(newSize);
-        });
-        GlobalEventHandler.getInstance().on(MapConfigEvents.HideUnitsAfterPositionUpdateChanged, (event: Event) => {
+        };
+        const onHideUnitsAfterPositionUpdateChanged = (event: Event) => {
             const newTimout = (event as DataProviderEvent).data as number;
             setHideUnitsAfterPositionUpdate(newTimout);
-        });
-
-        DataProvider.getInstance().on(DataProviderEventType.UNIT_UPDATED, (event) => {
+        };
+        const onUnitUpdated = (event: DataProviderEvent) => {
             ApplicationLogger.info('Unit updated, updating on map:' + (event.data as Unit).getName(), {service: 'UnitDisplay'});
-            const item = event.data as Unit;
-            updateUnit(item);
-        });
-        DataProvider.getInstance().on(DataProviderEventType.UNIT_ADDED, (event) => {
+            updateUnit(event.data as Unit);
+        };
+        const onUnitAdded = (event: DataProviderEvent) => {
             ApplicationLogger.info('New unit added, showing on map:' + (event.data as Unit).getName(), {service: 'UnitDisplay'});
-            const item = event.data as Unit;
-            updateUnit(item);
-        });
+            updateUnit(event.data as Unit);
+        };
+
+        GlobalEventHandler.getInstance().on(MapConfigEvents.UnitIconSizeChanged, onUnitIconSizeChanged);
+        GlobalEventHandler.getInstance().on(MapConfigEvents.ShowUnitStatusChanged, onShowUnitStatusChanged);
+        GlobalEventHandler.getInstance().on(MapConfigEvents.ExcludeStatusesChanged, onExcludeStatusesChanged);
+        GlobalEventHandler.getInstance().on(MapConfigEvents.HideUnitsAfterPositionUpdateChanged, onHideUnitsAfterPositionUpdateChanged);
+        DataProvider.getInstance().on(DataProviderEventType.UNIT_UPDATED, onUnitUpdated);
+        DataProvider.getInstance().on(DataProviderEventType.UNIT_ADDED, onUnitAdded);
+
         DataProvider.getInstance().getUnits().forEach((item) => {
             ApplicationLogger.info('Showing existing unit on map:' + item.getName(), {service: 'UnitDisplay'});
             updateUnit(item);
         });
+
+        return () => {
+            GlobalEventHandler.getInstance().off(MapConfigEvents.UnitIconSizeChanged, onUnitIconSizeChanged);
+            GlobalEventHandler.getInstance().off(MapConfigEvents.ShowUnitStatusChanged, onShowUnitStatusChanged);
+            GlobalEventHandler.getInstance().off(MapConfigEvents.ExcludeStatusesChanged, onExcludeStatusesChanged);
+            GlobalEventHandler.getInstance().off(MapConfigEvents.HideUnitsAfterPositionUpdateChanged, onHideUnitsAfterPositionUpdateChanged);
+            DataProvider.getInstance().off(DataProviderEventType.UNIT_UPDATED, onUnitUpdated);
+            DataProvider.getInstance().off(DataProviderEventType.UNIT_ADDED, onUnitAdded);
+        };
     }, []);
 
     useEffect(() => {

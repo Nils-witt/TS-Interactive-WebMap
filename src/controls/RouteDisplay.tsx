@@ -2,7 +2,7 @@ import {useMap} from "@vis.gl/react-maplibre";
 import {useEffect, useState} from "react";
 import {DataEvent, GlobalEventHandler} from "../dataProviders/GlobalEventHandler.ts";
 import type {Unit} from "../enitities/Unit.ts";
-import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider.ts";
+import {DataProvider, DataProviderEvent, DataProviderEventType} from "../dataProviders/DataProvider.ts";
 import {Marker} from "maplibre-gl";
 
 export function RouteDisplay() {
@@ -14,22 +14,20 @@ export function RouteDisplay() {
     const markerEnd = new Marker()
 
     useEffect(() => {
-        GlobalEventHandler.getInstance().on('show-route', (event: Event) => {
+        const onShowRoute = (event: Event) => {
             const dataEvent = event as DataEvent;
             const unit = dataEvent.data as Unit;
             setUnitId(unit.getId());
             if (unit.getRoute()) {
                 setRouteCoordinates((DataProvider.getInstance().getUnits().get(unit.getId()!)?.getRoute() || []).map(coord => [coord.longitude, coord.latitude]))
             }
-
-        });
-        GlobalEventHandler.getInstance().on('hide-route', () => {
+        };
+        const onHideRoute = () => {
             setRouteCoordinates([] as [number, number][]);
             setUnitId(null);
-        });
-        DataProvider.getInstance().on(DataProviderEventType.UNIT_UPDATED, (e) => {
-            const updatedEvent = e as DataEvent;
-            const updatedUnit = updatedEvent.data as Unit;
+        };
+        const onUnitUpdated = (e: DataProviderEvent) => {
+            const updatedUnit = e.data as Unit;
             if (updatedUnit.getId() === unitId) {
                 if (updatedUnit.getRoute()) {
                     setRouteCoordinates((updatedUnit.getRoute() || []).map(coord => [coord.longitude, coord.latitude]))
@@ -37,7 +35,17 @@ export function RouteDisplay() {
                     setRouteCoordinates([] as [number, number][]);
                 }
             }
-        });
+        };
+
+        GlobalEventHandler.getInstance().on('show-route', onShowRoute);
+        GlobalEventHandler.getInstance().on('hide-route', onHideRoute);
+        DataProvider.getInstance().on(DataProviderEventType.UNIT_UPDATED, onUnitUpdated);
+
+        return () => {
+            GlobalEventHandler.getInstance().off('show-route', onShowRoute);
+            GlobalEventHandler.getInstance().off('hide-route', onHideRoute);
+            DataProvider.getInstance().off(DataProviderEventType.UNIT_UPDATED, onUnitUpdated);
+        };
     }, []);
 
 

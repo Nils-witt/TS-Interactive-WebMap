@@ -32,10 +32,6 @@ import { MapConfig, MapConfigEvents } from '../enitities/MapConfig.ts';
 import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler.ts';
 import { Utilities } from '../Utilities.ts';
 
-// ---------------------------------------------------------------------------
-// LayerTableRow – identical to the one in SettingsComponent, kept local here
-// ---------------------------------------------------------------------------
-
 function LayerTableRow({ overlay }: { overlay: MapOverlay }): JSX.Element {
     const btnRef = useRef<HTMLButtonElement | null>(null);
     const [order, setOrder] = React.useState<number>(overlay.getOrder());
@@ -142,14 +138,21 @@ export function SettingsPage(): JSX.Element {
         setHideUnitsAfterPositionUpdate(lcConfig.getHideUnitsAfterPositionUpdate());
         setShowUnitStatus(lcConfig.getShowUnitStatus());
 
-        DataProvider.getInstance().on(DataProviderEventType.MAP_CONFIG_UPDATED, (event) => {
+        const onMapConfigUpdated = (event: DataProviderEvent) => {
             const config = event.data as MapConfig;
             setMapConfig(config);
             setUnitIconSizeState(config.getUnitIconSize().toString());
             setExcludeStatus6(config.getExcludeStatuses().includes(6));
             setHideUnitsAfterPositionUpdate(config.getHideUnitsAfterPositionUpdate());
             setShowUnitStatus(config.getShowUnitStatus());
-        });
+        };
+        DataProvider.getInstance().on(DataProviderEventType.MAP_CONFIG_UPDATED, onMapConfigUpdated);
+
+        return () => {
+            DataProvider.getInstance().off(DataProviderEventType.OVERLAY_ADDED, updateOverlays);
+            DataProvider.getInstance().off(DataProviderEventType.OVERLAY_UPDATED, updateOverlays);
+            DataProvider.getInstance().off(DataProviderEventType.MAP_CONFIG_UPDATED, onMapConfigUpdated);
+        };
     }, []);
 
     // --------------------------------------------------

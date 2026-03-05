@@ -12,19 +12,19 @@ export function MarkerEditor() {
     const [prepopulateData, setPrepopulateData] = useState<{ latitude: number; longitude: number; zoom: number } | undefined>(undefined);
 
     useEffect(() => {
-        GlobalEventHandler.getInstance().on('edit-marker', (data) => {
+        const onEditMarker = (data: Event) => {
             const eventData = data as DataEvent;
             setEntity(eventData.data as MapItem);
             setIsShown(true);
-        });
+        };
 
-        GlobalEventHandler.getInstance().on('create-marker', (data) => {
+        const onCreateMarker = (data: Event) => {
             const eventData = data as DataEvent;
             const dataset = eventData.data as { latitude: number; longitude: number; zoom: number };
             setEntity(undefined);
             setPrepopulateData(dataset);
             setIsShown(true);
-        });
+        };
 
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as HTMLElement;
@@ -33,7 +33,15 @@ export function MarkerEditor() {
             }
         };
 
+        GlobalEventHandler.getInstance().on('edit-marker', onEditMarker);
+        GlobalEventHandler.getInstance().on('create-marker', onCreateMarker);
         document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            GlobalEventHandler.getInstance().off('edit-marker', onEditMarker);
+            GlobalEventHandler.getInstance().off('create-marker', onCreateMarker);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, []);
 
     return (

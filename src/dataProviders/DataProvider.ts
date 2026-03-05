@@ -322,4 +322,8 @@ export class DataProvider {
         GlobalEventHandler.getInstance().on(eventType, listener as ((event: Event) => void));
     }
 
+    public off(eventType: string, listener: (event: DataProviderEvent) => void): void {
+        GlobalEventHandler.getInstance().off(eventType, listener as ((event: Event) => void));
+    }
+
 }
