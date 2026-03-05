@@ -34,7 +34,7 @@ function App() {
 
         const webSocketProvider = new WebSocketProvider();
         webSocketProvider.start();
-        
+
         await Promise.all([
             dbProvider.loadAllMapStyles().then((style) => {
                 const styles = Object.values(style);
@@ -88,15 +88,14 @@ function App() {
                     runTimeProvider.addOverlay(overlay);
                 });
                 void dbProvider.replaceOverlays(remoteOverlays)
-            }),/*
-,
-                remoteStorage.loadAllMapGroups().then((result) => {
-                    const remoteMapGroups = Object.values(result);
-                    remoteMapGroups.forEach((group) => {
-                        runTimeProvider.addMapGroup(group);
-                    });
-                    void dbProvider.replaceMapGroups(remoteMapGroups);
-                }),*/
+            }),
+            remoteStorage.loadAllMapGroups().then((result) => {
+                const remoteMapGroups = Object.values(result);
+                remoteMapGroups.forEach((group) => {
+                    runTimeProvider.addMapGroup(group);
+                });
+                void dbProvider.replaceMapGroups(remoteMapGroups);
+            }),
             remoteStorage.loadAllNamedGeoReferencedObjects().then((result) => {
                 const remoteObjects = Object.values(result);
                 remoteObjects.forEach((item: MapItem) => {

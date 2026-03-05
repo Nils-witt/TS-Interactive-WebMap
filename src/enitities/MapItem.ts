@@ -15,7 +15,7 @@ export interface IMapItem {
     name: string;
     zoomLevel?: number;
     showOnMap?: boolean;
-    groupId?: string | null; // Optional group ID for categorization
+    groupId?: string | null;
 }
 
 export class MapItem extends AbstractEntity {
@@ -39,7 +39,6 @@ export class MapItem extends AbstractEntity {
     }
 
     public static of(data: DBRecord): MapItem {
-
         return new MapItem({
             id: data.id as string,
             latitude: Number(data.latitude),

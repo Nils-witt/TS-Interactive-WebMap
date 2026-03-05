@@ -9,6 +9,7 @@ export interface ApiResponseStruct {
         mapOverlayDtoList?: MapOverlayStruct[]
         mapItemDtoList?: MapItemStruct[]
         unitDtoList?: UnitStruct[]
+        mapGroupDtoList?: MapGroupStruct[]
     }
     _links: unknown
 }
@@ -33,7 +34,13 @@ export interface MapItemStruct extends AbstractEntityStruct{
     name: string
     position: PositionStruct
     zoomLevel: number
+    mapGroupId: string
 }
+
+export interface MapGroupStruct extends AbstractEntityStruct{
+    name: string
+}
+
 
 export interface PositionStruct {
     latitude: number
