@@ -21,9 +21,6 @@ import ReactLayerControl from "../controls/LayerControl";
 import ReactSearchControl from "../controls/SearchControl";
 import {DataProvider, DataProviderEventType} from "../dataProviders/DataProvider";
 import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
-import {MapSettings} from "./SettingsComponent";
-import ReactButtonControl from "../controls/ButtonControl";
-import {faGear} from "@fortawesome/free-solid-svg-icons/faGear";
 import type {MapBaseLayer} from "../enitities/MapBaseLayer.ts";
 import type {KeyValueInterface} from "../dataProviders/KeyValueInterface.ts";
 import MapContextMenu from "./MapContextMenu.tsx";
@@ -68,7 +65,6 @@ export function MapComponent(props: MapComponentProps) {
     }
 
     const [mapStyle, setMapStyle] = React.useState<MapBaseLayer | null>(null);
-    const [settingsOpen, setSettingsOpen] = React.useState<boolean>(false);
 
     const [enableContextMenu, setEnableContextMenu] = React.useState<boolean>(true);
     const [isContextMenu, setContextMenu] = React.useState(false);
@@ -172,11 +168,6 @@ export function MapComponent(props: MapComponentProps) {
                     {resolvedItem.getName()}
                 </Popup>
             )}
-
-            {props.showSettings &&
-                <ReactButtonControl onClick={() => setSettingsOpen(true)} position={"bottom-left"}
-                                    icon={faGear}></ReactButtonControl>}
-            {settingsOpen && <MapSettings isOpen={[settingsOpen, setSettingsOpen]}/>}
 
             {enableContextMenu && (
                 <MapContextMenu top={points.y} left={points.x} latitude={points.latitude} longitude={points.longitude}
