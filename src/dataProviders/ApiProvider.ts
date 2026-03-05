@@ -159,6 +159,7 @@ export class ApiProvider implements StorageInterface {
                         return;
                     }
                     for (const item of data._embedded.mapItemDtoList) {
+                        
                         items[item.id] = MapItem.of({
                             id: item.id,
                             name: item.name,
@@ -167,8 +168,9 @@ export class ApiProvider implements StorageInterface {
                             zoomLevel: item.zoomLevel,
                             symbol: null,
                             show_on_map: false,
-                            groupId: null
+                            group_id: item.mapGroupId
                         });
+                        console.log('Loaded map item from API:', items[item.id]);
                     }
                     resolve(items);
                 })
@@ -400,7 +402,28 @@ export class ApiProvider implements StorageInterface {
     }
 
     loadAllMapGroups(): Promise<Record<string, MapGroup>> {
-        throw new Error('loadAllMapGroups not implemented');
+        return new Promise<Record<string, MapGroup>>(resolve => {
+            const groups: Record<string, MapGroup> = {};
+            const url = DataProvider.getInstance().getApiUrl() + '/map/groups';
+
+            this.fetchData(url)
+                .then(data => {
+                    if (data == null || data._embedded == undefined || data._embedded.mapGroupDtoList == undefined) {
+                        resolve(groups);
+                        return;
+                    }
+                    for (const rawUnit of data._embedded.mapGroupDtoList) {
+                        groups[rawUnit.id] = MapGroup.of({
+                            id: rawUnit.id,
+                            name: rawUnit.name,
+                        });
+                    }
+                    resolve(groups);
+                })
+                .catch(e => {
+                    console.error('Error fetching overlay layers:', e);
+                });
+        });
     }
 
     saveMapGroup(mapGroup: MapGroup): Promise<MapGroup> {
@@ -463,7 +486,6 @@ export class ApiProvider implements StorageInterface {
     deleteUnit(id: string): Promise<void> {
         throw new Error(`Method not implemented. deleteUnit: ${id}`);
     }
-
 
 
 }
