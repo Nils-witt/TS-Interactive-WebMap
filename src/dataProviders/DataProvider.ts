@@ -6,14 +6,14 @@
  * Purpose: keep app components synchronized and provide API token & data mutation helpers.
  */
 
-import  {type MapItem} from '../enitities/MapItem.ts';
-import {GlobalEventHandler} from './GlobalEventHandler';
-import {LngLat} from 'maplibre-gl';
-import {MapOverlay} from '../enitities/MapOverlay.ts';
-import {MapBaseLayer} from '../enitities/MapBaseLayer.ts';
-import  {type MapGroup} from '../enitities/MapGroup.ts';
-import type {Unit} from '../enitities/Unit.ts';
-import {MapConfig} from '../enitities/MapConfig.ts';
+import { type MapItem } from '../enitities/MapItem.ts';
+import { GlobalEventHandler } from './GlobalEventHandler';
+import { LngLat } from 'maplibre-gl';
+import { MapOverlay } from '../enitities/MapOverlay.ts';
+import { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
+import { type MapGroup } from '../enitities/MapGroup.ts';
+import type { Unit } from '../enitities/Unit.ts';
+import { MapConfig } from '../enitities/MapConfig.ts';
 
 /**
  * Interface representing an event dispatched by the DataProvider.
@@ -98,9 +98,7 @@ export class DataProvider {
     private mapConfig: MapConfig = new MapConfig();
 
     /** Set of overlay IDs that are currently visible, persisted to localStorage */
-    private activeOverlays: Set<string> = new Set(
-        JSON.parse(localStorage.getItem('activeOverlays') ?? '[]') as string[]
-    );
+    private activeOverlays: Set<string>;
 
     /** Singleton instance reference */
     private static instance: DataProvider;
@@ -111,6 +109,7 @@ export class DataProvider {
      */
     private constructor() {
         this.mapZoom = 2; // Default zoom level
+        this.activeOverlays = new Set(JSON.parse(localStorage.getItem('activeOverlays') ?? '[]') as string[]);
     }
 
     /**

@@ -27,7 +27,6 @@ import MapContextMenu from "./MapContextMenu.tsx";
 import {MarkerEditor} from "./MarkerEditor.tsx";
 import {RouteDisplay} from "../controls/RouteDisplay.tsx";
 import {UnitDisplay} from "../controls/UnitDisplay.tsx";
-import {WebSocketProvider} from "../dataProviders/WebSocketProvider.ts";
 
 interface MapComponentProps {
     keyValueStore: KeyValueInterface;
