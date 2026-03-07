@@ -1,5 +1,5 @@
-import { AbstractEntity, type DBRecord } from "./AbstractEntity";
-import { EmbeddablePosition, type IPosition } from "./embeddables/EmbeddablePosition";
+import { AbstractEntity, type DBRecord } from './AbstractEntity';
+import { EmbeddablePosition, type IPosition } from './embeddables/EmbeddablePosition';
 
 
 

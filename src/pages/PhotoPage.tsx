@@ -20,7 +20,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import PlaceIcon from '@mui/icons-material/Place';
 import { styled } from '@mui/material/styles';
 import { ApiProvider } from '../dataProviders/ApiProvider';
-import { DataProvider } from '../dataProviders/DataProvider';
 import { type Photo } from '../enitities/Photo';
 
 const VisuallyHiddenInput = styled('input')({

@@ -16,6 +16,7 @@ import { MapGroup } from '../enitities/MapGroup.ts';
 import { Unit } from '../enitities/Unit.ts';
 import type { ApiResponseStruct, MapItemStruct } from './structs/ApiResponseStruct.ts';
 import { Photo } from '../enitities/Photo.ts';
+import type { IPosition } from '../enitities/embeddables/EmbeddablePosition.ts';
 
 
 export class ApiProviderEvent extends Event {
@@ -520,7 +521,7 @@ export class ApiProvider implements StorageInterface {
         });
     }
 
-     getPhotoImageSrc(id: string): string {
+    getPhotoImageSrc(id: string): string {
         return DataProvider.getInstance().getApiUrl() + '/photos/' + id + '/image?token=' + DataProvider.getInstance().getApiToken();
     }
 
@@ -542,7 +543,7 @@ export class ApiProvider implements StorageInterface {
                     }
                     return response.json();
                 })
-                .then(data => {
+                .then((data: { id: string; name: string; position?: IPosition }) => {
                     const photo = new Photo({
                         id: data.id,
                         name: data.name,
@@ -557,7 +558,7 @@ export class ApiProvider implements StorageInterface {
                 })
                 .catch(error => {
                     console.error('Error uploading photo:', error);
-                    reject(error);
+                    reject(new Error('Failed to upload photo'));
                 });
         });
     }
