@@ -1,5 +1,12 @@
 
 
+export interface IPosition {
+    latitude: number;
+    longitude: number;
+    accuracy: number;
+    timestamp: string;
+}
+
 export class EmbeddablePosition {
     latitude: number;
     longitude: number;
@@ -13,13 +20,23 @@ export class EmbeddablePosition {
         this.timestamp = timestamp;
     }
 
-    public static of(data: { latitude: number, longitude: number, accuracy: number, timestamp: string }): EmbeddablePosition {
+    public static of(data?: IPosition): EmbeddablePosition | null {
+        if (!data) return null;
         return new EmbeddablePosition(
             data.latitude,
             data.longitude,
             data.accuracy,
             new Date(data.timestamp)
         );
+    }
+
+    record(): IPosition {
+        return {
+            latitude: this.latitude,
+            longitude: this.longitude,
+            accuracy: this.accuracy,
+            timestamp: this.timestamp.toISOString(),
+        }; 
     }
 
     public getLatitude(): number {

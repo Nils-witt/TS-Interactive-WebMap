@@ -3,11 +3,11 @@ import {type DBRecord, AbstractEntity} from './AbstractEntity.ts';
 import {erzeugeTaktischesZeichen} from 'taktische-zeichen-core';
 import {ApplicationLogger} from '../ApplicationLogger.ts';
 import {LngLat} from './LngLat.ts';
-import {EmbeddablePosition} from './embeddables/EmbeddablePosition.ts';
+import {EmbeddablePosition, type IPosition} from './embeddables/EmbeddablePosition.ts';
 
 export interface IUnit {
     id?: string;
-    position: { latitude: number, longitude: number, accuracy: number, timestamp: string };
+    position: IPosition;
     name: string;
     symbol?: TaktischesZeichen; // Optional symbol for rendering, if applicable
     groupId?: string | null; // Optional group ID for categorization

@@ -6,15 +6,17 @@
  * Purpose: wrap fetch calls and present a StorageInterface-like API to the app.
  */
 
-import {MapItem} from '../enitities/MapItem.ts';
-import {DataProvider} from './DataProvider';
-import {GlobalEventHandler} from './GlobalEventHandler';
-import {MapOverlay} from '../enitities/MapOverlay.ts';
-import {MapBaseLayer} from '../enitities/MapBaseLayer.ts';
-import type {StorageInterface} from './StorageInterface.ts';
-import {MapGroup} from '../enitities/MapGroup.ts';
-import {Unit} from '../enitities/Unit.ts';
-import type {ApiResponseStruct, MapItemStruct} from './structs/ApiResponseStruct.ts';
+import { MapItem } from '../enitities/MapItem.ts';
+import { DataProvider } from './DataProvider';
+import { GlobalEventHandler } from './GlobalEventHandler';
+import { MapOverlay } from '../enitities/MapOverlay.ts';
+import { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
+import type { StorageInterface } from './StorageInterface.ts';
+import { MapGroup } from '../enitities/MapGroup.ts';
+import { Unit } from '../enitities/Unit.ts';
+import type { ApiResponseStruct, MapItemStruct } from './structs/ApiResponseStruct.ts';
+import { Photo } from '../enitities/Photo.ts';
+import type { IPosition } from '../enitities/embeddables/EmbeddablePosition.ts';
 
 
 export class ApiProviderEvent extends Event {
@@ -159,7 +161,7 @@ export class ApiProvider implements StorageInterface {
                         return;
                     }
                     for (const item of data._embedded.mapItemDtoList) {
-                        
+
                         items[item.id] = MapItem.of({
                             id: item.id,
                             name: item.name,
@@ -204,7 +206,7 @@ export class ApiProvider implements StorageInterface {
         try {
             const res = await fetch(url, requestOptions);
             if (res.status == 401) {
-                this.notifyListeners(ApiProviderEventTypes.UNAUTHORIZED, {message: 'Unauthorized access - check your token.'});
+                this.notifyListeners(ApiProviderEventTypes.UNAUTHORIZED, { message: 'Unauthorized access - check your token.' });
             }
         } catch (e) {
             console.error('Error preparing request options:', e);
@@ -217,7 +219,7 @@ export class ApiProvider implements StorageInterface {
         const myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/json');
 
-        const raw = JSON.stringify({username, password});
+        const raw = JSON.stringify({ username, password });
 
         const requestOptions = {
             method: 'POST',
@@ -230,7 +232,7 @@ export class ApiProvider implements StorageInterface {
             if (res.ok) {
                 const data: { token: string } = await res.json() as { token: string };
                 DataProvider.getInstance().setApiToken(data.token); // Store the token for future requests
-                this.notifyListeners(ApiProviderEventTypes.LOGIN_SUCCESS, {message: 'Login successful'});
+                this.notifyListeners(ApiProviderEventTypes.LOGIN_SUCCESS, { message: 'Login successful' });
             } else {
                 throw new Error(`HTTP error! status: ${res.status}`);
             }
@@ -263,7 +265,7 @@ export class ApiProvider implements StorageInterface {
         const response = await fetch(url, requestOptions);
         if (!response.ok) {
             if (response.status === 401 || response.status === 403) {
-                this.notifyListeners(ApiProviderEventTypes.UNAUTHORIZED, {message: `Unauthorized access - check your token. ${response.status}`});
+                this.notifyListeners(ApiProviderEventTypes.UNAUTHORIZED, { message: `Unauthorized access - check your token. ${response.status}` });
             }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -479,7 +481,7 @@ export class ApiProvider implements StorageInterface {
         throw new Error(`Method not implemented. saveMapGroup: ${unit.getId()}`);
     }
 
-    replaceUnits(units:Unit[]): Promise<void> {
+    replaceUnits(units: Unit[]): Promise<void> {
         throw new Error('Not Available on this Provider : replaceUnits ' + units.length);
     }
 
@@ -487,6 +489,79 @@ export class ApiProvider implements StorageInterface {
         throw new Error(`Method not implemented. deleteUnit: ${id}`);
     }
 
+
+    loadAllPictures(): Promise<Record<string, Photo>> {
+        return new Promise<Record<string, Photo>>(resolve => {
+            const pictures: Record<string, Photo> = {};
+            const url = DataProvider.getInstance().getApiUrl() + '/photos';
+
+            this.fetchData(url)
+                .then(data => {
+                    if (data == null || data._embedded == undefined || data._embedded.photoDtoList == undefined) {
+                        resolve(pictures);
+                        return;
+                    }
+                    for (const rawPhoto of data._embedded.photoDtoList) {
+                        pictures[rawPhoto.id] = new Photo({
+                            id: rawPhoto.id,
+                            name: rawPhoto.name,
+                            position: rawPhoto.position ? {
+                                latitude: rawPhoto.position.latitude,
+                                longitude: rawPhoto.position.longitude,
+                                accuracy: rawPhoto.position.accuracy,
+                                timestamp: rawPhoto.position.timestamp
+                            } : undefined
+                        });
+                    }
+                    resolve(pictures);
+                })
+                .catch(e => {
+                    console.error('Error fetching overlay layers:', e);
+                });
+        });
+    }
+
+    getPhotoImageSrc(id: string): string {
+        return DataProvider.getInstance().getApiUrl() + '/photos/' + id + '/image?token=' + DataProvider.getInstance().getApiToken();
+    }
+
+    createPhoto(img: File): Promise<Photo> {
+        const url = DataProvider.getInstance().getApiUrl() + '/photos';
+
+        const formData = new FormData();
+        formData.append('file', img);
+
+        return new Promise<Photo>((resolve, reject) => {
+            fetch(url, {
+                method: 'POST',
+                headers: DataProvider.getInstance().getApiToken() ? { 'Authorization': `Bearer ${DataProvider.getInstance().getApiToken()}` } : undefined,
+                body: formData
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then((data: { id: string; name: string; position?: IPosition }) => {
+                    const photo = new Photo({
+                        id: data.id,
+                        name: data.name,
+                        position: data.position ? {
+                            latitude: data.position.latitude,
+                            longitude: data.position.longitude,
+                            accuracy: data.position.accuracy,
+                            timestamp: data.position.timestamp
+                        } : undefined
+                    });
+                    resolve(photo);
+                })
+                .catch(error => {
+                    console.error('Error uploading photo:', error);
+                    reject(new Error('Failed to upload photo'));
+                });
+        });
+    }
 
 }
 
