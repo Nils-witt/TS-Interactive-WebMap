@@ -167,6 +167,7 @@ export function PhotoPage(): JSX.Element {
                 <Typography variant="h5" sx={{ flexGrow: 1 }}>
                     Photos
                 </Typography>
+                <Button onClick={loadPhotos}>Refresh</Button>
                 <Button
                     component="label"
                     variant="contained"
