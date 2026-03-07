@@ -10,6 +10,7 @@ export interface ApiResponseStruct {
         mapItemDtoList?: MapItemStruct[]
         unitDtoList?: UnitStruct[]
         mapGroupDtoList?: MapGroupStruct[]
+        photoDtoList?: PhotoStruct[]
     }
     _links: unknown
 }
@@ -55,4 +56,9 @@ export interface UnitStruct extends AbstractEntityStruct{
     status: number
     speakRequest: boolean
     icon?: TaktischesZeichen
+}
+
+export interface PhotoStruct extends AbstractEntityStruct{
+    name: string
+    position?: PositionStruct
 }
