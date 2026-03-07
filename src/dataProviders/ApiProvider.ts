@@ -525,6 +525,28 @@ export class ApiProvider implements StorageInterface {
         return DataProvider.getInstance().getApiUrl() + '/photos/' + id + '/image?token=' + DataProvider.getInstance().getApiToken();
     }
 
+    updatePhoto(photo: Photo): Promise<Photo> {
+        const url = DataProvider.getInstance().getApiUrl() + '/photos/' + photo.id;
+        const body: Record<string, unknown> = { name: photo.name };
+        if (photo.position) {
+            body['position'] = photo.position.record();
+        }
+        return this.callApi(url, 'PATCH', new Headers(), body)
+            .then((data) => {
+                const raw = data as unknown as { id: string; name: string; position?: IPosition };
+                return new Photo({
+                    id: raw.id,
+                    name: raw.name,
+                    position: raw.position ? {
+                        latitude: raw.position.latitude,
+                        longitude: raw.position.longitude,
+                        accuracy: raw.position.accuracy,
+                        timestamp: raw.position.timestamp,
+                    } : undefined,
+                });
+            });
+    }
+
     createPhoto(img: File): Promise<Photo> {
         const url = DataProvider.getInstance().getApiUrl() + '/photos';
 
@@ -563,5 +585,16 @@ export class ApiProvider implements StorageInterface {
         });
     }
 
+    deletePhoto(id: string): Promise<void> {
+        const url = DataProvider.getInstance().getApiUrl() + '/photos/' + id;
+        return this.callApi(url, 'DELETE', new Headers())
+            .then(() => {
+                // Photo deleted successfully
+            })
+            .catch(error => {
+                console.error('Error deleting photo:', error);
+                throw new Error('Failed to delete photo');
+            });
+    }
 }
 

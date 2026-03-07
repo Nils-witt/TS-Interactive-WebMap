@@ -23,10 +23,9 @@ import {DataProvider, DataProviderEvent, DataProviderEventType} from "../dataPro
 import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
 import type {MapBaseLayer} from "../enitities/MapBaseLayer.ts";
 import type {KeyValueInterface} from "../dataProviders/KeyValueInterface.ts";
-import MapContextMenu from "./MapContextMenu.tsx";
-import {MarkerEditor} from "./MarkerEditor.tsx";
 import {RouteDisplay} from "../controls/RouteDisplay.tsx";
 import {UnitDisplay} from "../controls/UnitDisplay.tsx";
+import {GroupDisplay} from "../controls/GroupDisplay.tsx";
 
 interface MapComponentProps {
     keyValueStore: KeyValueInterface;
@@ -42,7 +41,8 @@ export function MapComponent(props: MapComponentProps) {
 
     const [searchParams] = useSearchParams();
 
-    const qId   = searchParams.get('mapItemId');
+    const qId      = searchParams.get('mapItemId');
+    const qGroupId = searchParams.get('groupId');
     const qLat  = searchParams.get('lat');
     const qLng  = searchParams.get('lng');
     const qZoom = searchParams.get('zoom');
@@ -65,14 +65,6 @@ export function MapComponent(props: MapComponentProps) {
 
     const [mapStyle, setMapStyle] = React.useState<MapBaseLayer | null>(null);
 
-    const [enableContextMenu, setEnableContextMenu] = React.useState<boolean>(true);
-    const [isContextMenu, setContextMenu] = React.useState(false);
-    const [points, setPoints] = React.useState({
-        x: 0,
-        y: 0,
-        latitude: 0,
-        longitude: 0
-    });
     const [showItemPopup, setShowItemPopup] = React.useState<boolean>(true);
 
     const [zoom, setZoom] = React.useState<number>(() => {
@@ -104,14 +96,6 @@ export function MapComponent(props: MapComponentProps) {
         };
         provider.on(DataProviderEventType.MAP_STYLE_UPDATED, onMapStyleUpdated);
 
-        try {
-            if ((navigator as Navigator).userAgentData.mobile) {
-                setEnableContextMenu(false);
-            }
-        } catch (e) {
-            console.log(e);
-        }
-
         return () => {
             provider.off(DataProviderEventType.MAP_STYLE_UPDATED, onMapStyleUpdated);
         };
@@ -133,18 +117,7 @@ export function MapComponent(props: MapComponentProps) {
             attributionControl={false}
             onMoveEnd={mapMoved}
             onContextMenu={(e) => {
-                setPoints({
-                    x: e.originalEvent.clientX,
-                    y: e.originalEvent.clientY,
-                    latitude: e.lngLat.lat,
-                    longitude: e.lngLat.lng
-                });
-                setZoom(Math.round(e.target.getZoom()));
-                setContextMenu(true);
                 e.originalEvent.preventDefault();
-            }}
-            onClick={() => {
-                setContextMenu(false);
             }}
         >
             <GeolocateControl/>
@@ -152,9 +125,9 @@ export function MapComponent(props: MapComponentProps) {
             <ReactLayerControl position="bottom-left" dataProvider={dataProvider}/>
             <ReactSearchControl position="top-left" dataProvider={dataProvider} globalEventHandler={eventHandler}/>
 
-            <MarkerEditor/>
             <RouteDisplay></RouteDisplay>
             <UnitDisplay/>
+            <GroupDisplay groupId={qGroupId}/>
 
             {resolvedItem && (
                 <Marker longitude={resolvedItem.getLongitude()} latitude={resolvedItem.getLatitude()}/>
@@ -170,11 +143,6 @@ export function MapComponent(props: MapComponentProps) {
                     {resolvedItem.getName()}
                 </Popup>
             )}
-
-            {enableContextMenu && (
-                <MapContextMenu top={points.y} left={points.x} latitude={points.latitude} longitude={points.longitude}
-                                isVisible={[isContextMenu, setContextMenu]} zoom={zoom}>
-                </MapContextMenu>)}
         </MapLibreMap>
     )
 }
