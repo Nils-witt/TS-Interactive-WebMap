@@ -6,9 +6,9 @@
  * Subscribes to DataProvider events so it stays in sync with data changes.
  */
 
-import React, { use, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Marker, Popup } from '@vis.gl/react-maplibre';
-import { DataProvider, DataProviderEvent, DataProviderEventType } from '../dataProviders/DataProvider.ts';
+import { DataProvider, DataProviderEventType } from '../dataProviders/DataProvider.ts';
 import type { MapItem } from '../enitities/MapItem.ts';
 
 interface GroupDisplayProps {
@@ -33,7 +33,7 @@ export function GroupDisplay({ groupId }: GroupDisplayProps): React.JSX.Element 
     useEffect(() => {
         refreshItems();
 
-        const onChange = (_event: DataProviderEvent) => refreshItems();
+        const onChange = () => refreshItems();
 
         const dp = DataProvider.getInstance();
         dp.on(DataProviderEventType.MAP_ITEM_CREATED, onChange);
