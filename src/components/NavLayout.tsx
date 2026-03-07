@@ -24,6 +24,7 @@ const NAV_ROUTES: NavRoute[] = [
     { path: '/map', label: 'Map' },
     { path: '/locations', label: 'Locations' },
     { path: '/photo', label: 'Photo' },
+    { path: '/units', label: 'Units' },
 ];
 
 const USER_ACTIONS: { label: string, path?: string, onClick?: () => void }[] = [

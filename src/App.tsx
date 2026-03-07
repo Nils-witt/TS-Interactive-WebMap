@@ -9,6 +9,7 @@ import { DataProvider } from "./dataProviders/DataProvider.ts";
 import { PhotoPage } from './pages/PhotoPage.tsx';
 import { MapLocationPage } from './pages/MapLocationPage.tsx';
 import { SettingsPage } from './pages/SettingsPage.tsx';
+import { UnitsPage } from './pages/UnitsPage.tsx';
 import { NavLayout } from './components/NavLayout.tsx';
 import { DatabaseProvider } from './dataProviders/DatabaseProvider.ts';
 import { MapOverlay } from './enitities/MapOverlay.ts';
@@ -162,6 +163,9 @@ function App() {
                 } />
                 <Route path="/settings" element={
                     <ProtectedRoute loggedin={loggedin}><SettingsPage /></ProtectedRoute>
+                } />
+                <Route path="/units" element={
+                    <ProtectedRoute loggedin={loggedin}><UnitsPage /></ProtectedRoute>
                 } />
             </Route>
             <Route path="*" element={<Navigate to="/map" replace />} />
