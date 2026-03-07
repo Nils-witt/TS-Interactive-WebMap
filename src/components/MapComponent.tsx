@@ -23,9 +23,9 @@ import {DataProvider, DataProviderEvent, DataProviderEventType} from "../dataPro
 import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler";
 import type {MapBaseLayer} from "../enitities/MapBaseLayer.ts";
 import type {KeyValueInterface} from "../dataProviders/KeyValueInterface.ts";
-import {MarkerEditor} from "./MarkerEditor.tsx";
 import {RouteDisplay} from "../controls/RouteDisplay.tsx";
 import {UnitDisplay} from "../controls/UnitDisplay.tsx";
+import {GroupDisplay} from "../controls/GroupDisplay.tsx";
 
 interface MapComponentProps {
     keyValueStore: KeyValueInterface;
@@ -41,7 +41,8 @@ export function MapComponent(props: MapComponentProps) {
 
     const [searchParams] = useSearchParams();
 
-    const qId   = searchParams.get('mapItemId');
+    const qId      = searchParams.get('mapItemId');
+    const qGroupId = searchParams.get('groupId');
     const qLat  = searchParams.get('lat');
     const qLng  = searchParams.get('lng');
     const qZoom = searchParams.get('zoom');
@@ -124,9 +125,9 @@ export function MapComponent(props: MapComponentProps) {
             <ReactLayerControl position="bottom-left" dataProvider={dataProvider}/>
             <ReactSearchControl position="top-left" dataProvider={dataProvider} globalEventHandler={eventHandler}/>
 
-            <MarkerEditor/>
             <RouteDisplay></RouteDisplay>
             <UnitDisplay/>
+            <GroupDisplay groupId={qGroupId}/>
 
             {resolvedItem && (
                 <Marker longitude={resolvedItem.getLongitude()} latitude={resolvedItem.getLatitude()}/>

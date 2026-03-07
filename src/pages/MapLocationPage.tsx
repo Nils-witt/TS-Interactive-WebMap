@@ -1,6 +1,7 @@
-import {type JSX, useEffect, useMemo, useState} from 'react';
+import { type JSX, useEffect, useMemo, useState } from 'react';
 import {
     Box,
+    Button,
     Chip,
     FormControl,
     InputAdornment,
@@ -22,11 +23,11 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import IconButton from '@mui/material/IconButton';
 import MapIcon from '@mui/icons-material/Map';
-import {useNavigate} from 'react-router-dom';
-import {DataProvider, DataProviderEventType} from '../dataProviders/DataProvider.ts';
-import {type MapItem} from '../enitities/MapItem.ts';
-import {type MapGroup} from '../enitities/MapGroup.ts';
-import {GlobalEventHandler} from '../dataProviders/GlobalEventHandler.ts';
+import { useNavigate } from 'react-router-dom';
+import { DataProvider, DataProviderEventType } from '../dataProviders/DataProvider.ts';
+import { type MapItem } from '../enitities/MapItem.ts';
+import { type MapGroup } from '../enitities/MapGroup.ts';
+import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler.ts';
 
 type SortField = 'name' | 'groupId' | 'latitude' | 'longitude' | 'zoomLevel';
 type SortOrder = 'asc' | 'desc';
@@ -125,30 +126,30 @@ export function MapLocationPage(): JSX.Element {
     };
 
     return (
-        <Box sx={{display: 'flex', flexDirection: 'column', height: '100%', p: 2, gap: 2}}>
-            <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                <Typography variant="h6" sx={{flexGrow: 1}}>Map Locations</Typography>
-                <Chip label={`${filtered.length} / ${items.length}`} size="small" variant="outlined"/>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', p: 2, gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="h6" sx={{ flexGrow: 1 }}>Map Locations</Typography>
+                <Chip label={`${filtered.length} / ${items.length}`} size="small" variant="outlined" />
             </Box>
 
-            <Box sx={{display: 'flex', gap: 2, flexWrap: 'wrap'}}>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                 <TextField
                     label="Filter by Name"
                     size="small"
                     value={nameFilter}
                     onChange={(e) => setNameFilter(e.target.value)}
-                    sx={{minWidth: 220}}
+                    sx={{ minWidth: 220 }}
                     slotProps={{
                         input: {
                             startAdornment: (
                                 <InputAdornment position="start">
-                                    <SearchIcon fontSize="small"/>
+                                    <SearchIcon fontSize="small" />
                                 </InputAdornment>
                             ),
                         },
                     }}
                 />
-                <FormControl size="small" sx={{minWidth: 200}}>
+                <FormControl size="small" sx={{ minWidth: 200 }}>
                     <InputLabel>Filter by Group</InputLabel>
                     <Select
                         value={groupFilter}
@@ -165,9 +166,19 @@ export function MapLocationPage(): JSX.Element {
                         ))}
                     </Select>
                 </FormControl>
+                <Button variant="outlined" onClick={() => {
+                    const params = new URLSearchParams({
+                        groupId: String(groupFilter),
+                    });
+                    void navigate(`/map?${params.toString()}`);
+                }}
+                    disabled={!groupFilter}
+                >
+                    Show all on Map
+                </Button>
             </Box>
 
-            <TableContainer component={Paper} sx={{flex: 1, overflow: 'auto'}}>
+            <TableContainer component={Paper} sx={{ flex: 1, overflow: 'auto' }}>
                 <Table stickyHeader size="small">
                     <TableHead>
                         <TableRow>
@@ -223,7 +234,7 @@ export function MapLocationPage(): JSX.Element {
                     <TableBody>
                         {filtered.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} align="center" sx={{color: 'text.secondary', py: 4}}>
+                                <TableCell colSpan={7} align="center" sx={{ color: 'text.secondary', py: 4 }}>
                                     No map locations match the current filters.
                                 </TableCell>
                             </TableRow>
@@ -249,7 +260,7 @@ export function MapLocationPage(): JSX.Element {
                                     <TableCell align="center">
                                         <Tooltip title="Open on Map">
                                             <IconButton size="small" onClick={() => openOnMap(item)}>
-                                                <MapIcon fontSize="small"/>
+                                                <MapIcon fontSize="small" />
                                             </IconButton>
                                         </Tooltip>
                                     </TableCell>
