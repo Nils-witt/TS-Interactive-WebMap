@@ -26,14 +26,23 @@ export class WebSocketProvider {
     }
 
 
-    updateModel(topic: string, data: { entity: never }) {
+    updateModel(topic: string, data: { entity: never, changeType: 'CREATED' | 'UPDATED' | 'DELETED' }) {
         const dataProvider = DataProvider.getInstance();
         ApplicationLogger.info('received update for topic: ' + topic, {service: 'WebSocket'});
         const modelType = topic.replace('/updates/entities/', '');
         const parts = modelType.split('/');
         const entityType = parts[0].toLowerCase();
+        const action = data.changeType;
 
         if (entityType === 'unit') {
+            if (action === 'DELETED') {
+                const itemId = (data.entity as UnitStruct).id;
+                dataProvider.removeUnit(itemId);
+                void DatabaseProvider.getInstance().then(instance => {
+                    void instance.deleteUnit(itemId);
+                });
+                return;
+            }
             const unitData = data.entity as UnitStruct;
             const item = new Unit({
                 id: unitData.id,
@@ -52,6 +61,14 @@ export class WebSocketProvider {
                 void instance.saveUnit(item);
             });
         } else if (entityType === 'mapoverlay') {
+            if (action === 'DELETED') {
+                const itemId = (data.entity as MapOverlayStruct).id;
+                dataProvider.removeOverlay(itemId);
+                void DatabaseProvider.getInstance().then(instance => {
+                    void instance.deleteOverlay(itemId);
+                });
+                return;
+            }
             const overlayData = data.entity as MapOverlayStruct;
             const item = new MapOverlay(
                 {
@@ -66,6 +83,13 @@ export class WebSocketProvider {
                 void instance.saveOverlay(item);
             });
         } else if (entityType === 'mapbaselayer') {
+            if (action === 'DELETED') {
+                const itemId = (data.entity as MapBaseLayerStruct).id;
+                void DatabaseProvider.getInstance().then(instance => {
+                    void instance.deleteMapStyle(itemId);
+                });
+                return;
+            }
             const layerData = data.entity as MapBaseLayerStruct;
             const item = new MapBaseLayer({
                 id: layerData.id,
@@ -77,6 +101,14 @@ export class WebSocketProvider {
                 void instance.saveMapStyle(item);
             });
         } else if (entityType === 'mapitem') {
+            if (action === 'DELETED') {
+                const itemId = (data.entity as MapItemStruct).id;
+                dataProvider.deleteMapLocation(itemId);
+                void DatabaseProvider.getInstance().then(instance => {
+                    void instance.deleteNamedGeoReferencedObject(itemId);
+                });
+                return;
+            }
             const itemData = data.entity as MapItemStruct;
             const item = new MapItem({
                 id: itemData.id,
@@ -84,6 +116,7 @@ export class WebSocketProvider {
                 latitude: itemData.position.latitude,
                 longitude: itemData.position.longitude,
                 zoomLevel: itemData.zoomLevel,
+                groupId: itemData.mapGroupId
             });
 
             dataProvider.addMapItem(item);

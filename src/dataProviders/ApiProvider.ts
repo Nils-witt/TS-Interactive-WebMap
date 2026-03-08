@@ -172,7 +172,6 @@ export class ApiProvider implements StorageInterface {
                             show_on_map: false,
                             group_id: item.mapGroupId
                         });
-                        console.log('Loaded map item from API:', items[item.id]);
                     }
                     resolve(items);
                 })
@@ -183,7 +182,15 @@ export class ApiProvider implements StorageInterface {
     }
 
     deleteNamedGeoReferencedObject(id: string): Promise<void> {
-        throw new Error(`Method not implemented. deleteNamedGeoReferencedObject: ${id}`);
+        const url = DataProvider.getInstance().getApiUrl() + '/map/items/' + id;
+        return this.callApi(url, 'DELETE', new Headers())
+            .then(() => {
+                // Item deleted successfully
+            })
+            .catch(error => {
+                console.error('Error deleting map item:', error);
+                throw new Error('Failed to delete map item');
+            });
     }
 
     public static getInstance(): ApiProvider {
@@ -320,25 +327,27 @@ export class ApiProvider implements StorageInterface {
     public async saveMapItem(item: MapItem): Promise<MapItem | null> {
         const data = {
             name: item.getName(),
+            mapGroupId: item.getGroupId(),
+            zoomLevel: item.getZoomLevel(),
             position: {
                 latitude: item.getLatitude(),
                 longitude: item.getLongitude()
             }
         };
 
-        const url = DataProvider.getInstance().getApiUrl() + '/map/items';
+        const url = DataProvider.getInstance().getApiUrl() + '/map/items' + (item.getId() ? '/' + item.getId() : '');
 
-        const response = await this.callApi(url, 'POST', new Headers(), data) as never as MapItemStruct;
+        const response = await this.callApi(url, item.getId() ? 'PUT' : 'POST', new Headers(), data) as never as MapItemStruct;
         if (response != null) {
             return MapItem.of({
                 id: response.id,
                 name: response.name,
                 latitude: response.position.latitude,
                 longitude: response.position.longitude,
-                zoomLevel: 16,
+                zoomLevel: response.zoomLevel,
                 symbol: null,
                 show_on_map: false,
-                groupId: null
+                groupId: response.mapGroupId
             });
         }
         throw Error('Failed to create map item');
