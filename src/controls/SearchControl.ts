@@ -233,10 +233,6 @@ export class SearchControl extends Evented implements IControl {
             if (resultCount >= this.resultLimit) {
                 break; // Stop after reaching the result limit
             }
-
-            const settingsCell = row.insertCell();
-            settingsCell.appendChild(this.showSettingsButton(entity));
-
         }
 
     }
