@@ -8,7 +8,6 @@ import {
     Input,
     InputAdornment,
     Paper,
-    Popover,
     Table,
     TableBody,
     TableCell,
