@@ -12,9 +12,8 @@ import type {MapItem} from '../enitities/MapItem.ts';
 import {icon} from '@fortawesome/fontawesome-svg-core';
 import {faMagnifyingGlass} from '@fortawesome/free-solid-svg-icons/faMagnifyingGlass';
 import {faMapLocationDot} from '@fortawesome/free-solid-svg-icons/faMapLocationDot';
-import {faWrench} from '@fortawesome/free-solid-svg-icons/faWrench';
 import {faXmark} from '@fortawesome/free-solid-svg-icons/faXmark';
-import {DataEvent, GlobalEventHandler} from '../dataProviders/GlobalEventHandler';
+import {GlobalEventHandler} from '../dataProviders/GlobalEventHandler';
 import {useControl} from '@vis.gl/react-maplibre';
 
 import './css/search.scss';
@@ -174,21 +173,6 @@ export class SearchControl extends Evented implements IControl {
                 essential: true // This ensures the animation is not interrupted
             });
             this.setOpen(false); // Close the search control after selecting an entity
-        };
-        return button;
-    }
-
-    /**
-     * Creates a button that, when clicked, will show the entity on the map and fly to its location.
-     * @param entity
-     */
-    private showSettingsButton(entity: MapItem): HTMLButtonElement {
-        const button = document.createElement('button');
-
-        //button.textContent = "<>";
-        button.innerHTML = icon(faWrench).html[0];
-        button.onclick = (): void => {
-            GlobalEventHandler.getInstance().emit('edit-marker', new DataEvent('edit-marker', entity));
         };
         return button;
     }
