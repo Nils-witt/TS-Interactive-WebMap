@@ -124,6 +124,10 @@ class CacheProvider {
 
     }
 
+    async clearOverlayCache(overlay: MapOverlay): Promise<void> {
+        await caches.delete(`overlay-${overlay.getId()}_${overlay.getLayerVersion()}`);
+    }
+
 
     /**
      * Caches vector background tiles for all overlays currently cached.
