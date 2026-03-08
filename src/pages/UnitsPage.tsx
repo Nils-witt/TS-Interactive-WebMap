@@ -62,14 +62,14 @@ export function UnitsPage(): JSX.Element {
     const dp = DataProvider.getInstance();
     const navigate = useNavigate();
 
-    const [units, setUnits] = useState<Unit[]>(() => Array.from(dp.getUnits().values()));
+    const [units, setUnits] = useState<Unit[]>(() => Array.from(dp.getAllUnits().values()));
     const [nameFilter, setNameFilter] = useState('');
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
     // Subscribe to live updates
     useEffect(() => {
-        const refresh = () => setUnits(Array.from(dp.getUnits().values()));
+        const refresh = () => setUnits(Array.from(dp.getAllUnits().values()));
 
         const events = [
             DataProviderEventType.UNIT_ADDED,

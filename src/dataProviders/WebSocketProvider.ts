@@ -1,11 +1,11 @@
-import {DataProvider} from './DataProvider.ts';
-import {ApplicationLogger} from '../ApplicationLogger.ts';
-import {Unit} from '../enitities/Unit.ts';
-import type {MapBaseLayerStruct, MapItemStruct, MapOverlayStruct, UnitStruct} from './structs/ApiResponseStruct.ts';
-import {MapOverlay} from '../enitities/MapOverlay.ts';
-import {MapBaseLayer} from '../enitities/MapBaseLayer.ts';
-import {MapItem} from '../enitities/MapItem.ts';
-import {DatabaseProvider} from './DatabaseProvider.ts';
+import { DataProvider } from './DataProvider.ts';
+import { ApplicationLogger } from '../ApplicationLogger.ts';
+import { Unit } from '../enitities/Unit.ts';
+import type { MapBaseLayerStruct, MapItemStruct, MapOverlayStruct, UnitStruct } from './structs/ApiResponseStruct.ts';
+import { MapOverlay } from '../enitities/MapOverlay.ts';
+import { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
+import { MapItem } from '../enitities/MapItem.ts';
+import { DatabaseProvider } from './DatabaseProvider.ts';
 
 
 export class WebSocketProvider {
@@ -28,7 +28,7 @@ export class WebSocketProvider {
 
     updateModel(topic: string, data: { entity: never, changeType: 'CREATED' | 'UPDATED' | 'DELETED' }) {
         const dataProvider = DataProvider.getInstance();
-        ApplicationLogger.info('received update for topic: ' + topic, {service: 'WebSocket'});
+        ApplicationLogger.info('received update for topic: ' + topic, { service: 'WebSocket' });
         const modelType = topic.replace('/updates/entities/', '');
         const parts = modelType.split('/');
         const entityType = parts[0].toLowerCase();
@@ -63,9 +63,9 @@ export class WebSocketProvider {
         } else if (entityType === 'mapoverlay') {
             if (action === 'DELETED') {
                 const itemId = (data.entity as MapOverlayStruct).id;
-                dataProvider.removeOverlay(itemId);
+                dataProvider.removeMapOverlay(itemId);
                 void DatabaseProvider.getInstance().then(instance => {
-                    void instance.deleteOverlay(itemId);
+                    void instance.deleteMapOverlay(itemId);
                 });
                 return;
             }
@@ -78,9 +78,9 @@ export class WebSocketProvider {
                     layerVersion: overlayData.layerVersion,
                 }
             );
-            dataProvider.addOverlay(item);
+            dataProvider.addMapOverlay(item);
             void DatabaseProvider.getInstance().then(instance => {
-                void instance.saveOverlay(item);
+                void instance.saveMapOverlay(item);
             });
         } else if (entityType === 'mapbaselayer') {
             if (action === 'DELETED') {
@@ -103,9 +103,9 @@ export class WebSocketProvider {
         } else if (entityType === 'mapitem') {
             if (action === 'DELETED') {
                 const itemId = (data.entity as MapItemStruct).id;
-                dataProvider.deleteMapLocation(itemId);
+                dataProvider.deleteMapItem(itemId);
                 void DatabaseProvider.getInstance().then(instance => {
-                    void instance.deleteNamedGeoReferencedObject(itemId);
+                    void instance.deleteMapItem(itemId);
                 });
                 return;
             }
@@ -121,7 +121,7 @@ export class WebSocketProvider {
 
             dataProvider.addMapItem(item);
             void DatabaseProvider.getInstance().then(instance => {
-                void instance.saveNamedGeoReferencedObject(item);
+                void instance.saveMapItem(item);
             });
         } else {
             console.log('Unknown entity type:', entityType);
@@ -129,17 +129,17 @@ export class WebSocketProvider {
     }
 
     start() {
-        ApplicationLogger.info('WebSocket Started', {service: 'WebSocket'});
+        ApplicationLogger.info('WebSocket Started', { service: 'WebSocket' });
 
         this.socket = new WebSocket(this.getConnectionURL());
         const entityTypes = ['unit', 'mapoverlay', 'mapbaselayer', 'mapitem'];
         this.socket.onopen = (event) => {
-            ApplicationLogger.info('WebSocket connection opened', {service: 'WebSocket', event: event});
+            ApplicationLogger.info('WebSocket connection opened', { service: 'WebSocket', event: event });
             for (const entityType of entityTypes) {
                 this.socket!.send('SUBSCRIBE /updates/entities/' + entityType);
             }
             if (this.lastMessageRecived != null) {
-                ApplicationLogger.info('Requesting updates since last message received: ' + new Date(this.lastMessageRecived).toISOString(), {service: 'WebSocket'});
+                ApplicationLogger.info('Requesting updates since last message received: ' + new Date(this.lastMessageRecived).toISOString(), { service: 'WebSocket' });
                 this.socket!.send('REQUEST_UPDATES_SINCE ' + this.lastMessageRecived);
             }
             if (this.pingInterval) {
@@ -156,9 +156,9 @@ export class WebSocketProvider {
                 return;
             }
             this.lastMessageRecived = Date.now();
-            ApplicationLogger.debug('WebSocket message received: ' + event.data, {service: 'WebSocket', event: event});
+            ApplicationLogger.debug('WebSocket message received: ' + event.data, { service: 'WebSocket', event: event });
             if ((event.data as string).startsWith('Subscribed') || (event.data as string).startsWith('REQUEST_UPDATES_SINCE')) {
-                ApplicationLogger.info('WebSocket subscription confirmed: ' + event.data, {service: 'WebSocket'});
+                ApplicationLogger.info('WebSocket subscription confirmed: ' + event.data, { service: 'WebSocket' });
                 return;
             }
             try {
@@ -167,7 +167,7 @@ export class WebSocketProvider {
                     this.updateModel(data.topic, data.payload);
                 }
             } catch {
-                ApplicationLogger.info('Received message: ' + event.data, {service: 'WebSocket'});
+                ApplicationLogger.info('Received message: ' + event.data, { service: 'WebSocket' });
             }
         };
         this.socket.onclose = (event) => {

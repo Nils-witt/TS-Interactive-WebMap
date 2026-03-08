@@ -45,8 +45,8 @@ type SortOrder = 'asc' | 'desc';
 export function MapLocationPage(): JSX.Element {
     const navigate = useNavigate();
     const dp = DataProvider.getInstance();
-    const [items, setItems] = useState<MapItem[]>(() => Array.from(dp.getMapLocations().values()));
-    const [groups, setGroups] = useState<MapGroup[]>(() => Array.from(dp.getMapGroups().values()));
+    const [items, setItems] = useState<MapItem[]>(() => Array.from(dp.getAllMapItems().values()));
+    const [groups, setGroups] = useState<MapGroup[]>(() => Array.from(dp.getAllMapGroups().values()));
 
     const [nameFilter, setNameFilter] = useState('');
     const [groupFilter, setGroupFilter] = useState<string>('');
@@ -55,8 +55,8 @@ export function MapLocationPage(): JSX.Element {
 
     useEffect(() => {
         const refresh = () => {
-            setItems(Array.from(dp.getMapLocations().values()));
-            setGroups(Array.from(dp.getMapGroups().values()));
+            setItems(Array.from(dp.getAllMapItems().values()));
+            setGroups(Array.from(dp.getAllMapGroups().values()));
         };
 
         const events = [
@@ -74,7 +74,7 @@ export function MapLocationPage(): JSX.Element {
 
     const groupMap = useMemo(() => {
         const m = new Map<string, string>();
-        groups.forEach((g) => m.set(g.getID(), g.getName()));
+        groups.forEach((g) => m.set(g.getId(), g.getName()));
         return m;
     }, [groups]);
 
@@ -178,7 +178,7 @@ export function MapLocationPage(): JSX.Element {
                 if (!isNaN(z)) item.setZoomLevel(z);
             }
             DataProvider.getInstance().addMapItem(item);
-            void DatabaseProvider.getInstance().then((db) => db.saveNamedGeoReferencedObject(item));
+            void DatabaseProvider.getInstance().then((db) => db.saveMapItem(item));
             void ApiProvider.getInstance().saveMapItem(item);
         }
         setBulkEditOpen(false);
@@ -225,9 +225,9 @@ export function MapLocationPage(): JSX.Element {
 
     const bulkDeleteItems = () => {
         for (const id of selectedIds) {
-            void ApiProvider.getInstance().deleteNamedGeoReferencedObject(id);
-            void DataProvider.getInstance().deleteMapLocation(id);
-            void DatabaseProvider.getInstance().then((db) => db.deleteNamedGeoReferencedObject(id));
+            void ApiProvider.getInstance().deleteMapItem(id);
+            void DataProvider.getInstance().deleteMapItem(id);
+            void DatabaseProvider.getInstance().then((db) => db.deleteMapItem(id));
         }
         setSelectedIds(new Set());
         setConfirmBulkDelete(false);
@@ -257,7 +257,7 @@ export function MapLocationPage(): JSX.Element {
 
         DataProvider.getInstance().addMapItem(editingItem);
         void DatabaseProvider.getInstance().then((db) =>
-            db.saveNamedGeoReferencedObject(editingItem)
+            db.saveMapItem(editingItem)
         );
         void ApiProvider.getInstance().saveMapItem(editingItem);
         closeEditDialog();
@@ -267,9 +267,9 @@ export function MapLocationPage(): JSX.Element {
             if (!editingItem || !editingItem.getId()) return;
             setConfirmDelete(false);
             closeEditDialog();
-            void ApiProvider.getInstance().deleteNamedGeoReferencedObject(editingItem.getId()!);
-            void DataProvider.getInstance().deleteMapLocation(editingItem.getId()!);
-            void DatabaseProvider.getInstance().then((db) => db.deleteNamedGeoReferencedObject(editingItem.getId()!));
+            void ApiProvider.getInstance().deleteMapItem(editingItem.getId()!);
+            void DataProvider.getInstance().deleteMapItem(editingItem.getId()!);
+            void DatabaseProvider.getInstance().then((db) => db.deleteMapItem(editingItem.getId()!));
         };
 
     return (
@@ -308,7 +308,7 @@ export function MapLocationPage(): JSX.Element {
                                 <em>All groups</em>
                             </MenuItem>
                             {groups.map((g) => (
-                                <MenuItem key={g.getID()} value={g.getID()}>
+                                <MenuItem key={g.getId()} value={g.getId()}>
                                     {g.getName()}
                                 </MenuItem>
                             ))}
@@ -486,7 +486,7 @@ export function MapLocationPage(): JSX.Element {
                             <MenuItem value="__keep__"><em>Keep current</em></MenuItem>
                             <MenuItem value=""><em>No group</em></MenuItem>
                             {groups.map((g) => (
-                                <MenuItem key={g.getID()} value={g.getID()}>{g.getName()}</MenuItem>
+                                <MenuItem key={g.getId()} value={g.getId()}>{g.getName()}</MenuItem>
                             ))}
                         </Select>
                     </FormControl>
@@ -599,7 +599,7 @@ export function MapLocationPage(): JSX.Element {
                         >
                             <MenuItem value=""><em>No group</em></MenuItem>
                             {groups.map((g) => (
-                                <MenuItem key={g.getID()} value={g.getID()}>{g.getName()}</MenuItem>
+                                <MenuItem key={g.getId()} value={g.getId()}>{g.getName()}</MenuItem>
                             ))}
                         </Select>
                     </FormControl>

@@ -14,7 +14,7 @@ import { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
 import type { StorageInterface } from './StorageInterface.ts';
 import { MapGroup } from '../enitities/MapGroup.ts';
 import { Unit } from '../enitities/Unit.ts';
-import type { ApiResponseStruct, MapItemStruct } from './structs/ApiResponseStruct.ts';
+import type { ApiResponseStruct, MapItemStruct, PhotoStruct } from './structs/ApiResponseStruct.ts';
 import { Photo } from '../enitities/Photo.ts';
 import type { IPosition } from '../enitities/embeddables/EmbeddablePosition.ts';
 
@@ -48,151 +48,6 @@ export class ApiProvider implements StorageInterface {
         throw new Error('Method not implemented.');
     }
 
-    saveOverlay(overlay: MapOverlay): Promise<MapOverlay> {
-        throw new Error(`Method not implemented: saveOverlays ${overlay.getId()}`,);
-    }
-
-    loadOverlay(id: string): Promise<MapOverlay | null> {
-        throw new Error('Method not implemented: loadOverlay ' + id);
-    }
-
-    loadAllOverlays(): Promise<Record<string, MapOverlay>> {
-
-
-        return new Promise<Record<string, MapOverlay>>(resolve => {
-            const overlays: Record<string, MapOverlay> = {};
-
-            try {
-                const url = DataProvider.getInstance().getApiUrl() + '/map/overlays';
-                this.fetchData(url)
-                    .then(data => {
-                        if (data == null || data._embedded == undefined || data._embedded.mapOverlayDtoList == undefined) {
-                            resolve(overlays);
-                            return;
-                        }
-                        for (const layer of data._embedded.mapOverlayDtoList) {
-                            overlays[layer.id] = MapOverlay.of({
-                                id: layer.id,
-                                name: layer.name,
-                                url: layer.fullTileUrl,
-                                layerVersion: layer.layerVersion,
-                                description: '',
-                                order: 0,
-                                opacity: 1.0
-                            });
-                        }
-                        resolve(overlays);
-                    })
-                    .catch(e => {
-                        console.error('Error fetching overlay layers:', e);
-                    });
-            } catch (error) {
-                console.error('Error fetching overlay layers:', error);
-            }
-        });
-
-    }
-
-    deleteOverlay(id: string): Promise<boolean> {
-        throw new Error(`Method not implemented. deleteOverlay ${id}`);
-    }
-
-    saveMapStyle(mapStyle: MapBaseLayer): Promise<MapBaseLayer> {
-        throw new Error(`Method not implemented. saveMapStyle: ${mapStyle.getID()}`);
-    }
-
-    loadMapStyle(id: string): Promise<MapBaseLayer | null> {
-        throw new Error(`Method not implemented. loadMapStyle: ${id}`);
-    }
-
-    loadAllMapStyles(): Promise<Record<string, MapBaseLayer>> {
-
-        return new Promise<Record<string, MapBaseLayer>>(resolve => {
-            const mapStyles: Record<string, MapBaseLayer> = {};
-            const url = DataProvider.getInstance().getApiUrl() + '/map/baselayers';
-            this.fetchData(url)
-                .then(data => {
-                    if (data == null || data._embedded == undefined || data._embedded.mapBaseLayerDtoList == undefined) {
-                        resolve(mapStyles);
-                        return;
-                    }
-                    for (const layer of data._embedded.mapBaseLayerDtoList) {
-                        mapStyles[layer.id] = MapBaseLayer.of({
-                            id: layer.id,
-                            name: layer.id,
-                            url: layer.url
-                        });
-                        const layerUrl = new URL(layer.url);
-                        new BroadcastChannel('setMapServicesBase').postMessage(
-                            {
-                                url: layerUrl.protocol + '//' + layerUrl.hostname
-                            }
-                        );
-                    }
-                    resolve(mapStyles);
-                })
-                .catch(e => {
-                    console.error('Error fetching overlay layers:', e);
-                });
-        });
-    }
-
-    deleteMapStyle(id: string): Promise<void> {
-        throw new Error(`Method not implemented. deleteMapStyle: ${id}`);
-    }
-
-    saveNamedGeoReferencedObject(namedGeoReferencedObject: MapItem): Promise<MapItem> {
-        throw new Error(`Method not implemented. saveNamedGeoReferencedObject: ${namedGeoReferencedObject.getId()}`);
-    }
-
-    loadNamedGeoReferencedObject(id: string): Promise<MapItem | null> {
-        throw new Error(`Method not implemented. loadNamedGeoReferencedObject: ${id}`);
-    }
-
-    loadAllNamedGeoReferencedObjects(): Promise<Record<string, MapItem>> {
-        return new Promise<Record<string, MapItem>>(resolve => {
-            const items: Record<string, MapItem> = {};
-
-            const url = DataProvider.getInstance().getApiUrl() + '/map/items';
-            this.fetchData(url)
-                .then(data => {
-                    if (data == null || data._embedded == undefined || data._embedded.mapItemDtoList == undefined) {
-                        resolve(items);
-                        return;
-                    }
-                    for (const item of data._embedded.mapItemDtoList) {
-
-                        items[item.id] = MapItem.of({
-                            id: item.id,
-                            name: item.name,
-                            latitude: item.position.latitude,
-                            longitude: item.position.longitude,
-                            zoomLevel: item.zoomLevel,
-                            symbol: null,
-                            show_on_map: false,
-                            group_id: item.mapGroupId
-                        });
-                    }
-                    resolve(items);
-                })
-                .catch(e => {
-                    console.error('Error fetching overlay layers:', e);
-                });
-        });
-    }
-
-    deleteNamedGeoReferencedObject(id: string): Promise<void> {
-        const url = DataProvider.getInstance().getApiUrl() + '/map/items/' + id;
-        return this.callApi(url, 'DELETE', new Headers())
-            .then(() => {
-                // Item deleted successfully
-            })
-            .catch(error => {
-                console.error('Error deleting map item:', error);
-                throw new Error('Failed to delete map item');
-            });
-    }
-
     public static getInstance(): ApiProvider {
         if (!ApiProvider.instance) {
             ApiProvider.instance = new ApiProvider();
@@ -200,6 +55,9 @@ export class ApiProvider implements StorageInterface {
         return ApiProvider.instance;
     }
 
+    private notifyListeners(event: ApiProviderEventTypes, data: { message: string }): void {
+        GlobalEventHandler.getInstance().emit(event, new ApiProviderEvent(event, data));
+    }
 
     public async testLogin(): Promise<void> {
         const url = DataProvider.getInstance().getApiUrl() + '/token';
@@ -254,7 +112,7 @@ export class ApiProvider implements StorageInterface {
         window.location.reload();
     }
 
-    private async callApi(url: string, method: string, headers: Headers = new Headers(), body?: object): Promise<ApiResponseStruct | null> {
+    private async callApi(url: string, method: string, headers: Headers = new Headers(), body?: object): Promise<unknown> {
 
         if (DataProvider.getInstance().getApiToken()) {
             headers.append('Authorization', `Bearer ${DataProvider.getInstance().getApiToken()}`);
@@ -277,7 +135,7 @@ export class ApiProvider implements StorageInterface {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         try {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
             return await response.json();
         } catch (e) {
             console.error('Error parsing JSON:', e);
@@ -285,75 +143,411 @@ export class ApiProvider implements StorageInterface {
         }
     }
 
-    public async fetchData(url: string): Promise<ApiResponseStruct | null> {
+    public async fetchData(url: string): Promise<unknown> {
         return this.callApi(url, 'GET');
     }
 
-    public async createMapItem(item: {
-        name: string,
-        latitude: number,
-        longitude: number,
-        zoomLevel?: number,
-        showOnMap?: boolean,
-        groupId?: string
-    }): Promise<MapItem | null> {
+    //-- Load All
+    loadAllUnits(): Promise<Record<string, Unit>> {
+        return new Promise<Record<string, Unit>>((resolve, reject) => {
+            const units: Record<string, Unit> = {};
+            const url = DataProvider.getInstance().getApiUrl() + '/units';
 
-        const data = {
-            name: item.name,
-            position: {
-                latitude: item.latitude,
-                longitude: item.longitude
-            }
-        };
-
-        const url = DataProvider.getInstance().getApiUrl() + '/map/items';
-
-        const response = await this.callApi(url, 'POST', new Headers(), data) as never as MapItemStruct;
-        if (response != null) {
-            return MapItem.of({
-                id: response.id,
-                name: response.name,
-                latitude: response.position.latitude,
-                longitude: response.position.longitude,
-                zoomLevel: item.zoomLevel ?? 18,
-                symbol: null,
-                show_on_map: item.showOnMap ?? false,
-                groupId: item.groupId ?? null
-            });
-        }
-        throw Error('Failed to create map item');
+            this.fetchData(url)
+                .then(raw => {
+                    const data = raw as ApiResponseStruct;
+                    if (data == null || data._embedded == undefined || data._embedded.unitDtoList == undefined) {
+                        return resolve(units);
+                    }
+                    for (const rawUnit of data._embedded.unitDtoList) {
+                        units[rawUnit.id] = Unit.of({
+                            id: rawUnit.id,
+                            name: rawUnit.name,
+                            pos_latitude: rawUnit.position.latitude,
+                            pos_longitude: rawUnit.position.longitude,
+                            pos_accuracy: rawUnit.position.accuracy,
+                            pos_timestamp: rawUnit.position.timestamp,
+                            symbol: rawUnit.icon as never,
+                            unit_status: rawUnit.status,
+                            unit_status_timestamp: new Date().toISOString(),
+                            route: null,
+                        });
+                    }
+                    return resolve(units);
+                })
+                .catch(e => {
+                    return reject(new Error('Error fetching units', { cause: e }));
+                });
+        });
     }
 
-    public async saveMapItem(item: MapItem): Promise<MapItem | null> {
-        const data = {
-            name: item.getName(),
-            mapGroupId: item.getGroupId(),
-            zoomLevel: item.getZoomLevel(),
-            position: {
-                latitude: item.getLatitude(),
-                longitude: item.getLongitude()
-            }
-        };
+    loadAllMapGroups(): Promise<Record<string, MapGroup>> {
+        return new Promise<Record<string, MapGroup>>((resolve, reject) => {
+            const groups: Record<string, MapGroup> = {};
+            const url = DataProvider.getInstance().getApiUrl() + '/map/groups';
 
-        const url = DataProvider.getInstance().getApiUrl() + '/map/items' + (item.getId() ? '/' + item.getId() : '');
-
-        const response = await this.callApi(url, item.getId() ? 'PUT' : 'POST', new Headers(), data) as never as MapItemStruct;
-        if (response != null) {
-            return MapItem.of({
-                id: response.id,
-                name: response.name,
-                latitude: response.position.latitude,
-                longitude: response.position.longitude,
-                zoomLevel: response.zoomLevel,
-                symbol: null,
-                show_on_map: false,
-                groupId: response.mapGroupId
-            });
-        }
-        throw Error('Failed to create map item');
+            this.fetchData(url)
+                .then(raw => {
+                    const data = raw as ApiResponseStruct;
+                    if (data == null || data._embedded == undefined || data._embedded.mapGroupDtoList == undefined) {
+                        return resolve(groups);
+                    }
+                    for (const rawUnit of data._embedded.mapGroupDtoList) {
+                        groups[rawUnit.id] = MapGroup.of({
+                            id: rawUnit.id,
+                            name: rawUnit.name,
+                        });
+                    }
+                    return resolve(groups);
+                })
+                .catch(e => {
+                    return reject(new Error('Error fetching map groups', { cause: e }));
+                });
+        });
     }
 
-    public async getOverlayTiles(overlay: MapOverlay): Promise<string[]> {
+    loadAllMapItems(): Promise<Record<string, MapItem>> {
+        return new Promise<Record<string, MapItem>>((resolve, reject) => {
+            const items: Record<string, MapItem> = {};
+
+            const url = DataProvider.getInstance().getApiUrl() + '/map/items';
+            this.fetchData(url)
+                .then(raw => {
+                    const data = raw as ApiResponseStruct;
+                    if (data == null || data._embedded == undefined || data._embedded.mapItemDtoList == undefined) {
+                        return resolve(items);
+                    }
+                    for (const item of data._embedded.mapItemDtoList) {
+
+                        items[item.id] = MapItem.of({
+                            id: item.id,
+                            name: item.name,
+                            latitude: item.position.latitude,
+                            longitude: item.position.longitude,
+                            zoomLevel: item.zoomLevel,
+                            symbol: null,
+                            show_on_map: false,
+                            group_id: item.mapGroupId
+                        });
+                    }
+                    return resolve(items);
+                })
+                .catch(e => {
+                    return reject(new Error('Error fetching map items', { cause: e }));
+                });
+        });
+    }
+
+    loadAllMapStyles(): Promise<Record<string, MapBaseLayer>> {
+
+        return new Promise<Record<string, MapBaseLayer>>((resolve, reject) => {
+            const mapStyles: Record<string, MapBaseLayer> = {};
+            const url = DataProvider.getInstance().getApiUrl() + '/map/baselayers';
+            this.fetchData(url)
+                .then(raw => {
+                    const data = raw as ApiResponseStruct;
+                    if (data == null || data._embedded == undefined || data._embedded.mapBaseLayerDtoList == undefined) {
+                        return resolve(mapStyles);
+                    }
+                    for (const layer of data._embedded.mapBaseLayerDtoList) {
+                        mapStyles[layer.id] = MapBaseLayer.of({
+                            id: layer.id,
+                            name: layer.id,
+                            url: layer.url
+                        });
+                        const layerUrl = new URL(layer.url);
+                        new BroadcastChannel('setMapServicesBase').postMessage(
+                            {
+                                url: layerUrl.protocol + '//' + layerUrl.hostname
+                            }
+                        );
+                    }
+                    return resolve(mapStyles);
+                })
+                .catch(e => {
+                    return reject(new Error('Error fetching base layers', { cause: e }));
+                });
+        });
+    }
+
+    loadAllMapOverlays(): Promise<Record<string, MapOverlay>> {
+        return new Promise<Record<string, MapOverlay>>((resolve, reject) => {
+            const overlays: Record<string, MapOverlay> = {};
+
+            try {
+                const url = DataProvider.getInstance().getApiUrl() + '/map/overlays';
+                this.fetchData(url)
+                    .then(raw => {
+                        const data = raw as ApiResponseStruct;
+                        if (data == null || data._embedded == undefined || data._embedded.mapOverlayDtoList == undefined) {
+                            return resolve(overlays);
+                        }
+                        for (const layer of data._embedded.mapOverlayDtoList) {
+                            overlays[layer.id] = MapOverlay.of({
+                                id: layer.id,
+                                name: layer.name,
+                                url: layer.fullTileUrl,
+                                layerVersion: layer.layerVersion,
+                                description: '',
+                                order: 0,
+                                opacity: 1.0
+                            });
+                        }
+                        return resolve(overlays);
+                    })
+                    .catch(e => {
+                        return reject(new Error('Error fetching overlay layers', { cause: e }));
+                    });
+            } catch (error) {
+                return reject(new Error('Error fetching overlay layers', { cause: error }));
+            }
+        });
+
+    }
+
+    loadAllPhotos(): Promise<Record<string, Photo>> {
+        return new Promise<Record<string, Photo>>((resolve, reject) => {
+            const pictures: Record<string, Photo> = {};
+            const url = DataProvider.getInstance().getApiUrl() + '/photos';
+
+            this.fetchData(url)
+                .then(raw => {
+                    const data = raw as ApiResponseStruct;
+                    if (data == null || data._embedded == undefined || data._embedded.photoDtoList == undefined) {
+                        return resolve(pictures);
+                    }
+                    for (const rawPhoto of data._embedded.photoDtoList) {
+                        pictures[rawPhoto.id] = new Photo({
+                            id: rawPhoto.id,
+                            name: rawPhoto.name,
+                            position: rawPhoto.position ? {
+                                latitude: rawPhoto.position.latitude,
+                                longitude: rawPhoto.position.longitude,
+                                accuracy: rawPhoto.position.accuracy,
+                                timestamp: rawPhoto.position.timestamp
+                            } : undefined
+                        });
+                    }
+                    return resolve(pictures);
+                })
+                .catch(e => {
+                    return reject(new Error('Error fetching photos', { cause: e }));
+                });
+        });
+    }
+
+    //--- load Single Currently not implemented, as the app always loads all items at once. Can be implemented later if needed.
+    loadUnit(id: string): Promise<Unit> {
+        return Promise.reject(new Error(`Method not implemented. (loadUnit(${id}))`));
+    }
+
+    loadMapGroup(id: string): Promise<MapGroup> {
+        return Promise.reject(new Error(`Method not implemented. (loadMapGroup(${id}))`));
+    }
+
+    loadMapItem(id: string): Promise<MapItem> {
+        return Promise.reject(new Error(`Method not implemented. (loadMapItem(${id}))`));
+    }
+
+    loadMapStyle(id: string): Promise<MapBaseLayer> {
+        return Promise.reject(new Error(`Method not implemented. (loadMapStyle(${id}))`));
+    }
+
+    loadMapOverlay(id: string): Promise<MapOverlay> {
+        return Promise.reject(new Error(`Method not implemented. (loadMapOverlay(${id}))`));
+    }
+
+    loadPhoto(id: string): Promise<Photo> {
+        return Promise.reject(new Error(`Method not implemented. (loadPhoto(${id}))`));
+    }
+
+    //-- Replace All Currently not implemented, as the app always loads all items at once and does not support bulk updates. Can be implemented later if needed.
+    replaceAllUnits(units: Unit[]): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. replaceAllUnits(${units.length})`));
+    }
+
+    replaceAllMapGroups(mapGroups: MapGroup[]): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. replaceAllMapGroups(${mapGroups.length})`));
+    }
+
+    replaceAllMapItems(mapItems: MapItem[]): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. replaceAllMapItems(${mapItems.length})`));
+    }
+
+    replaceAllMapStyles(mapStyles: MapBaseLayer[]): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. replaceAllMapStyles(${mapStyles.length})`));
+    }
+
+    replaceAllMapOverlays(mapOverlays: MapOverlay[]): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. replaceAllMapOverlays(${mapOverlays.length})`));
+    }
+
+    replaceAllPhotos(photos: Photo[]): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. replaceAllPhotos(${photos.length})`));
+    }
+
+
+
+    //-- Save Single
+    saveUnit(unit: Unit): Promise<Unit> {
+        return Promise.reject(new Error(`Method not implemented. saveUnit(${unit.getId()})`));
+    }
+
+    saveMapGroup(mapGroup: MapGroup): Promise<MapGroup> {
+        return Promise.reject(new Error(`Method not implemented. saveMapGroup(${mapGroup.getId()})`));
+    }
+
+    saveMapItem(mapItem: MapItem): Promise<MapItem> {
+        return new Promise<MapItem>((resolve, reject) => {
+            const data = {
+                name: mapItem.getName(),
+                mapGroupId: mapItem.getGroupId(),
+                zoomLevel: mapItem.getZoomLevel(),
+                position: {
+                    latitude: mapItem.getLatitude(),
+                    longitude: mapItem.getLongitude()
+                }
+            };
+
+            const url = DataProvider.getInstance().getApiUrl() + '/map/items' + (mapItem.getId() ? '/' + mapItem.getId() : '');
+
+            this.callApi(url, mapItem.getId() ? 'PUT' : 'POST', new Headers(), data)
+                .then((res) => {
+                    const response = res as MapItemStruct;
+                    return resolve(MapItem.of({
+                        id: response.id,
+                        name: response.name,
+                        latitude: response.position.latitude,
+                        longitude: response.position.longitude,
+                        zoomLevel: response.zoomLevel,
+                        symbol: null,
+                        show_on_map: false,
+                        groupId: response.mapGroupId
+                    }));
+                }).catch(error => {
+                    return reject(new Error('Failed to save map item', { cause: error }));
+                });
+        });
+    }
+
+    saveMapStyle(mapStyle: MapBaseLayer): Promise<MapBaseLayer> {
+        return Promise.reject(new Error(`Method not implemented. saveMapStyle(${mapStyle.getId()})`));
+    }
+
+    saveMapOverlay(mapOverlay: MapOverlay): Promise<MapOverlay> {
+        return Promise.reject(new Error(`Method not implemented. saveMapOverlay(${mapOverlay.getId()})`));
+    }
+
+    savePhoto(photo: Photo): Promise<Photo> {
+        return new Promise<Photo>((resolve) => {
+            const url = DataProvider.getInstance().getApiUrl() + '/photos/' + photo.id;
+            const body: Record<string, unknown> = { name: photo.name };
+            if (photo.position) {
+                body['position'] = photo.position.record();
+            }
+            void this.callApi(url, 'PATCH', new Headers(), body)
+                .then((data) => {
+                    const raw = data as { id: string; name: string; position?: IPosition };
+                    return resolve(new Photo({
+                        id: raw.id,
+                        name: raw.name,
+                        position: raw.position ? {
+                            latitude: raw.position.latitude,
+                            longitude: raw.position.longitude,
+                            accuracy: raw.position.accuracy,
+                            timestamp: raw.position.timestamp,
+                        } : undefined,
+                    }));
+                });
+        });
+    }
+
+    savePhotoImage(img: File): Promise<Photo> {
+        const url = DataProvider.getInstance().getApiUrl() + '/photos';
+
+        const formData = new FormData();
+        formData.append('file', img);
+
+        return new Promise<Photo>((resolve, reject) => {
+            fetch(url, {
+                method: 'POST',
+                headers: DataProvider.getInstance().getApiToken() ? { 'Authorization': `Bearer ${DataProvider.getInstance().getApiToken()}` } : undefined,
+                body: formData
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return reject(new Error(`HTTP error! status: ${response.status}`));
+                    }
+                    return response.json();
+                })
+                .then((data: PhotoStruct) => {
+                    const photo = new Photo({
+                        id: data.id,
+                        name: data.name,
+                        position: data.position ? {
+                            latitude: data.position.latitude,
+                            longitude: data.position.longitude,
+                            accuracy: data.position.accuracy,
+                            timestamp: data.position.timestamp
+                        } : undefined
+                    });
+                    return resolve(photo);
+                })
+                .catch(error => {
+                    return reject(new Error('Failed to upload photo', { cause: error }));
+                });
+        });
+    }
+
+
+    //-- Delete Single
+
+    deleteUnit(id: string): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. deleteUnit(${id})`));
+    }
+
+    deleteMapGroup(id: string): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. deleteMapGroup(${id})`));
+    }
+
+    deleteMapItem(id: string): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const url = DataProvider.getInstance().getApiUrl() + '/map/items/' + id;
+            void this.callApi(url, 'DELETE', new Headers())
+                .then(() => {
+                    return resolve();
+                })
+                .catch(error => {
+                    return reject(new Error('Failed to delete map item', { cause: error }));
+                });
+        });
+    }
+    deleteMapStyle(id: string): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. deleteMapStyle(${id})`));
+    }
+
+    deleteMapOverlay(id: string): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. deleteMapOverlay(${id})`));
+    }
+
+    deletePhoto(id: string): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const url = DataProvider.getInstance().getApiUrl() + '/photos/' + id;
+            void this.callApi(url, 'DELETE', new Headers())
+                .then(() => {
+                    return resolve();
+                })
+                .catch(error => {
+                    return reject(new Error('Failed to delete photo', { cause: error }));
+                });
+        });
+    }
+
+
+    //--
+
+
+    public async getMapOverlayTiles(overlay: MapOverlay): Promise<string[]> {
         let url: URL | undefined;
         if (overlay.getUrl().startsWith('http')) {
             url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search('{z}')));
@@ -387,223 +581,6 @@ export class ApiProvider implements StorageInterface {
         }
 
         return [];
-    }
-
-    private notifyListeners(event: ApiProviderEventTypes, data: { message: string }): void {
-        GlobalEventHandler.getInstance().emit(event, new ApiProviderEvent(event, data));
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    replaceOverlays(_overlays: MapOverlay[]): Promise<void> {
-        throw new Error('Not implemented');
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    replaceMapStyles(_mapStyles: MapBaseLayer[]): Promise<void> {
-        throw new Error('Not implemented');
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    replaceNamedGeoReferencedObjects(_namedGeoReferencedObjects: MapItem[]): Promise<void> {
-        throw new Error('replaceNamedGeoReferencedObjects not implemented');
-    }
-
-    loadMapGroup(id: string): Promise<MapGroup | null> {
-        throw new Error('loadMapGroup not implemented: ' + id);
-    }
-
-    loadAllMapGroups(): Promise<Record<string, MapGroup>> {
-        return new Promise<Record<string, MapGroup>>(resolve => {
-            const groups: Record<string, MapGroup> = {};
-            const url = DataProvider.getInstance().getApiUrl() + '/map/groups';
-
-            this.fetchData(url)
-                .then(data => {
-                    if (data == null || data._embedded == undefined || data._embedded.mapGroupDtoList == undefined) {
-                        resolve(groups);
-                        return;
-                    }
-                    for (const rawUnit of data._embedded.mapGroupDtoList) {
-                        groups[rawUnit.id] = MapGroup.of({
-                            id: rawUnit.id,
-                            name: rawUnit.name,
-                        });
-                    }
-                    resolve(groups);
-                })
-                .catch(e => {
-                    console.error('Error fetching overlay layers:', e);
-                });
-        });
-    }
-
-    saveMapGroup(mapGroup: MapGroup): Promise<MapGroup> {
-        throw new Error(`Method not implemented. saveMapGroup: ${mapGroup.getID()}`);
-    }
-
-    replaceMapGroups(mapGroups: MapGroup[]): Promise<void> {
-        throw new Error('Not Available on this Provider : replaceMapGroups ' + mapGroups.length);
-    }
-
-    deleteMapGroup(id: string): Promise<void> {
-        throw new Error(`Method not implemented. deleteMapGroup: ${id}`);
-    }
-
-    loadUnit(id: string): Promise<Unit | null> {
-        throw new Error('loadMapGroup not implemented: ' + id);
-    }
-
-    loadAllUnits(): Promise<Record<string, Unit>> {
-        return new Promise<Record<string, Unit>>(resolve => {
-            const units: Record<string, Unit> = {};
-            const url = DataProvider.getInstance().getApiUrl() + '/units';
-
-            this.fetchData(url)
-                .then(data => {
-                    if (data == null || data._embedded == undefined || data._embedded.unitDtoList == undefined) {
-                        resolve(units);
-                        return;
-                    }
-                    for (const rawUnit of data._embedded.unitDtoList) {
-                        units[rawUnit.id] = Unit.of({
-                            id: rawUnit.id,
-                            name: rawUnit.name,
-                            pos_latitude: rawUnit.position.latitude,
-                            pos_longitude: rawUnit.position.longitude,
-                            pos_accuracy: rawUnit.position.accuracy,
-                            pos_timestamp: rawUnit.position.timestamp,
-                            symbol: rawUnit.icon as never,
-                            unit_status: rawUnit.status,
-                            unit_status_timestamp: new Date().toISOString(),
-                            route: null,
-                        });
-                    }
-                    resolve(units);
-                })
-                .catch(e => {
-                    console.error('Error fetching overlay layers:', e);
-                });
-        });
-    }
-
-    saveUnit(unit: Unit): Promise<Unit> {
-        throw new Error(`Method not implemented. saveMapGroup: ${unit.getId()}`);
-    }
-
-    replaceUnits(units: Unit[]): Promise<void> {
-        throw new Error('Not Available on this Provider : replaceUnits ' + units.length);
-    }
-
-    deleteUnit(id: string): Promise<void> {
-        throw new Error(`Method not implemented. deleteUnit: ${id}`);
-    }
-
-
-    loadAllPictures(): Promise<Record<string, Photo>> {
-        return new Promise<Record<string, Photo>>(resolve => {
-            const pictures: Record<string, Photo> = {};
-            const url = DataProvider.getInstance().getApiUrl() + '/photos';
-
-            this.fetchData(url)
-                .then(data => {
-                    if (data == null || data._embedded == undefined || data._embedded.photoDtoList == undefined) {
-                        resolve(pictures);
-                        return;
-                    }
-                    for (const rawPhoto of data._embedded.photoDtoList) {
-                        pictures[rawPhoto.id] = new Photo({
-                            id: rawPhoto.id,
-                            name: rawPhoto.name,
-                            position: rawPhoto.position ? {
-                                latitude: rawPhoto.position.latitude,
-                                longitude: rawPhoto.position.longitude,
-                                accuracy: rawPhoto.position.accuracy,
-                                timestamp: rawPhoto.position.timestamp
-                            } : undefined
-                        });
-                    }
-                    resolve(pictures);
-                })
-                .catch(e => {
-                    console.error('Error fetching overlay layers:', e);
-                });
-        });
-    }
-
-    getPhotoImageSrc(id: string): string {
-        return DataProvider.getInstance().getApiUrl() + '/photos/' + id + '/image?token=' + DataProvider.getInstance().getApiToken();
-    }
-
-    updatePhoto(photo: Photo): Promise<Photo> {
-        const url = DataProvider.getInstance().getApiUrl() + '/photos/' + photo.id;
-        const body: Record<string, unknown> = { name: photo.name };
-        if (photo.position) {
-            body['position'] = photo.position.record();
-        }
-        return this.callApi(url, 'PATCH', new Headers(), body)
-            .then((data) => {
-                const raw = data as unknown as { id: string; name: string; position?: IPosition };
-                return new Photo({
-                    id: raw.id,
-                    name: raw.name,
-                    position: raw.position ? {
-                        latitude: raw.position.latitude,
-                        longitude: raw.position.longitude,
-                        accuracy: raw.position.accuracy,
-                        timestamp: raw.position.timestamp,
-                    } : undefined,
-                });
-            });
-    }
-
-    createPhoto(img: File): Promise<Photo> {
-        const url = DataProvider.getInstance().getApiUrl() + '/photos';
-
-        const formData = new FormData();
-        formData.append('file', img);
-
-        return new Promise<Photo>((resolve, reject) => {
-            fetch(url, {
-                method: 'POST',
-                headers: DataProvider.getInstance().getApiToken() ? { 'Authorization': `Bearer ${DataProvider.getInstance().getApiToken()}` } : undefined,
-                body: formData
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then((data: { id: string; name: string; position?: IPosition }) => {
-                    const photo = new Photo({
-                        id: data.id,
-                        name: data.name,
-                        position: data.position ? {
-                            latitude: data.position.latitude,
-                            longitude: data.position.longitude,
-                            accuracy: data.position.accuracy,
-                            timestamp: data.position.timestamp
-                        } : undefined
-                    });
-                    resolve(photo);
-                })
-                .catch(error => {
-                    console.error('Error uploading photo:', error);
-                    reject(new Error('Failed to upload photo'));
-                });
-        });
-    }
-
-    deletePhoto(id: string): Promise<void> {
-        const url = DataProvider.getInstance().getApiUrl() + '/photos/' + id;
-        return this.callApi(url, 'DELETE', new Headers())
-            .then(() => {
-                // Photo deleted successfully
-            })
-            .catch(error => {
-                console.error('Error deleting photo:', error);
-                throw new Error('Failed to delete photo');
-            });
     }
 }
 

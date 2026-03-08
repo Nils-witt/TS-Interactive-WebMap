@@ -43,7 +43,7 @@ export class MapBaseLayer extends AbstractEntity {
         };
     }
 
-    public getID(): string {
+    public getId(): string {
         return this.id;
     }
 

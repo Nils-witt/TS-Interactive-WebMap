@@ -11,59 +11,46 @@ import type {MapBaseLayer} from '../enitities/MapBaseLayer.ts';
 import type {MapItem} from '../enitities/MapItem.ts';
 import type {MapGroup} from '../enitities/MapGroup.ts';
 import type {Unit} from '../enitities/Unit.ts';
+import type { Photo } from '../enitities/Photo.ts';
 
 
 export interface StorageInterface {
 
     setUp(): Promise<void>;
 
-    saveOverlay(overlay: MapOverlay): Promise<MapOverlay>;
-
-    replaceOverlays(overlays: MapOverlay[]): Promise<void>;
-
-    loadOverlay(id: string): Promise<MapOverlay | null>;
-
-    loadAllOverlays(): Promise<Record<string, MapOverlay>>;
-
-    deleteOverlay(id: string): Promise<boolean>;
-
-    saveMapStyle(mapStyle: MapBaseLayer): Promise<MapBaseLayer>;
-
-    replaceMapStyles(mapStyles: MapBaseLayer[]): Promise<void>;
-
-    loadMapStyle(id: string): Promise<MapBaseLayer | null>;
-
-    loadAllMapStyles(): Promise<Record<string, MapBaseLayer>>;
-
-    deleteMapStyle(id: string): Promise<void>;
-
-    saveNamedGeoReferencedObject(namedGeoReferencedObject: MapItem): Promise<MapItem>;
-
-    replaceNamedGeoReferencedObjects(namedGeoReferencedObjects: MapItem[]): Promise<void>;
-
-    loadNamedGeoReferencedObject(id: string): Promise<MapItem | null>;
-
-    loadAllNamedGeoReferencedObjects(): Promise<Record<string, MapItem>>;
-
-    deleteNamedGeoReferencedObject(id: string): Promise<void>;
-
-    loadMapGroup(id: string): Promise<MapGroup | null>;
-
+    loadAllUnits(): Promise<Record<string, Unit>>;
     loadAllMapGroups(): Promise<Record<string, MapGroup>>;
+    loadAllMapItems(): Promise<Record<string, MapItem>>;
+    loadAllMapStyles(): Promise<Record<string, MapBaseLayer>>;
+    loadAllMapOverlays(): Promise<Record<string, MapOverlay>>;
+    loadAllPhotos(): Promise<Record<string, Photo>>;
 
-    saveMapGroup(mapGroup: MapGroup): Promise<MapGroup>;
+    loadUnit(id: string): Promise<Unit>;
+    loadMapGroup(id: string): Promise<MapGroup>;
+    loadMapItem(id: string): Promise<MapItem>;
+    loadMapStyle(id: string): Promise<MapBaseLayer>;
+    loadMapOverlay(id: string): Promise<MapOverlay>;
+    loadPhoto(id: string): Promise<Photo>;
 
-    replaceMapGroups(mapGroups: MapGroup[]): Promise<void>;
-
-    deleteMapGroup(id: string): Promise<void>;
+    replaceAllUnits(units: Unit[]): Promise<void>;
+    replaceAllMapGroups(mapGroups: MapGroup[]): Promise<void>;
+    replaceAllMapItems(mapItems: MapItem[]): Promise<void>;
+    replaceAllMapStyles(mapStyles: MapBaseLayer[]): Promise<void>;
+    replaceAllMapOverlays(mapOverlays: MapOverlay[]): Promise<void>;
+    replaceAllPhotos(photos: Photo[]): Promise<void>;
 
     saveUnit(unit: Unit): Promise<Unit>;
+    saveMapGroup(mapGroup: MapGroup): Promise<MapGroup>;
+    saveMapItem(mapItem: MapItem): Promise<MapItem>;
+    saveMapStyle(mapStyle: MapBaseLayer): Promise<MapBaseLayer>;
+    saveMapOverlay(mapOverlay: MapOverlay): Promise<MapOverlay>;
+    savePhoto(photo: Photo): Promise<Photo>;
+    savePhotoImage(image: File): Promise<Photo>;
 
     deleteUnit(id: string): Promise<void>;
-
-    loadUnit(id: string): Promise<Unit | null>;
-
-    loadAllUnits(): Promise<Record<string, Unit>>;
-
-    replaceUnits(units: Unit[]): Promise<void>;
+    deleteMapGroup(id: string): Promise<void>;
+    deleteMapItem(id: string): Promise<void>;
+    deleteMapStyle(id: string): Promise<void>;
+    deleteMapOverlay(id: string): Promise<void>;
+    deletePhoto(id: string): Promise<void>;
 }

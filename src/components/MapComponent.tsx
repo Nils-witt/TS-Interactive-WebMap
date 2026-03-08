@@ -67,7 +67,7 @@ export function MapComponent(props: MapComponentProps) {
     const qZoom = searchParams.get('zoom');
 
     // Resolve coordinates: id param → lat/lng params → localStorage → default (Bonn)
-    const resolvedItem = qId ? dataProvider.getMapLocations().get(qId) : undefined;
+    const resolvedItem = qId ? dataProvider.getAllMapItems().get(qId) : undefined;
 
     const mapCenter: [number, number] = resolvedItem
         ? [resolvedItem.getLongitude(), resolvedItem.getLatitude()]
@@ -97,10 +97,10 @@ export function MapComponent(props: MapComponentProps) {
     const [createZoom, setCreateZoom] = useState('14');
     const [createShowOnMap, setCreateShowOnMap] = useState(false);
     const [createGroupId, setCreateGroupId] = useState('');
-    const [groups, setGroups] = useState<MapGroup[]>(() => Array.from(dataProvider.getMapGroups().values()));
+    const [groups, setGroups] = useState<MapGroup[]>(() => Array.from(dataProvider.getAllMapGroups().values()));
 
     useEffect(() => {
-        const refresh = () => setGroups(Array.from(DataProvider.getInstance().getMapGroups().values()));
+        const refresh = () => setGroups(Array.from(DataProvider.getInstance().getAllMapGroups().values()));
         const events = [
             DataProviderEventType.MAP_GROUPS_UPDATED,
             DataProviderEventType.MAP_GROUPS_CREATED,
@@ -282,7 +282,7 @@ export function MapComponent(props: MapComponentProps) {
                     >
                         <MenuItem value=""><em>No group</em></MenuItem>
                         {groups.map((g) => (
-                            <MenuItem key={g.getID()} value={g.getID()}>{g.getName()}</MenuItem>
+                            <MenuItem key={g.getId()} value={g.getId()}>{g.getName()}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>

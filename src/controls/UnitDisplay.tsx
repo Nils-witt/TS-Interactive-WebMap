@@ -58,7 +58,7 @@ export function UnitDisplay() {
         DataProvider.getInstance().on(DataProviderEventType.UNIT_UPDATED, onUnitUpdated);
         DataProvider.getInstance().on(DataProviderEventType.UNIT_ADDED, onUnitAdded);
 
-        DataProvider.getInstance().getUnits().forEach((item) => {
+        DataProvider.getInstance().getAllUnits().forEach((item) => {
             ApplicationLogger.info('Showing existing unit on map:' + item.getName(), {service: 'UnitDisplay'});
             updateUnit(item);
         });

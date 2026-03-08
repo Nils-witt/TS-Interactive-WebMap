@@ -44,10 +44,10 @@ function App() {
                     runTimeProvider.setMapStyle(styles[0]);
                 }
             }),
-            dbProvider.loadAllOverlays().then((result: Record<string, MapOverlay>) => {
+            dbProvider.loadAllMapOverlays().then((result: Record<string, MapOverlay>) => {
                 const localOverlays = Object.values(result);
                 localOverlays.forEach((overlay: MapOverlay) => {
-                    runTimeProvider.addOverlay(overlay);
+                    runTimeProvider.addMapOverlay(overlay);
                 });
             }),
             dbProvider.loadAllMapGroups().then((result) => {
@@ -56,7 +56,7 @@ function App() {
                     runTimeProvider.addMapGroup(group);
                 });
             }),
-            dbProvider.loadAllNamedGeoReferencedObjects().then((result) => {
+            dbProvider.loadAllMapItems().then((result) => {
                 const localObjects = Object.values(result);
                 localObjects.forEach((item: MapItem) => {
                     runTimeProvider.addMapItem(item);
@@ -82,39 +82,37 @@ function App() {
                 if (mapStyles.length > 0) {
                     runTimeProvider.setMapStyle(Object.values(result)[0]);
                 }
-                void dbProvider.replaceMapStyles(mapStyles);
+                void dbProvider.replaceAllMapStyles(mapStyles);
             }),
-            remoteStorage.loadAllOverlays().then((result: Record<string, MapOverlay>) => {
+            remoteStorage.loadAllMapOverlays().then((result: Record<string, MapOverlay>) => {
                 const remoteOverlays = Object.values(result);
                 remoteOverlays.forEach((overlay: MapOverlay) => {
-                    runTimeProvider.addOverlay(overlay);
+                    runTimeProvider.addMapOverlay(overlay);
                 });
-                void dbProvider.replaceOverlays(remoteOverlays)
+                void dbProvider.replaceAllMapOverlays(remoteOverlays)
             }),
             remoteStorage.loadAllMapGroups().then((result) => {
                 const remoteMapGroups = Object.values(result);
                 remoteMapGroups.forEach((group) => {
                     runTimeProvider.addMapGroup(group);
                 });
-                void dbProvider.replaceMapGroups(remoteMapGroups);
+                void dbProvider.replaceAllMapGroups(remoteMapGroups);
             }),
-            remoteStorage.loadAllNamedGeoReferencedObjects().then((result) => {
+            remoteStorage.loadAllMapItems().then((result) => {
                 const remoteObjects = Object.values(result);
                 remoteObjects.forEach((item: MapItem) => {
                     runTimeProvider.addMapItem(item);
                 });
-                void dbProvider.replaceNamedGeoReferencedObjects(remoteObjects);
+                void dbProvider.replaceAllMapItems(remoteObjects);
             }),
             remoteStorage.loadAllUnits().then((result) => {
                 const remoteUnits = Object.values(result);
                 remoteUnits.forEach((unit) => {
                     runTimeProvider.addUnit(unit);
                 });
-                void dbProvider.replaceUnits(remoteUnits);
+                void dbProvider.replaceAllUnits(remoteUnits);
             })
-
-
-        ])
+        ]);
 
 
         ApplicationLogger.info("Data synchronization complete.", { service: "MapComponent" });

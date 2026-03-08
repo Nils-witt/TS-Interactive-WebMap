@@ -118,7 +118,7 @@ export function PhotoPage(): JSX.Element {
         });
         setEditSaving(true);
         ApiProvider.getInstance()
-            .updatePhoto(updated)
+            .savePhoto(updated)
             .then((saved) => {
                 setPhotos((prev) => prev.map((p) => p.id === saved.id ? saved : p));
                 closeEditDialog();
@@ -132,7 +132,7 @@ export function PhotoPage(): JSX.Element {
     const loadPhotos = useCallback(() => {
         setLoading(true);
         ApiProvider.getInstance()
-            .loadAllPictures()
+            .loadAllPhotos()
             .then((pictures) => {
                 setPhotos(Object.values(pictures));
             })
@@ -149,7 +149,7 @@ export function PhotoPage(): JSX.Element {
         if (!files) return;
         setUploading(true);
         Promise.all(
-            Array.from(files).map((file) => ApiProvider.getInstance().createPhoto(file))
+            Array.from(files).map((file) => ApiProvider.getInstance().savePhotoImage(file))
         )
             .then(() => loadPhotos())
             .catch((e) => console.error('Upload failed:', e))
@@ -198,7 +198,7 @@ export function PhotoPage(): JSX.Element {
                                 onClick={() => setSelected(photo)}
                             >
                                 <img
-                                    src={photo.id ? ApiProvider.getInstance().getPhotoImageSrc(photo.id) : ''}
+                                    src={photo.getImageSrc()}
                                     alt={photo.name}
                                     loading="lazy"
                                     style={{ display: 'block', width: '100%' }}
@@ -345,7 +345,7 @@ export function PhotoPage(): JSX.Element {
                         </DialogTitle>
                         <DialogContent sx={{ p: 0, textAlign: 'center', backgroundColor: '#000' }}>
                             <img
-                                src={ApiProvider.getInstance().getPhotoImageSrc(selected.id!)}
+                                src={selected.getImageSrc()}
                                 alt={selected.name}
                                 style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }}
                             />

@@ -156,12 +156,12 @@ export class DataProvider {
      *
      * @returns Map of all location objects indexed by their IDs
      */
-    public getMapLocations(): Map<string, MapItem> {
+    public getAllMapItems(): Map<string, MapItem> {
         return this.mapLocations;
     }
 
 
-    public deleteMapLocation(id: string): void {
+    public deleteMapItem(id: string): void {
         if (this.mapLocations.has(id)) {
             const item = this.mapLocations.get(id);
             this.mapLocations.delete(id);
@@ -178,7 +178,7 @@ export class DataProvider {
      * @param group - The map group object to store
      */
     public addMapGroup(group: MapGroup): void {
-        const id = group.getID();
+        const id = group.getId();
         if (this.mapGroups.has(id)) {
             this.mapGroups.set(id, group);
             this.triggerEvent(DataProviderEventType.MAP_GROUPS_UPDATED, group);
@@ -193,7 +193,7 @@ export class DataProvider {
      *
      * @returns Map of all group objects indexed by their IDs
      */
-    public getMapGroups(): Map<string, MapGroup> {
+    public getAllMapGroups(): Map<string, MapGroup> {
         return this.mapGroups;
     }
 
@@ -222,7 +222,7 @@ export class DataProvider {
      * @param id - Unique identifier for the overlay
      * @param overlay - The overlay configuration to store
      */
-    public addOverlay(overlay: MapOverlay): void {
+    public addMapOverlay(overlay: MapOverlay): void {
         if (this.overlays.has(overlay.getId())) {
             this.overlays.set(overlay.getId(), overlay);
             this.triggerEvent(DataProviderEventType.OVERLAY_UPDATED, overlay);
@@ -232,7 +232,7 @@ export class DataProvider {
         }
     }
 
-    public removeOverlay(id: string): void {
+    public removeMapOverlay(id: string): void {
         if (this.overlays.has(id)) {
             const overlay = this.overlays.get(id);
             if (!overlay) return;
@@ -248,7 +248,7 @@ export class DataProvider {
      *
      * @returns Map of all overlay configurations indexed by their IDs
      */
-    public getOverlays(): Map<string, MapOverlay> {
+    public getAllMapOverlays(): Map<string, MapOverlay> {
         return this.overlays;
     }
 
@@ -264,7 +264,7 @@ export class DataProvider {
         }
     }
 
-    public getUnits(): Map<string, Unit> {
+    public getAllUnits(): Map<string, Unit> {
         return this.units;
     }
 
@@ -325,7 +325,7 @@ export class DataProvider {
     }
 
     /** Returns the set of overlay IDs that are currently marked as visible. */
-    public getActiveOverlays(): Set<string> {
+    public getActiveMapOverlays(): Set<string> {
         return this.activeOverlays;
     }
 
@@ -334,7 +334,7 @@ export class DataProvider {
      *
      * @param ids - Set of overlay IDs that should be visible
      */
-    public setActiveOverlays(ids: Set<string>): void {
+    public setActiveMapOverlays(ids: Set<string>): void {
         this.activeOverlays = ids;
         localStorage.setItem('activeOverlays', JSON.stringify(Array.from(ids)));
         this.triggerEvent(DataProviderEventType.ACTIVE_OVERLAYS_UPDATED, Array.from(ids));

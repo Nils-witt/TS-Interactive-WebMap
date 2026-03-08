@@ -108,14 +108,14 @@ function OverlayTableRow({ overlay }: { overlay: MapOverlay }): JSX.Element {
 export function OverlaysPage(): JSX.Element {
     const dp = DataProvider.getInstance();
     const [overlays, setOverlays] = useState<MapOverlay[]>(() =>
-        Array.from(dp.getOverlays().values())
+        Array.from(dp.getAllMapOverlays().values())
     );
     const [nameFilter, setNameFilter] = useState('');
     const [sortField, setSortField] = useState<SortField>('order');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
     useEffect(() => {
-        const refresh = () => setOverlays(Array.from(DataProvider.getInstance().getOverlays().values()));
+        const refresh = () => setOverlays(Array.from(DataProvider.getInstance().getAllMapOverlays().values()));
         const events = [
             DataProviderEventType.OVERLAY_ADDED,
             DataProviderEventType.OVERLAY_UPDATED,

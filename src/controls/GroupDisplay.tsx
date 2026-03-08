@@ -26,7 +26,7 @@ export function GroupDisplay({ groupId }: GroupDisplayProps): React.JSX.Element 
             setItems([]);
             return;
         }
-        const all = DataProvider.getInstance().getMapLocations();
+        const all = DataProvider.getInstance().getAllMapItems();
         setItems(Array.from(all.values()).filter(i => i.getGroupId() === groupId));
     };
 

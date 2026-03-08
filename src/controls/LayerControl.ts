@@ -113,17 +113,17 @@ export class LayersControl extends Evented implements IControl {
         });
 
         // Restore previously active overlays from DataProvider (backed by localStorage)
-        for (const id of this.options.dataProvider.getActiveOverlays()) {
+        for (const id of this.options.dataProvider.getActiveMapOverlays()) {
             this.activeOverlays.set(id, true);
         }
 
         this.options.dataProvider.on(DataProviderEventType.OVERLAY_ADDED, () => {
-            this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
+            this.setOverlays(Array.from(this.options.dataProvider.getAllMapOverlays().values()));
         });
         this.options.dataProvider.on(DataProviderEventType.OVERLAY_UPDATED, () => {
-            this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
+            this.setOverlays(Array.from(this.options.dataProvider.getAllMapOverlays().values()));
         });
-        this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
+        this.setOverlays(Array.from(this.options.dataProvider.getAllMapOverlays().values()));
     }
 
     private setOpen(open: boolean): void {
@@ -213,7 +213,7 @@ export class LayersControl extends Evented implements IControl {
                     this.activeOverlays.delete(layer.getId());
                 }
                 // Persist the updated active-overlay set via DataProvider
-                this.options.dataProvider.setActiveOverlays(
+                this.options.dataProvider.setActiveMapOverlays(
                     new Set(Array.from(this.activeOverlays.entries()).filter(([, v]) => v).map(([k]) => k))
                 );
             }

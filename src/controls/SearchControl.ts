@@ -199,7 +199,7 @@ export class SearchControl extends Evented implements IControl {
         this.resultsContainer.classList.remove('hidden');
         let resultCount = 0;
 
-        let entries = Array.from(this.options.dataProvider.getMapLocations().values()).filter(entity => entity.getName().toLowerCase().includes(query.toLowerCase()));
+        let entries = Array.from(this.options.dataProvider.getAllMapItems().values()).filter(entity => entity.getName().toLowerCase().includes(query.toLowerCase()));
         entries = entries.sort((a, b) => a.getName().localeCompare(b.getName())); // Sort results by name
         if (entries.length === 0) {
             this.resultsContainer.classList.add('hidden');
