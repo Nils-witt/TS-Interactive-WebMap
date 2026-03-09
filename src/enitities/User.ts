@@ -1,4 +1,4 @@
-import { AbstractEntity, type DBRecord } from "./AbstractEntity";
+import { AbstractEntity, type DBRecord } from './AbstractEntity';
 
 
 export interface IUser {
@@ -28,28 +28,28 @@ export class User extends AbstractEntity {
         this.username = data.username;
     }
 
-        public static of(data: DBRecord): User {
-            return new User({
-                id: data.id as string,
-                email: data.email as string,
-                firstName: data.first_name as string,
-                lastName: data.last_name as string,
-                unitId: data.unit_id as string,
-                username: data.username as string,
-            });
-        }
+    public static of(data: DBRecord): User {
+        return new User({
+            id: data.id as string,
+            email: data.email as string,
+            firstName: data.first_name as string,
+            lastName: data.last_name as string,
+            unitId: data.unit_id as string,
+            username: data.username as string,
+        });
+    }
     
     
-        record(): DBRecord {
-            return {
-                id: this.id,
-                email: this.email,
-                first_name: this.firstName,
-                last_name: this.lastName,
-                unit_id: this.unitId,
-                username: this.username,
-            };
-        }
+    record(): DBRecord {
+        return {
+            id: this.id,
+            email: this.email,
+            first_name: this.firstName,
+            last_name: this.lastName,
+            unit_id: this.unitId,
+            username: this.username,
+        };
+    }
 
     getId(): string {
         return this.id;

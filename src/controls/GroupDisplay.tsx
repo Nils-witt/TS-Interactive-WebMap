@@ -18,7 +18,6 @@ interface GroupDisplayProps {
 
 export function GroupDisplay({ groupId }: GroupDisplayProps): React.JSX.Element {
     const [items, setItems] = useState<MapItem[]>([]);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
 
     /** (Re)compute the filtered item list whenever the groupId or data changes. */
     const refreshItems = () => {
@@ -54,7 +53,6 @@ export function GroupDisplay({ groupId }: GroupDisplayProps): React.JSX.Element 
                     <Marker
                         longitude={item.getLongitude()}
                         latitude={item.getLatitude()}
-                        onClick={() => setSelectedId(item.getId())}
                     />
                     <Popup
                         longitude={item.getLongitude()}

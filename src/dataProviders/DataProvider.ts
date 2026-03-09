@@ -165,7 +165,7 @@ export class DataProvider {
     public setActiveUserId(userId: string): void {
         localStorage.setItem('activeUser', userId);
         this.activeUserId = userId;
-        const lUser = this.users.get(userId)
+        const lUser = this.users.get(userId);
         if (lUser != undefined) {
             this.activeUser = lUser;
         }else {
