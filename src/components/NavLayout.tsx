@@ -28,6 +28,7 @@ const NAV_ROUTES: NavRoute[] = [
     { path: '/photo', label: 'Photo' },
     { path: '/units', label: 'Units' },
     { path: '/overlays', label: 'Overlays' },
+    { path: '/mission-groups', label: 'Mission Groups' },
 ];
 
 const USER_ACTIONS: { label: string, path?: string, onClick?: () => void }[] = [

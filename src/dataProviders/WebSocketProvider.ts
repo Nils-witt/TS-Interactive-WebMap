@@ -7,7 +7,10 @@ import { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
 import { MapItem } from '../enitities/MapItem.ts';
 import { DatabaseProvider } from './DatabaseProvider.ts';
 
-
+/**
+ * ToDo: Add update handling for map groups, users and photos if needed.
+ * ToDo: Add error handling and reconnection logic for WebSocket connection. Including preauthentication disconnect.
+ */
 export class WebSocketProvider {
 
 

@@ -11,6 +11,7 @@ import { MapLocationPage } from './pages/MapLocationPage.tsx';
 import { SettingsPage } from './pages/SettingsPage.tsx';
 import { UnitsPage } from './pages/UnitsPage.tsx';
 import { OverlaysPage } from './pages/OverlaysPage.tsx';
+import { MissionGroupsPage } from './pages/MissionGroupsPage.tsx';
 import { NavLayout } from './components/NavLayout.tsx';
 import { DatabaseProvider } from './dataProviders/DatabaseProvider.ts';
 import { MapOverlay } from './enitities/MapOverlay.ts';
@@ -193,6 +194,9 @@ function App() {
                 } />
                 <Route path="/overlays" element={
                     <ProtectedRoute loggedin={loggedin}><OverlaysPage /></ProtectedRoute>
+                } />
+                <Route path="/mission-groups" element={
+                    <ProtectedRoute loggedin={loggedin}><MissionGroupsPage /></ProtectedRoute>
                 } />
                 <Route path="*" element={
                     <ProtectedRoute loggedin={loggedin}><MapPage /></ProtectedRoute>
