@@ -32,6 +32,7 @@ function App() {
     void (async () => {
         ApplicationLogger.info("Loading local data from IndexedDB.", { service: "MapComponent" });
         const runTimeProvider = DataProvider.getInstance();
+        runTimeProvider.obtainActiveUser();
         const dbProvider = await DatabaseProvider.getInstance();
 
         const webSocketProvider = new WebSocketProvider();
@@ -66,6 +67,12 @@ function App() {
                 const localUnits = Object.values(result);
                 localUnits.forEach((unit) => {
                     runTimeProvider.addUnit(unit);
+                });
+            }),
+            dbProvider.loadAllUsers().then((result) => {
+                const localUsers = Object.values(result);
+                localUsers.forEach((user) => {
+                    runTimeProvider.addUser(user);
                 });
             })
         ]);
@@ -111,6 +118,13 @@ function App() {
                     runTimeProvider.addUnit(unit);
                 });
                 void dbProvider.replaceAllUnits(remoteUnits);
+            }),
+            remoteStorage.loadAllUsers().then((result) => {
+                const remoteUsers = Object.values(result);
+                remoteUsers.forEach((user) => {
+                    runTimeProvider.addUser(user);
+                });
+                void dbProvider.replaceAllUsers(remoteUsers);
             })
         ]);
 

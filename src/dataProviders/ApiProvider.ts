@@ -17,6 +17,7 @@ import { Unit } from '../enitities/Unit.ts';
 import type { ApiResponseStruct, MapItemStruct, PhotoStruct } from './structs/ApiResponseStruct.ts';
 import { Photo } from '../enitities/Photo.ts';
 import type { IPosition } from '../enitities/embeddables/EmbeddablePosition.ts';
+import { User } from '../enitities/User.ts';
 
 
 export class ApiProviderEvent extends Event {
@@ -95,8 +96,9 @@ export class ApiProvider implements StorageInterface {
         try {
             const res = await fetch(url, requestOptions);
             if (res.ok) {
-                const data: { token: string } = await res.json() as { token: string };
+                const data: { token: string; userId: string } = await res.json() as { token: string; userId: string };
                 DataProvider.getInstance().setApiToken(data.token); // Store the token for future requests
+                DataProvider.getInstance().setActiveUserId(data.userId); // Store the active user ID
                 this.notifyListeners(ApiProviderEventTypes.LOGIN_SUCCESS, { message: 'Login successful' });
             } else {
                 throw new Error(`HTTP error! status: ${res.status}`);
@@ -349,6 +351,36 @@ export class ApiProvider implements StorageInterface {
         });
     }
 
+    loadAllUsers(): Promise<Record<string, User>> {
+        return new Promise<Record<string, User>>((resolve, reject) => {
+            const users: Record<string, User> = {};
+            const url = DataProvider.getInstance().getApiUrl() + '/users';
+
+            this.fetchData(url)
+                .then(raw => {
+                    const data = raw as ApiResponseStruct;
+                    if (data == null || data._embedded == undefined || data._embedded.userDtoList == undefined) {
+                        return resolve(users);
+                    }
+                    for (const rawUser of data._embedded.userDtoList) {
+                        users[rawUser.id] = new User({
+                            id: rawUser.id,
+                            email: rawUser.email,
+                            firstName: rawUser.firstName,
+                            lastName: rawUser.lastName,
+                            unitId: rawUser.unitId,
+                            username: rawUser.username
+                        });
+                    }
+                    return resolve(users);
+                })
+                .catch(e => {
+                    return reject(new Error('Error fetching users', { cause: e }));
+                });
+        });
+    }
+
+
     //--- load Single Currently not implemented, as the app always loads all items at once. Can be implemented later if needed.
     loadUnit(id: string): Promise<Unit> {
         return Promise.reject(new Error(`Method not implemented. (loadUnit(${id}))`));
@@ -372,6 +404,10 @@ export class ApiProvider implements StorageInterface {
 
     loadPhoto(id: string): Promise<Photo> {
         return Promise.reject(new Error(`Method not implemented. (loadPhoto(${id}))`));
+    }
+
+    loadUser(id: string): Promise<User> {
+        return Promise.reject(new Error(`Method not implemented. (loadUser(${id}))`));
     }
 
     //-- Replace All Currently not implemented, as the app always loads all items at once and does not support bulk updates. Can be implemented later if needed.
@@ -399,7 +435,9 @@ export class ApiProvider implements StorageInterface {
         return Promise.reject(new Error(`Method not implemented. replaceAllPhotos(${photos.length})`));
     }
 
-
+    replaceAllUsers(users: User[]): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. replaceAllUsers(${users.length})`));
+    }
 
     //-- Save Single
     saveUnit(unit: Unit): Promise<Unit> {
@@ -512,6 +550,10 @@ export class ApiProvider implements StorageInterface {
         });
     }
 
+    saveUser(user: User): Promise<User> {
+        return Promise.reject(new Error(`Method not implemented. saveUser(${user.getId()})`));
+    }
+
 
     //-- Delete Single
 
@@ -556,6 +598,9 @@ export class ApiProvider implements StorageInterface {
         });
     }
 
+    deleteUser(id: string): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. deleteUser(${id})`));
+    }
 
     //--
 

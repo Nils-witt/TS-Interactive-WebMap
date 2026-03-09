@@ -12,6 +12,7 @@ import type {MapItem} from '../enitities/MapItem.ts';
 import type {MapGroup} from '../enitities/MapGroup.ts';
 import type {Unit} from '../enitities/Unit.ts';
 import type { Photo } from '../enitities/Photo.ts';
+import type { User } from '../enitities/User.ts';
 
 
 export interface StorageInterface {
@@ -24,6 +25,7 @@ export interface StorageInterface {
     loadAllMapStyles(): Promise<Record<string, MapBaseLayer>>;
     loadAllMapOverlays(): Promise<Record<string, MapOverlay>>;
     loadAllPhotos(): Promise<Record<string, Photo>>;
+    loadAllUsers(): Promise<Record<string, User>>;
 
     loadUnit(id: string): Promise<Unit>;
     loadMapGroup(id: string): Promise<MapGroup>;
@@ -31,6 +33,7 @@ export interface StorageInterface {
     loadMapStyle(id: string): Promise<MapBaseLayer>;
     loadMapOverlay(id: string): Promise<MapOverlay>;
     loadPhoto(id: string): Promise<Photo>;
+    loadUser(id: string): Promise<User>;
 
     replaceAllUnits(units: Unit[]): Promise<void>;
     replaceAllMapGroups(mapGroups: MapGroup[]): Promise<void>;
@@ -38,6 +41,7 @@ export interface StorageInterface {
     replaceAllMapStyles(mapStyles: MapBaseLayer[]): Promise<void>;
     replaceAllMapOverlays(mapOverlays: MapOverlay[]): Promise<void>;
     replaceAllPhotos(photos: Photo[]): Promise<void>;
+    replaceAllUsers(users: User[]): Promise<void>;
 
     saveUnit(unit: Unit): Promise<Unit>;
     saveMapGroup(mapGroup: MapGroup): Promise<MapGroup>;
@@ -46,6 +50,7 @@ export interface StorageInterface {
     saveMapOverlay(mapOverlay: MapOverlay): Promise<MapOverlay>;
     savePhoto(photo: Photo): Promise<Photo>;
     savePhotoImage(image: File): Promise<Photo>;
+    saveUser(user: User): Promise<User>;
 
     deleteUnit(id: string): Promise<void>;
     deleteMapGroup(id: string): Promise<void>;
@@ -53,4 +58,5 @@ export interface StorageInterface {
     deleteMapStyle(id: string): Promise<void>;
     deleteMapOverlay(id: string): Promise<void>;
     deletePhoto(id: string): Promise<void>;
+    deleteUser(id: string): Promise<void>;
 }

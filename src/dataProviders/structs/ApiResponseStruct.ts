@@ -11,6 +11,7 @@ export interface ApiResponseStruct {
         unitDtoList?: UnitStruct[]
         mapGroupDtoList?: MapGroupStruct[]
         photoDtoList?: PhotoStruct[]
+        userDtoList?: UserStruct[]
     }
     _links: unknown
 }
@@ -62,4 +63,12 @@ export interface UnitStruct extends AbstractEntityStruct{
 export interface PhotoStruct extends AbstractEntityStruct{
     name: string
     position?: PositionStruct
+}
+
+export interface UserStruct extends AbstractEntityStruct{
+    email: string;
+    firstName: string;
+    lastName: string;
+    unitId: string;
+    username: string;
 }

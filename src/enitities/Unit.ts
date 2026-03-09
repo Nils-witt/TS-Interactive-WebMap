@@ -82,8 +82,6 @@ export class Unit extends AbstractEntity {
 
 
     record(): DBRecord {
-        const record: DBRecord = {};
-        record['id'] = this.id;
         return {
             id: this.id,
             pos_latitude: this.position ? this.position.latitude : 0,

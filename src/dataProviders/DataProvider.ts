@@ -14,6 +14,7 @@ import { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
 import { type MapGroup } from '../enitities/MapGroup.ts';
 import type { Unit } from '../enitities/Unit.ts';
 import { MapConfig } from '../enitities/MapConfig.ts';
+import type { User } from '../enitities/User.ts';
 
 /**
  * Interface representing an event dispatched by the DataProvider.
@@ -62,6 +63,12 @@ export enum DataProviderEventType {
     UNIT_UPDATED = 'unit-updated',
     UNIT_DELETED = 'unit-deleted',
 
+    USER_ADDED = 'user-added',
+    USER_UPDATED = 'user-updated',
+    USER_DELETED = 'user-deleted',
+
+    ACTIVE_USER_UPDATED = 'active-user-updated',
+
     MAP_CENTER_UPDATED = 'map-center-updated',
     MAP_ZOOM_UPDATED = 'map-zoom-updated',
     API_URL_UPDATED = 'api-url-updated',
@@ -92,10 +99,15 @@ export class DataProvider {
 
     private units: Map<string, Unit> = new Map<string, Unit>();
 
+    private users: Map<string, User> = new Map<string, User>();
+
     private mapCenter: LngLat = new LngLat(0.0, 0.0); // Default center of the map
     private mapZoom: number;
 
     private mapConfig: MapConfig = new MapConfig();
+
+    private activeUser: User | null = null;
+    private activeUserId: string | null = null;
 
     /** Set of overlay IDs that are currently visible, persisted to localStorage */
     private activeOverlays: Set<string>;
@@ -133,6 +145,33 @@ export class DataProvider {
      */
     private triggerEvent(eventType: string, data: object | string | number): void {
         GlobalEventHandler.getInstance().emit(eventType, new DataProviderEvent(eventType, data));
+    }
+
+
+    public obtainActiveUser(): void {
+        const activeUserId = localStorage.getItem('activeUser');
+        this.activeUserId = activeUserId ? activeUserId : null;
+        const lUser = this.users.get(this.activeUserId as string);
+        if (lUser != undefined) {
+            this.activeUser = lUser;
+        }else {
+            this.activeUser = null;
+        }
+        if (activeUserId) {
+            this.triggerEvent(DataProviderEventType.ACTIVE_USER_UPDATED, this.activeUser as object);
+        }
+    }
+
+    public setActiveUserId(userId: string): void {
+        localStorage.setItem('activeUser', userId);
+        this.activeUserId = userId;
+        const lUser = this.users.get(userId)
+        if (lUser != undefined) {
+            this.activeUser = lUser;
+        }else {
+            this.activeUser = null;
+        }
+        this.triggerEvent(DataProviderEventType.ACTIVE_USER_UPDATED, this.activeUser as object);
     }
 
     /**
@@ -346,6 +385,34 @@ export class DataProvider {
 
     public off(eventType: string, listener: (event: DataProviderEvent) => void): void {
         GlobalEventHandler.getInstance().off(eventType, listener as ((event: Event) => void));
+    }
+
+    public addUser(user: User): void {
+        if (this.users.has(user.getId())) {
+            this.users.set(user.getId(), user);
+            this.triggerEvent(DataProviderEventType.USER_UPDATED, user);
+        } else {
+            this.users.set(user.getId(), user);
+            this.triggerEvent(DataProviderEventType.USER_ADDED, user);
+        }
+
+        if (user.getId() === this.activeUserId) {
+            this.activeUser = user;
+            this.triggerEvent(DataProviderEventType.ACTIVE_USER_UPDATED, this.activeUser as object);
+        }
+    }
+
+    public getAllUsers(): Map<string, User> {
+        return this.users;
+    }
+
+    public removeUser(id: string): void {
+        if (this.users.has(id)) {
+            const user = this.users.get(id);
+            if (!user) return;
+            this.users.delete(id);
+            this.triggerEvent(DataProviderEventType.USER_DELETED, user);
+        }
     }
 
 }

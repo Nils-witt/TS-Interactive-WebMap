@@ -15,6 +15,7 @@ import { MapGroup } from '../enitities/MapGroup.ts';
 import { ApplicationLogger } from '../ApplicationLogger.ts';
 import { Unit } from '../enitities/Unit.ts';
 import type { Photo } from '../enitities/Photo.ts';
+import { User } from '../enitities/User.ts';
 
 
 enum DB_TABLES {
@@ -23,6 +24,7 @@ enum DB_TABLES {
     mapItems = 'namedgeoreferencedobjects',
     mapGroups = 'mapGroups',
     units = 'units',
+    users = 'users',
 }
 
 export class DatabaseProvider implements StorageInterface {
@@ -37,7 +39,7 @@ export class DatabaseProvider implements StorageInterface {
 
     public async setUp(): Promise<void> {
 
-        const dbVersion = 10;
+        const dbVersion = 11;
         this.db = await openDB(this.DB_NAME, dbVersion, {
             upgrade(db) {
                 console.log(`Upgrading database to version ${dbVersion}`);
@@ -56,6 +58,9 @@ export class DatabaseProvider implements StorageInterface {
                 }
                 if (!db.objectStoreNames.contains(DB_TABLES.units)) {
                     db.createObjectStore(DB_TABLES.units, { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains(DB_TABLES.users)) {
+                    db.createObjectStore(DB_TABLES.users, { keyPath: 'id' });
                 }
             }
         });
@@ -177,6 +182,23 @@ export class DatabaseProvider implements StorageInterface {
         return Promise.reject(new Error('Method not implemented.'));
     }
 
+    loadAllUsers(): Promise<Record<string, User>> {
+        return new Promise<Record<string, User>>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.users, 'readonly');
+
+            void tx.objectStore(DB_TABLES.users).getAll()
+                .then((result: Record<string, string | number>[]) => {
+                    const overlays: Record<string, User> = {};
+                    for (const record of result) {
+                        const overlay = User.of(record);
+                        overlays[overlay.getId()] = overlay;
+                    }
+                    resolve(overlays);
+                });
+        });
+    }
+
     // -- load single
 
     loadUnit(id: string): Promise<Unit> {
@@ -266,6 +288,22 @@ export class DatabaseProvider implements StorageInterface {
 
     loadPhoto(id: string): Promise<Photo> {
         return Promise.reject(new Error(`Method not implemented. loadPhoto(${id}`));
+    }
+
+    loadUser(id: string): Promise<User> {
+        return new Promise<User>((resolve, reject) => {
+            if (!this.db) throw new Error('Database not initialized');
+
+            const tx = this.db.transaction(DB_TABLES.users, 'readonly');
+
+            void tx.objectStore(DB_TABLES.users).get(id).then((result: Record<string, string | number> | undefined) => {
+                if (result) {
+                    return resolve(User.of(result));
+                } else {
+                    reject(new Error('Not Exist'));
+                }
+            });
+        });
     }
 
     // -- replace all
@@ -413,6 +451,33 @@ export class DatabaseProvider implements StorageInterface {
         return Promise.reject(new Error(`Method not implemented. replaceAllPhotos(${photos.length} photos)`));
     }
 
+    replaceAllUsers(users: User[]): Promise<void> {
+        return new Promise<void>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.users, 'readwrite');
+            void tx.objectStore(DB_TABLES.users).getAllKeys().then(result => {
+                const existingKeys = result as string[];
+                const newKeys = users.map(entry => entry.getId());
+
+                for (const existingKey of existingKeys) {
+                    if (!newKeys.includes(existingKey)) {
+                        void tx.objectStore(DB_TABLES.users).delete(existingKey);
+                    }
+                }
+
+                for (const user of users) {
+                    const userRecord = user.record();
+                    if (existingKeys.includes(user.getId())) {
+                        void tx.objectStore(DB_TABLES.users).put(userRecord);
+                    } else {
+                        void tx.objectStore(DB_TABLES.users).add(userRecord);
+                    }
+                }
+                resolve();
+            });
+        });
+    }
+
     // -- save single
 
     saveUnit(unit: Unit): Promise<Unit> {
@@ -517,6 +582,24 @@ export class DatabaseProvider implements StorageInterface {
         return Promise.reject(new Error(`Method not implemented. savePhotoImage(${image.name})`));
     }
 
+    saveUser(user: User): Promise<User> {
+        return new Promise((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+
+            const userRecord = user.record();
+            const tx = this.db.transaction(DB_TABLES.users, 'readwrite');
+
+            void tx.objectStore(DB_TABLES.users).getKey(user.getId()).then(result => {
+                if (result) {
+                    void tx.objectStore(DB_TABLES.users).put(userRecord);
+                } else {
+                    void tx.objectStore(DB_TABLES.users).add(userRecord);
+                }
+                resolve(user);
+            });
+        });
+    }
+
     // -- delete single
 
     deleteUnit(id: string): Promise<void> {
@@ -603,6 +686,22 @@ export class DatabaseProvider implements StorageInterface {
 
     deletePhoto(id: string): Promise<void> {
         return Promise.reject(new Error(`Method not implemented. deletePhoto(${id})`));
+    }
+
+    deleteUser(id: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.users, 'readwrite');
+
+            void tx.objectStore(DB_TABLES.users).getKey(id).then(result => {
+                if (result) {
+                    void tx.objectStore(DB_TABLES.users).delete(id);
+                    resolve();
+                } else {
+                    reject(new Error('Not Exist'));
+                }
+            });
+        });
     }
 
 }

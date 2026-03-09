@@ -47,10 +47,6 @@ export function GroupDisplay({ groupId }: GroupDisplayProps): React.JSX.Element 
         };
     }, [groupId]);
 
-    useEffect(() => {
-        console.log('Selected Item ID:', selectedId);
-    }, [selectedId]);
-
     return (
         <>
             {items.map(item => (

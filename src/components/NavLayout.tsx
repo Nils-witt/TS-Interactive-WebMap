@@ -14,6 +14,8 @@ import { Utilities } from '../Utilities.ts';
 
 // @ts-expect-error Custom plugin to compile this line correctly not recognized by TypeScript
 import APPICON from '../svg/ts-interactive-webmap-icon.svg?react';
+import { DataProvider, DataProviderEvent, DataProviderEventType } from '../dataProviders/DataProvider.ts';
+import type { User } from '../enitities/User.ts';
 
 interface NavRoute {
     path: string;
@@ -38,6 +40,17 @@ export function NavLayout(): JSX.Element {
 
     const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
     const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
+
+    const [userDisplayName, setUserDisplayName] = React.useState<string>('');
+
+
+    React.useEffect(() => {
+        DataProvider.getInstance().on(DataProviderEventType.ACTIVE_USER_UPDATED, (event: DataProviderEvent) => {
+            console.log('Active user updated:', event.data);
+            setUserDisplayName((event.data as User)?.getUsername() || '');
+        });
+        
+    }, []);
 
     const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorElNav(event.currentTarget);
@@ -167,7 +180,9 @@ export function NavLayout(): JSX.Element {
                                 open={Boolean(anchorElUser)}
                                 onClose={handleCloseUserMenu}
                             >
-
+                                    <MenuItem key={'user_self'} >
+                                        <Typography sx={{ textAlign: 'center' }}>{userDisplayName}</Typography>
+                                    </MenuItem>
                                 {USER_ACTIONS.map(r => (
                                     <MenuItem key={r.label} onClick={() => { if (r.path) { void navigate(r.path); } else { r.onClick?.(); } handleCloseUserMenu(); }}>
                                         <Typography sx={{ textAlign: 'center' }}>{r.label}</Typography>
