@@ -14,10 +14,11 @@ import { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
 import type { StorageInterface } from './StorageInterface.ts';
 import { MapGroup } from '../enitities/MapGroup.ts';
 import { Unit } from '../enitities/Unit.ts';
-import type { ApiResponseStruct, MapItemStruct, PhotoStruct } from './structs/ApiResponseStruct.ts';
+import type { ApiResponseStruct, MapItemStruct, MissionGroupStruct, PhotoStruct } from './structs/ApiResponseStruct.ts';
 import { Photo } from '../enitities/Photo.ts';
 import type { IPosition } from '../enitities/embeddables/EmbeddablePosition.ts';
 import { User } from '../enitities/User.ts';
+import { MissionGroup } from '../enitities/MissionGroup.ts';
 
 
 export class ApiProviderEvent extends Event {
@@ -351,6 +352,36 @@ export class ApiProvider implements StorageInterface {
         });
     }
 
+    loadAllMissionGroups(): Promise<Record<string, MissionGroup>> {
+        return new Promise<Record<string, MissionGroup>>((resolve, reject) => {
+            const missionGroups: Record<string, MissionGroup> = {};
+            const url = DataProvider.getInstance().getApiUrl() + '/missiongroups';
+
+            this.fetchData(url)
+                .then(raw => {
+                    const data = raw as ApiResponseStruct;
+                    if (data == null || data._embedded == undefined || data._embedded.missionGroupDtoList == undefined) {
+                        return resolve(missionGroups);
+                    }
+                    for (const rawMissionGroup of data._embedded.missionGroupDtoList) {
+                        missionGroups[rawMissionGroup.id] = MissionGroup.of({
+                            id: rawMissionGroup.id,
+                            name: rawMissionGroup.name,
+                            startTime: rawMissionGroup.startTime,
+                            endTime: rawMissionGroup.endTime,
+                            mapGroupIds: rawMissionGroup.mapGroupIds,
+                            unitIds: rawMissionGroup.unitIds,
+                            position: rawMissionGroup.position,
+                        });
+                    }
+                    return resolve(missionGroups);
+                })
+                .catch(e => {
+                    return reject(new Error('Error fetching mission groups', { cause: e }));
+                });
+        });
+    }
+
     loadAllUsers(): Promise<Record<string, User>> {
         return new Promise<Record<string, User>>((resolve, reject) => {
             const users: Record<string, User> = {};
@@ -382,6 +413,10 @@ export class ApiProvider implements StorageInterface {
 
 
     //--- load Single Currently not implemented, as the app always loads all items at once. Can be implemented later if needed.
+    loadMissionGroup(id: string): Promise<MissionGroup> {
+        return Promise.reject(new Error(`Method not implemented. (loadMissionGroup(${id})))`));
+    }
+
     loadUnit(id: string): Promise<Unit> {
         return Promise.reject(new Error(`Method not implemented. (loadUnit(${id}))`));
     }
@@ -437,6 +472,10 @@ export class ApiProvider implements StorageInterface {
 
     replaceAllUsers(users: User[]): Promise<void> {
         return Promise.reject(new Error(`Method not implemented. replaceAllUsers(${users.length})`));
+    }
+
+    replaceAllMissionGroups(missionGroups: MissionGroup[]): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. replaceAllMissionGroups(${missionGroups.length})`));
     }
 
     //-- Save Single
@@ -554,6 +593,30 @@ export class ApiProvider implements StorageInterface {
         return Promise.reject(new Error(`Method not implemented. saveUser(${user.getId()})`));
     }
 
+    saveMissionGroup(missionGroup: MissionGroup): Promise<MissionGroup> {
+        return new Promise<MissionGroup>((resolve, reject) => {
+            const data = missionGroup.record();
+            const url = DataProvider.getInstance().getApiUrl() + '/mission-groups' + (missionGroup.getId() ? '/' + missionGroup.getId() : '');
+
+            this.callApi(url, missionGroup.getId() ? 'PUT' : 'POST', new Headers(), data)
+                .then((res) => {
+                    const response = res as MissionGroupStruct;
+                    return resolve(MissionGroup.of({
+                        id: response.id,
+                        name: response.name,
+                        startTime: response.startTime,
+                        endTime: response.endTime,
+                        mapGroupIds: response.mapGroupIds,
+                        unitIds: response.unitIds,
+                        position: response.position,
+                    }));
+                })
+                .catch(error => {
+                    return reject(new Error('Failed to save mission group', { cause: error }));
+                });
+        });
+    }
+
 
     //-- Delete Single
 
@@ -600,6 +663,19 @@ export class ApiProvider implements StorageInterface {
 
     deleteUser(id: string): Promise<void> {
         return Promise.reject(new Error(`Method not implemented. deleteUser(${id})`));
+    }
+
+    deleteMissionGroup(id: string): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const url = DataProvider.getInstance().getApiUrl() + '/mission-groups/' + id;
+            void this.callApi(url, 'DELETE', new Headers())
+                .then(() => {
+                    return resolve();
+                })
+                .catch(error => {
+                    return reject(new Error('Failed to delete mission group', { cause: error }));
+                });
+        });
     }
 
     //--

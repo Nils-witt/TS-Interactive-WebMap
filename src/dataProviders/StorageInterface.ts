@@ -13,6 +13,7 @@ import type {MapGroup} from '../enitities/MapGroup.ts';
 import type {Unit} from '../enitities/Unit.ts';
 import type { Photo } from '../enitities/Photo.ts';
 import type { User } from '../enitities/User.ts';
+import type { MissionGroup } from '../enitities/MissionGroup.ts';
 
 
 export interface StorageInterface {
@@ -26,6 +27,7 @@ export interface StorageInterface {
     loadAllMapOverlays(): Promise<Record<string, MapOverlay>>;
     loadAllPhotos(): Promise<Record<string, Photo>>;
     loadAllUsers(): Promise<Record<string, User>>;
+    loadAllMissionGroups(): Promise<Record<string, MissionGroup>>;
 
     loadUnit(id: string): Promise<Unit>;
     loadMapGroup(id: string): Promise<MapGroup>;
@@ -34,6 +36,7 @@ export interface StorageInterface {
     loadMapOverlay(id: string): Promise<MapOverlay>;
     loadPhoto(id: string): Promise<Photo>;
     loadUser(id: string): Promise<User>;
+    loadMissionGroup(id: string): Promise<MissionGroup>;
 
     replaceAllUnits(units: Unit[]): Promise<void>;
     replaceAllMapGroups(mapGroups: MapGroup[]): Promise<void>;
@@ -42,6 +45,7 @@ export interface StorageInterface {
     replaceAllMapOverlays(mapOverlays: MapOverlay[]): Promise<void>;
     replaceAllPhotos(photos: Photo[]): Promise<void>;
     replaceAllUsers(users: User[]): Promise<void>;
+    replaceAllMissionGroups(missionGroups: MissionGroup[]): Promise<void>;
 
     saveUnit(unit: Unit): Promise<Unit>;
     saveMapGroup(mapGroup: MapGroup): Promise<MapGroup>;
@@ -51,6 +55,7 @@ export interface StorageInterface {
     savePhoto(photo: Photo): Promise<Photo>;
     savePhotoImage(image: File): Promise<Photo>;
     saveUser(user: User): Promise<User>;
+    saveMissionGroup(missionGroup: MissionGroup): Promise<MissionGroup>;
 
     deleteUnit(id: string): Promise<void>;
     deleteMapGroup(id: string): Promise<void>;
@@ -59,4 +64,5 @@ export interface StorageInterface {
     deleteMapOverlay(id: string): Promise<void>;
     deletePhoto(id: string): Promise<void>;
     deleteUser(id: string): Promise<void>;
+    deleteMissionGroup(id: string): Promise<void>;
 }

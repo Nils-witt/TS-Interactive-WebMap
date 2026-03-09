@@ -74,6 +74,12 @@ function App() {
                 localUsers.forEach((user) => {
                     runTimeProvider.addUser(user);
                 });
+            }),
+                dbProvider.loadAllMissionGroups().then((result) => {
+                const localMissionGroups = Object.values(result);
+                localMissionGroups.forEach((group) => {
+                    runTimeProvider.addMissionGroup(group);
+                });
             })
         ]);
 
@@ -125,6 +131,14 @@ function App() {
                     runTimeProvider.addUser(user);
                 });
                 void dbProvider.replaceAllUsers(remoteUsers);
+            }),
+            remoteStorage.loadAllMissionGroups().then((result) => {
+                const remoteMissionGroups = Object.values(result);
+                console.log("Remote mission groups:", remoteMissionGroups);
+                remoteMissionGroups.forEach((group) => {
+                    runTimeProvider.addMissionGroup(group);
+                });
+                void dbProvider.replaceAllMissionGroups(remoteMissionGroups);
             })
         ]);
 

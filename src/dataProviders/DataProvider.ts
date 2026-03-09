@@ -15,6 +15,7 @@ import { type MapGroup } from '../enitities/MapGroup.ts';
 import type { Unit } from '../enitities/Unit.ts';
 import { MapConfig } from '../enitities/MapConfig.ts';
 import type { User } from '../enitities/User.ts';
+import type { MissionGroup } from '../enitities/MissionGroup.ts';
 
 /**
  * Interface representing an event dispatched by the DataProvider.
@@ -67,6 +68,10 @@ export enum DataProviderEventType {
     USER_UPDATED = 'user-updated',
     USER_DELETED = 'user-deleted',
 
+    MISSION_GROUPS_CREATED = 'missionGroups-created',
+    MISSION_GROUPS_UPDATED = 'missionGroups-updated',
+    MISSION_GROUPS_DELETED = 'missionGroups-deleted',
+
     ACTIVE_USER_UPDATED = 'active-user-updated',
 
     MAP_CENTER_UPDATED = 'map-center-updated',
@@ -96,6 +101,9 @@ export class DataProvider {
 
     /** Collection of map groups for organizing map elements */
     private mapGroups: Map<string, MapGroup> = new Map<string, MapGroup>();
+
+    /** Collection of mission groups for organizing mission-related data */
+    private missionGroups: Map<string, MissionGroup> = new Map<string, MissionGroup>();
 
     private units: Map<string, Unit> = new Map<string, Unit>();
 
@@ -412,6 +420,29 @@ export class DataProvider {
             if (!user) return;
             this.users.delete(id);
             this.triggerEvent(DataProviderEventType.USER_DELETED, user);
+        }
+    }
+
+    public addMissionGroup(missionGroup: MissionGroup): void {
+        if (this.missionGroups.has(missionGroup.getId())) {
+            this.missionGroups.set(missionGroup.getId(), missionGroup);
+            this.triggerEvent(DataProviderEventType.MISSION_GROUPS_UPDATED, missionGroup);
+        } else {
+            this.missionGroups.set(missionGroup.getId(), missionGroup);
+            this.triggerEvent(DataProviderEventType.MISSION_GROUPS_CREATED, missionGroup);
+        }
+    }
+
+    public getAllMissionGroups(): Map<string, MissionGroup> {
+        return this.missionGroups;
+    }
+
+    public removeMissionGroup(id: string): void {
+        if (this.missionGroups.has(id)) {
+            const missionGroup = this.missionGroups.get(id);
+            if (!missionGroup) return;
+            this.missionGroups.delete(id);
+            this.triggerEvent(DataProviderEventType.MISSION_GROUPS_DELETED, missionGroup);
         }
     }
 
