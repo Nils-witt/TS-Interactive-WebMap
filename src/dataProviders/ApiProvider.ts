@@ -253,12 +253,13 @@ export class ApiProvider implements StorageInterface {
                         mapStyles[layer.id] = MapBaseLayer.of({
                             id: layer.id,
                             name: layer.id,
-                            url: layer.url
+                            url: layer.url,
+                            cacheUrl: layer.cacheUrl
                         });
-                        const layerUrl = new URL(layer.url);
-                        new BroadcastChannel('setMapServicesBase').postMessage(
+                        new BroadcastChannel('addVectorCacheUrl').postMessage(
                             {
-                                url: layerUrl.protocol + '//' + layerUrl.hostname
+                                id: layer.id,
+                                url: layer.cacheUrl
                             }
                         );
                     }
@@ -292,6 +293,18 @@ export class ApiProvider implements StorageInterface {
                                 order: 0,
                                 opacity: 1.0
                             });
+                            new BroadcastChannel('addOverlayCacheUrl').postMessage(
+                                {
+                                    id: layer.id + '_' + layer.layerVersion,
+                                    url: layer.fullTileUrl
+                                });
+
+                            new BroadcastChannel('removeOtherOverlayCaches').postMessage(
+                                {
+                                    id: layer.id,
+                                    version: layer.layerVersion
+                                });
+                        
                         }
                         return resolve(overlays);
                     })

@@ -149,11 +149,8 @@ function App() {
 
     return (
         <Routes>
-            <Route path="/login" element={loggedin ? <Navigate to="/map" replace /> : <LoginPage />} />
+            <Route path="/login" element={loggedin ? <Navigate to="/" replace /> : <LoginPage />} />
             <Route element={<NavLayout />}>
-                <Route path="/map" element={
-                    <ProtectedRoute loggedin={loggedin}><MapPage /></ProtectedRoute>
-                } />
                 <Route path="/photo" element={
                     <ProtectedRoute loggedin={loggedin}><PhotoPage /></ProtectedRoute>
                 } />
@@ -169,8 +166,10 @@ function App() {
                 <Route path="/overlays" element={
                     <ProtectedRoute loggedin={loggedin}><OverlaysPage /></ProtectedRoute>
                 } />
+                <Route path="*" element={
+                    <ProtectedRoute loggedin={loggedin}><MapPage /></ProtectedRoute>
+                } />
             </Route>
-            <Route path="*" element={<Navigate to="/map" replace />} />
         </Routes>
     );
 }

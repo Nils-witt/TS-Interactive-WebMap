@@ -21,7 +21,7 @@ interface NavRoute {
 }
 
 const NAV_ROUTES: NavRoute[] = [
-    { path: '/map', label: 'Map' },
+    { path: '/', label: 'Map' },
     { path: '/locations', label: 'Locations' },
     { path: '/photo', label: 'Photo' },
     { path: '/units', label: 'Units' },

@@ -24,6 +24,7 @@ export interface AbstractEntityStruct {
 export interface MapBaseLayerStruct extends AbstractEntityStruct{
     name: string
     url: string
+    cacheUrl: string
 }
 export interface MapOverlayStruct extends AbstractEntityStruct{
     name: string
