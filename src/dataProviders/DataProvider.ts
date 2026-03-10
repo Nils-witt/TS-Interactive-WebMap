@@ -462,11 +462,11 @@ export class DataProvider {
             console.warn('Trying to add photo without ID');
             return;
         }
-        if (this.photos.has(photo.getId()!)) {
-            this.photos.set(photo.getId()!, photo);
+        if (this.photos.has(photo.getId())) {
+            this.photos.set(photo.getId(), photo);
             this.triggerEvent(DataProviderEventType.PHOTO_UPDATED, photo);
         } else {
-            this.photos.set(photo.getId()!, photo);
+            this.photos.set(photo.getId(), photo);
             this.triggerEvent(DataProviderEventType.PHOTO_CREATED, photo);
         }
     }

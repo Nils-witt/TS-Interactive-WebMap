@@ -1,4 +1,4 @@
-import { Map as MapLibreMap, Marker, NavigationControl, Popup, type MapRef } from '@vis.gl/react-maplibre';
+import { Map as MapLibreMap } from '@vis.gl/react-maplibre';
 import { useEffect, useState } from 'react';
 import { DataProvider, DataProviderEvent, DataProviderEventType } from '../dataProviders/DataProvider';
 import type { MapBaseLayer } from '../enitities/MapBaseLayer';
@@ -7,9 +7,12 @@ import type { MapBaseLayer } from '../enitities/MapBaseLayer';
 
 
 export function DisplayMapComponent() {
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [mapCenter, setMapCenter] = useState<[number, number]>(localStorage.getItem('mapCenter')
         ? JSON.parse(localStorage.getItem('mapCenter') || '[7.1545,50.7438]') as [number, number]
         : [7.1545, 50.7438]);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [zoom, setZoom] = useState<number>(localStorage.getItem('mapZoom') ? parseFloat(localStorage.getItem('mapZoom') || '10') : 10);
     const [mapStyle, setMapStyle] = useState<MapBaseLayer | undefined>(undefined);
 

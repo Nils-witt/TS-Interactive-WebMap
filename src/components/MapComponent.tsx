@@ -82,7 +82,7 @@ export function MapComponent(props: MapComponentProps) {
         // If unitId or groupId is present in the URL, we could set some state here to filter displayed units/groups on the map.
         // For now, we'll just log them.
         if (qUnit) {
-            let unit = dataProvider.getAllUnits().get(qUnit);
+            const unit = dataProvider.getAllUnits().get(qUnit);
             setShowUnit(unit || undefined);
             if (unit) {
                 setZoom(16);
@@ -110,7 +110,7 @@ export function MapComponent(props: MapComponentProps) {
         }
 
         if (qItem) {
-            let item = dataProvider.getAllMapItems().get(qItem);
+            const item = dataProvider.getAllMapItems().get(qItem);
             setShowItem(item || undefined);
             if (item) {
                 setZoom(item.getZoomLevel());

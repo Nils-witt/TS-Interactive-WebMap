@@ -197,7 +197,7 @@ export class DatabaseProvider implements StorageInterface {
                     const photos: Record<string, Photo> = {};
                     for (const record of result) {
                         const photo = Photo.of(record);
-                        photos[photo.getId()!] = photo;
+                        photos[photo.getId()] = photo;
                     }
                     resolve(photos);
                 });
@@ -529,7 +529,7 @@ export class DatabaseProvider implements StorageInterface {
 
                 for (const photo of photos) {
                     const photoRecord = photo.record();
-                    if (existingKeys.includes(photo.getId()!)) {
+                    if (existingKeys.includes(photo.getId())) {
                         void tx.objectStore(DB_TABLES.photos).put(photoRecord);
                     } else {
                         void tx.objectStore(DB_TABLES.photos).add(photoRecord);
@@ -556,7 +556,7 @@ export class DatabaseProvider implements StorageInterface {
 
                 for (const missionGroup of missionGroups) {
                     const missionGroupRecord = missionGroup.record();
-                    if (existingKeys.includes(missionGroup.getId()!)) {
+                    if (existingKeys.includes(missionGroup.getId())) {
                         void tx.objectStore(DB_TABLES.missionGroups).put(missionGroupRecord);
                     } else {
                         void tx.objectStore(DB_TABLES.missionGroups).add(missionGroupRecord);
@@ -697,7 +697,7 @@ export class DatabaseProvider implements StorageInterface {
             const photoRecord = photo.record();
             const tx = this.db.transaction(DB_TABLES.photos, 'readwrite');
 
-            void tx.objectStore(DB_TABLES.photos).getKey(photo.getId()!).then(result => {
+            void tx.objectStore(DB_TABLES.photos).getKey(photo.getId()).then(result => {
                 if (result) {
                     void tx.objectStore(DB_TABLES.photos).put(photoRecord);
                 } else {

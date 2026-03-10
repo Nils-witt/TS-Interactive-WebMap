@@ -78,7 +78,7 @@ export function UnitDisplay(props: { showId?: string | null }): React.JSX.Elemen
             updateUnit(item);
         });
 
-        let activeUser = DataProvider.getInstance().getActiveUser();
+        const activeUser = DataProvider.getInstance().getActiveUser();
         if (activeUser) {
             const selfUnitId = activeUser.getUnitId();
             if (selfUnitId) {

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, type JSX } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import {
     Box,
     Button,
@@ -52,7 +52,6 @@ export function PhotoPage(): JSX.Element {
 
     const [photos, setPhotos] = useState<Photo[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [uploading, setUploading] = useState<boolean>(false);
     const [selected, setSelected] = useState<Photo | null>(null);
 
     const [missionGroups, setMissionGroups] = useState<MissionGroup[]>([]);
@@ -74,7 +73,6 @@ export function PhotoPage(): JSX.Element {
     const [createLatitude, setCreateLatitude] = useState('');
     const [createLongitude, setCreateLongitude] = useState('');
     const [createGeolocating, setCreateGeolocating] = useState(false);
-    const [createMissionGroupId, setCreateMissionGroupId] = useState('');
     const [creating, setCreating] = useState(false);
     const [createPreview, setCreatePreview] = useState<string | null>(null);
 
