@@ -182,6 +182,10 @@ export class DataProvider {
         this.triggerEvent(DataProviderEventType.ACTIVE_USER_UPDATED, this.activeUser as object);
     }
 
+    public getActiveUser(): User | null {
+        return this.activeUser;
+    }
+
     /**
      * Adds a new map location to the data store and notifies subscribers.
      *

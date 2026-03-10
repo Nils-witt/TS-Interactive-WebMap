@@ -135,7 +135,6 @@ function App() {
             }),
             remoteStorage.loadAllMissionGroups().then((result) => {
                 const remoteMissionGroups = Object.values(result);
-                console.log("Remote mission groups:", remoteMissionGroups);
                 remoteMissionGroups.forEach((group) => {
                     runTimeProvider.addMissionGroup(group);
                 });

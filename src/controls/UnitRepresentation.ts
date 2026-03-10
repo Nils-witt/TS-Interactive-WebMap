@@ -25,6 +25,11 @@ export class UnitRepresentation {
 
     private status_div = document.createElement('div');
 
+    /**
+     * If true, the unit will always be shown regardless of its status or position update time. This is used for the "follow unit" feature.
+     */
+    private showAlways = false;
+
     constructor(unit: Unit, map: maplibregl.Map | undefined) {
         this.unit = unit;
         this.map = map;
@@ -153,6 +158,11 @@ export class UnitRepresentation {
 
     private updateVisibility(): void {
         if(this.marker != null) {
+            if (this.map != null && this.unit.getPosition() != null && this.showAlways) {
+                this.marker.addTo(this.map);
+                return;
+            }
+
             if (
                 this.map != null &&
                 this.unit.getStatus() != null &&
@@ -173,4 +183,11 @@ export class UnitRepresentation {
         }
         this.updateVisibility();
     }
+
+    public setShowAlways(show: boolean): void {
+        console.log(`Setting showAlways for unit ${this.unit.getId()} to ${show}`);
+        this.showAlways = show;
+        this.updateVisibility();
+    }
+
 }

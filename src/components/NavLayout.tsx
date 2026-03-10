@@ -47,7 +47,6 @@ export function NavLayout(): JSX.Element {
 
     React.useEffect(() => {
         DataProvider.getInstance().on(DataProviderEventType.ACTIVE_USER_UPDATED, (event: DataProviderEvent) => {
-            console.log('Active user updated:', event.data);
             setUserDisplayName((event.data as User)?.getUsername() || '');
         });
         

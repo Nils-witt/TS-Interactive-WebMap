@@ -13,7 +13,7 @@ import type { MapItem } from '../enitities/MapItem.ts';
 
 interface GroupDisplayProps {
     /** The ID of the group whose items should be shown, or null to show nothing. */
-    groupId: string | null;
+    groupId: string | null | undefined;
 }
 
 export function GroupDisplay({ groupId }: GroupDisplayProps): React.JSX.Element {

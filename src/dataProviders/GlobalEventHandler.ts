@@ -48,7 +48,6 @@ export class GlobalEventHandler {
     }
 
     emit(eventName: string, event: Event): void {
-        //ApplicationLogger.info(`Emitting event: ${eventName}`, {service: 'GlobalEventHandler'});
         this.listeners.get(eventName)?.forEach(callback => {
             callback(event);
         });

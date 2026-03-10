@@ -6,13 +6,15 @@ import type {Unit} from "../enitities/Unit.ts";
 import {ApplicationLogger} from "../ApplicationLogger.ts";
 import {GlobalEventHandler} from "../dataProviders/GlobalEventHandler.ts";
 import {UnitRepresentation} from "./UnitRepresentation.ts";
+import type { User } from "../enitities/User.ts";
 
 
-export function UnitDisplay() {
+export function UnitDisplay(props: { showId?: string | null }): React.JSX.Element {
     const mapRef = useMap();
 
     const [iconSize, setIconSize] = useState<number>(75);
     const [units] = useState<Map<string, UnitRepresentation>>(new Map<string, UnitRepresentation>());
+    const [selfUnitId, setSelfUnitId] = useState<string | null>(null);
 
     const [excludeStatuses, setExcludeStatuses] = useState<number[]>([6]);
     const [hideUnitsAfterPositionUpdate, setHideUnitsAfterPositionUpdate] = useState<number>(21600);
@@ -51,17 +53,43 @@ export function UnitDisplay() {
             updateUnit(event.data as Unit);
         };
 
+        const onActiveUserUpdated = (event: DataProviderEvent) => {
+            const updatedUser = event.data as User;
+            const selfUnitId = updatedUser.getUnitId();
+            if (selfUnitId) {
+                setSelfUnitId(selfUnitId);
+                if(units.get(selfUnitId)) {
+                    units.get(selfUnitId)?.setShowAlways(true);
+                }
+            } else {
+                setSelfUnitId(null);
+            }
+        }
+
         GlobalEventHandler.getInstance().on(MapConfigEvents.UnitIconSizeChanged, onUnitIconSizeChanged);
         GlobalEventHandler.getInstance().on(MapConfigEvents.ShowUnitStatusChanged, onShowUnitStatusChanged);
         GlobalEventHandler.getInstance().on(MapConfigEvents.ExcludeStatusesChanged, onExcludeStatusesChanged);
         GlobalEventHandler.getInstance().on(MapConfigEvents.HideUnitsAfterPositionUpdateChanged, onHideUnitsAfterPositionUpdateChanged);
         DataProvider.getInstance().on(DataProviderEventType.UNIT_UPDATED, onUnitUpdated);
         DataProvider.getInstance().on(DataProviderEventType.UNIT_ADDED, onUnitAdded);
+        DataProvider.getInstance().on(DataProviderEventType.ACTIVE_USER_UPDATED, onActiveUserUpdated);
 
         DataProvider.getInstance().getAllUnits().forEach((item) => {
-            ApplicationLogger.info('Showing existing unit on map:' + item.getName(), {service: 'UnitDisplay'});
             updateUnit(item);
         });
+
+        let activeUser = DataProvider.getInstance().getActiveUser();
+        if (activeUser) {
+            const selfUnitId = activeUser.getUnitId();
+            if (selfUnitId) {
+                setSelfUnitId(selfUnitId);
+                if(units.get(selfUnitId)) {
+                    units.get(selfUnitId)?.setShowAlways(true);
+                }
+            } else {
+                setSelfUnitId(null);
+            }
+        }
 
         return () => {
             GlobalEventHandler.getInstance().off(MapConfigEvents.UnitIconSizeChanged, onUnitIconSizeChanged);
@@ -70,8 +98,13 @@ export function UnitDisplay() {
             GlobalEventHandler.getInstance().off(MapConfigEvents.HideUnitsAfterPositionUpdateChanged, onHideUnitsAfterPositionUpdateChanged);
             DataProvider.getInstance().off(DataProviderEventType.UNIT_UPDATED, onUnitUpdated);
             DataProvider.getInstance().off(DataProviderEventType.UNIT_ADDED, onUnitAdded);
+            DataProvider.getInstance().off(DataProviderEventType.ACTIVE_USER_UPDATED, onActiveUserUpdated);
         };
     }, []);
+
+    useEffect(() => {
+        units.get(props.showId || '')?.setShowAlways(true);
+    }, [props.showId]);
 
     useEffect(() => {
         units.forEach(unit => {
@@ -113,6 +146,9 @@ export function UnitDisplay() {
             newRep.setShowStatusBar(showUnitStatus);
             newRep.setShowIconTimeout(hideUnitsAfterPositionUpdate);
             newRep.setExcludeStatuses(excludeStatuses);
+            if (selfUnitId == unit.getId()) {
+                newRep.setShowAlways(true);
+            }
             units.set(unit.getId() as string, newRep);
         }
     }

@@ -276,9 +276,7 @@ export function UnitsPage(): JSX.Element {
                                                             onClick={() => {
                                                                 if (!pos) return;
                                                                 const params = new URLSearchParams({
-                                                                    lat: pos.getLatitude().toString(),
-                                                                    lng: pos.getLongitude().toString(),
-                                                                    zoom: '16',
+                                                                    unitId: unit.getId() || ''
                                                                 });
                                                                 void navigate(`/map?${params.toString()}`);
                                                             }}
