@@ -20,6 +20,7 @@ import { type StorageInterface } from './dataProviders/StorageInterface.ts';
 import { ApiProvider } from './dataProviders/ApiProvider.ts';
 import { MapBaseLayer } from './enitities/MapBaseLayer.ts';
 import { WebSocketProvider } from './dataProviders/WebSocketProvider.ts';
+import { DisplayPage } from './pages/DisplayPage.tsx';
 
 function ProtectedRoute({ loggedin, children }: { loggedin: boolean; children: JSX.Element }) {
     if (!loggedin) return <Navigate to="/login" replace />;
@@ -76,10 +77,16 @@ function App() {
                     runTimeProvider.addUser(user);
                 });
             }),
-                dbProvider.loadAllMissionGroups().then((result) => {
+            dbProvider.loadAllMissionGroups().then((result) => {
                 const localMissionGroups = Object.values(result);
                 localMissionGroups.forEach((group) => {
                     runTimeProvider.addMissionGroup(group);
+                });
+            }),
+            dbProvider.loadAllPhotos().then((result) => {
+                const localPhotos = Object.values(result);
+                localPhotos.forEach((photo) => {
+                    runTimeProvider.addPhoto(photo);
                 });
             })
         ]);
@@ -139,6 +146,13 @@ function App() {
                     runTimeProvider.addMissionGroup(group);
                 });
                 void dbProvider.replaceAllMissionGroups(remoteMissionGroups);
+            }),
+            remoteStorage.loadAllPhotos().then((result) => {
+                const remotePhotos = Object.values(result);
+                remotePhotos.forEach((photo) => {
+                    runTimeProvider.addPhoto(photo);
+                });
+                void dbProvider.replaceAllPhotos(remotePhotos);
             })
         ]);
 
@@ -178,6 +192,9 @@ function App() {
     return (
         <Routes>
             <Route path="/login" element={loggedin ? <Navigate to="/" replace /> : <LoginPage />} />
+            <Route path="/display" element={
+                <ProtectedRoute loggedin={loggedin}><DisplayPage /></ProtectedRoute>
+            } />
             <Route element={<NavLayout />}>
                 <Route path="/photo" element={
                     <ProtectedRoute loggedin={loggedin}><PhotoPage /></ProtectedRoute>

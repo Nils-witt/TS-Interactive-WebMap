@@ -16,6 +16,7 @@ import type { Unit } from '../enitities/Unit.ts';
 import { MapConfig } from '../enitities/MapConfig.ts';
 import type { User } from '../enitities/User.ts';
 import type { MissionGroup } from '../enitities/MissionGroup.ts';
+import type { Photo } from '../enitities/Photo.ts';
 
 /**
  * Interface representing an event dispatched by the DataProvider.
@@ -72,6 +73,10 @@ export enum DataProviderEventType {
     MISSION_GROUPS_UPDATED = 'missionGroups-updated',
     MISSION_GROUPS_DELETED = 'missionGroups-deleted',
 
+    PHOTO_CREATED = 'photo-created',
+    PHOTO_UPDATED = 'photo-updated',
+    PHOTO_DELETED = 'photo-deleted',
+
     ACTIVE_USER_UPDATED = 'active-user-updated',
 
     MAP_CENTER_UPDATED = 'map-center-updated',
@@ -108,6 +113,8 @@ export class DataProvider {
     private units: Map<string, Unit> = new Map<string, Unit>();
 
     private users: Map<string, User> = new Map<string, User>();
+
+    private photos: Map<string, Photo> = new Map<string, Photo>();
 
     private mapCenter: LngLat = new LngLat(0.0, 0.0); // Default center of the map
     private mapZoom: number;
@@ -450,4 +457,30 @@ export class DataProvider {
         }
     }
 
+    public addPhoto(photo: Photo): void {
+        if(!photo.getId()) {
+            console.warn('Trying to add photo without ID');
+            return;
+        }
+        if (this.photos.has(photo.getId()!)) {
+            this.photos.set(photo.getId()!, photo);
+            this.triggerEvent(DataProviderEventType.PHOTO_UPDATED, photo);
+        } else {
+            this.photos.set(photo.getId()!, photo);
+            this.triggerEvent(DataProviderEventType.PHOTO_CREATED, photo);
+        }
+    }
+
+    public getAllPhotos(): Map<string, Photo> {
+        return this.photos;
+    }
+
+    public removePhoto(id: string): void {
+        if (this.photos.has(id)) {
+            const photo = this.photos.get(id);
+            if (!photo) return;
+            this.photos.delete(id);
+            this.triggerEvent(DataProviderEventType.PHOTO_DELETED, photo);
+        }
+    }
 }

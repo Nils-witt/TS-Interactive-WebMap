@@ -7,10 +7,14 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    FormControl,
     IconButton,
     ImageList,
     ImageListItem,
     ImageListItemBar,
+    InputLabel,
+    MenuItem,
+    Select,
     TextField,
     Tooltip,
     Typography,
@@ -25,6 +29,9 @@ import PlaceIcon from '@mui/icons-material/Place';
 import { styled } from '@mui/material/styles';
 import { ApiProvider } from '../dataProviders/ApiProvider';
 import { Photo } from '../enitities/Photo';
+import type { MissionGroup } from '../enitities/MissionGroup';
+import { DataProvider, DataProviderEventType } from '../dataProviders/DataProvider';
+import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler';
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -48,6 +55,9 @@ export function PhotoPage(): JSX.Element {
     const [uploading, setUploading] = useState<boolean>(false);
     const [selected, setSelected] = useState<Photo | null>(null);
 
+    const [missionGroups, setMissionGroups] = useState<MissionGroup[]>([]);
+    const [missionGroupFilter, setMissionGroupFilter] = useState<string>('');
+
     // ── Edit dialog state ──────────────────────────────────────────────────
     const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null);
     const [editName, setEditName] = useState('');
@@ -56,6 +66,72 @@ export function PhotoPage(): JSX.Element {
     const [editSaving, setEditSaving] = useState(false);
     const [geolocating, setGeolocating] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
+
+    // ── Create dialog state ────────────────────────────────────────────────
+    const [createOpen, setCreateOpen] = useState(false);
+    const [createFile, setCreateFile] = useState<File | null>(null);
+    const [createName, setCreateName] = useState('');
+    const [createLatitude, setCreateLatitude] = useState('');
+    const [createLongitude, setCreateLongitude] = useState('');
+    const [createGeolocating, setCreateGeolocating] = useState(false);
+    const [createMissionGroupId, setCreateMissionGroupId] = useState('');
+    const [creating, setCreating] = useState(false);
+    const [createPreview, setCreatePreview] = useState<string | null>(null);
+
+    const openCreateDialog = () => {
+        setCreateFile(null);
+        setCreateName('');
+        setCreateLatitude('');
+        setCreateLongitude('');
+        setCreatePreview(null);
+        setCreateOpen(true);
+    };
+
+    const closeCreateDialog = () => {
+        setCreateOpen(false);
+        if (createPreview) URL.revokeObjectURL(createPreview);
+        setCreatePreview(null);
+    };
+
+    const handleCreateFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        setCreateFile(file);
+        if (file) {
+            setCreateName(file.name.replace(/\.[^.]+$/, ''));
+            if (createPreview) URL.revokeObjectURL(createPreview);
+            setCreatePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const useCurrentLocationCreate = () => {
+        if (!window.navigator.geolocation) return;
+        setCreateGeolocating(true);
+        window.navigator.geolocation.getCurrentPosition(
+            (pos: GeolocationPosition) => {
+                setCreateLatitude(String(pos.coords.latitude));
+                setCreateLongitude(String(pos.coords.longitude));
+                setCreateGeolocating(false);
+            },
+            (err: GeolocationPositionError) => {
+                console.error('Geolocation error:', err);
+                setCreateGeolocating(false);
+            },
+            { enableHighAccuracy: true }
+        );
+    };
+
+    const submitCreateDialog = () => {
+        if (!createFile) return;
+        setCreating(true);
+        ApiProvider.getInstance()
+            .savePhotoImage(createFile, createLatitude || createLongitude ? { latitude: parseFloat(createLatitude), longitude: parseFloat(createLongitude), accuracy: 0, timestamp: new Date().toISOString() } : null, createName.trim(), missionGroupFilter)
+            .then((photo) => {
+                setPhotos((prev) => [photo, ...prev]);
+                closeCreateDialog();
+            })
+            .catch((e) => console.error('Failed to create photo:', e))
+            .finally(() => setCreating(false));
+    };
 
     const useCurrentLocation = () => {
         if (!window.navigator.geolocation) return;
@@ -115,6 +191,8 @@ export function PhotoPage(): JSX.Element {
                     timestamp: editingPhoto.position?.getTimestamp().toISOString() ?? new Date().toISOString(),
                 }
                 : undefined,
+            authorId: editingPhoto.authorId,
+            missionGroupId: editingPhoto.missionGroupId,
         });
         setEditSaving(true);
         ApiProvider.getInstance()
@@ -129,36 +207,33 @@ export function PhotoPage(): JSX.Element {
 
     const cols = isXs ? 2 : isSm ? 3 : 4;
 
-    const loadPhotos = useCallback(() => {
-        setLoading(true);
-        ApiProvider.getInstance()
-            .loadAllPhotos()
-            .then((pictures) => {
-                setPhotos(Object.values(pictures));
-            })
-            .catch((e) => console.error('Failed to load photos:', e))
-            .finally(() => setLoading(false));
-    }, []);
+    const dp = DataProvider.getInstance();
+
+    const refresh = () => {
+        const pMissionGroups = Array.from(dp.getAllMissionGroups().values());
+        setPhotos(Array.from(dp.getAllPhotos().values()));
+        setMissionGroups(pMissionGroups);
+        setLoading(false);
+        console.log('PhotoPage refreshed, ', missionGroupFilter, pMissionGroups);
+        if (missionGroupFilter.trim() == '' && pMissionGroups.length > 0) {
+            setMissionGroupFilter(pMissionGroups[0].getId());
+        }
+    };
 
     useEffect(() => {
-        loadPhotos();
-    }, [loadPhotos]);
+        const events = [
+            DataProviderEventType.PHOTO_UPDATED,
+            DataProviderEventType.PHOTO_DELETED,
+            DataProviderEventType.PHOTO_CREATED,
+            DataProviderEventType.MISSION_GROUPS_CREATED,
+            DataProviderEventType.MISSION_GROUPS_UPDATED,
+            DataProviderEventType.MISSION_GROUPS_DELETED,
+        ];
+        refresh();
+        events.forEach((event) => GlobalEventHandler.getInstance().on(event, refresh));
+        return () => events.forEach((event) => GlobalEventHandler.getInstance().off(event, refresh));
+    }, []);
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (!files) return;
-        setUploading(true);
-        Promise.all(
-            Array.from(files).map((file) => ApiProvider.getInstance().savePhotoImage(file))
-        )
-            .then(() => loadPhotos())
-            .catch((e) => console.error('Upload failed:', e))
-            .finally(() => {
-                setUploading(false);
-                // Reset input so the same file can be re-uploaded
-                event.target.value = '';
-            });
-    };
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -167,15 +242,23 @@ export function PhotoPage(): JSX.Element {
                 <Typography variant="h5" sx={{ flexGrow: 1 }}>
                     Photos
                 </Typography>
-                <Button onClick={loadPhotos}>Refresh</Button>
-                <Button
-                    component="label"
-                    variant="contained"
-                    startIcon={uploading ? <CircularProgress size={18} color="inherit" /> : <CloudUploadIcon />}
-                    disabled={uploading}
-                >
-                    {uploading ? 'Uploading…' : 'Upload'}
-                    <VisuallyHiddenInput type="file" accept="image/*" onChange={handleFileChange} multiple />
+                <FormControl size="small" sx={{ minWidth: 200 }}>
+                    <InputLabel>Filter by Mission Group</InputLabel>
+                    <Select
+                        value={missionGroupFilter}
+                        label="Filter by Group"
+                        onChange={(e) => setMissionGroupFilter(e.target.value)}
+                    >
+                        {missionGroups.map((g) => (
+                            <MenuItem key={g.getId()} value={g.getId()}>
+                                {g.getName()}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <Button onClick={refresh}>Refresh</Button>
+                <Button variant="contained" onClick={openCreateDialog}>
+                    Create
                 </Button>
             </Box>
 
@@ -191,7 +274,7 @@ export function PhotoPage(): JSX.Element {
                     </Box>
                 ) : (
                     <ImageList variant="masonry" cols={cols} gap={8}>
-                        {photos.map((photo) => (
+                        {photos.filter((photo) => photo.missionGroupId === missionGroupFilter).map((photo) => (
                             <ImageListItem
                                 key={photo.id ?? photo.name}
                                 sx={{ cursor: 'pointer', borderRadius: 1, overflow: 'hidden' }}
@@ -235,6 +318,84 @@ export function PhotoPage(): JSX.Element {
                     </ImageList>
                 )}
             </Box>
+
+            {/* --- create dialog --- */}
+            <Dialog open={createOpen} onClose={closeCreateDialog} fullWidth maxWidth="xs">
+                <DialogTitle>Create Photo</DialogTitle>
+                <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '16px !important' }}>
+                    <Button
+                        component="label"
+                        variant="outlined"
+                        startIcon={<CloudUploadIcon />}
+                        fullWidth
+                    >
+                        {createFile ? createFile.name : 'Select image…'}
+                        <VisuallyHiddenInput type="file" accept="image/*" onChange={handleCreateFileChange} />
+                    </Button>
+                    {createPreview && (
+                        <Box
+                            component="img"
+                            src={createPreview}
+                            alt="preview"
+                            sx={{ width: '100%', maxHeight: 200, objectFit: 'contain', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+                        />
+                    )}
+                    <TextField
+                        label="Name"
+                        value={createName}
+                        onChange={(e) => setCreateName(e.target.value)}
+                        fullWidth
+                        size="small"
+                    />
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+                            <TextField
+                                label="Latitude"
+                                type="number"
+                                value={createLatitude}
+                                onChange={(e) => setCreateLatitude(e.target.value)}
+                                fullWidth
+                                size="small"
+                                slotProps={{ htmlInput: { step: 'any' } }}
+                                helperText="Optional"
+                            />
+                            <TextField
+                                label="Longitude"
+                                type="number"
+                                value={createLongitude}
+                                onChange={(e) => setCreateLongitude(e.target.value)}
+                                fullWidth
+                                size="small"
+                                slotProps={{ htmlInput: { step: 'any' } }}
+                            />
+                        </Box>
+                        <Tooltip title="Use current location">
+                            <span>
+                                <IconButton
+                                    onClick={useCurrentLocationCreate}
+                                    disabled={createGeolocating || !window.navigator.geolocation}
+                                    sx={{ mt: 0.5 }}
+                                >
+                                    {createGeolocating
+                                        ? <CircularProgress size={20} />
+                                        : <GpsFixedIcon />}
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={closeCreateDialog} disabled={creating}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        onClick={submitCreateDialog}
+                        disabled={creating || !createFile}
+                        startIcon={creating ? <CircularProgress size={16} color="inherit" /> : undefined}
+                    >
+                        Create
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* --- confirm delete dialog --- */}
             <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)}>

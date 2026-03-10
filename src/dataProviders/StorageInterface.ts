@@ -14,6 +14,7 @@ import type {Unit} from '../enitities/Unit.ts';
 import type { Photo } from '../enitities/Photo.ts';
 import type { User } from '../enitities/User.ts';
 import type { MissionGroup } from '../enitities/MissionGroup.ts';
+import type { IPosition } from '../enitities/embeddables/EmbeddablePosition.ts';
 
 
 export interface StorageInterface {
@@ -53,7 +54,7 @@ export interface StorageInterface {
     saveMapStyle(mapStyle: MapBaseLayer): Promise<MapBaseLayer>;
     saveMapOverlay(mapOverlay: MapOverlay): Promise<MapOverlay>;
     savePhoto(photo: Photo): Promise<Photo>;
-    savePhotoImage(image: File): Promise<Photo>;
+    savePhotoImage(image: File, position: IPosition | null, name: string, missionGroupId: string): Promise<Photo>;
     saveUser(user: User): Promise<User>;
     saveMissionGroup(missionGroup: MissionGroup): Promise<MissionGroup>;
 

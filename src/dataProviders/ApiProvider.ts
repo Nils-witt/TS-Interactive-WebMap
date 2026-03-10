@@ -341,7 +341,9 @@ export class ApiProvider implements StorageInterface {
                                 longitude: rawPhoto.position.longitude,
                                 accuracy: rawPhoto.position.accuracy,
                                 timestamp: rawPhoto.position.timestamp
-                            } : undefined
+                            } : undefined,
+                            authorId: rawPhoto.authorId,
+                            missionGroupId: rawPhoto.missionGroupId
                         });
                     }
                     return resolve(pictures);
@@ -547,16 +549,23 @@ export class ApiProvider implements StorageInterface {
                             accuracy: raw.position.accuracy,
                             timestamp: raw.position.timestamp,
                         } : undefined,
+                        authorId: photo.authorId,
+                        missionGroupId: photo.missionGroupId
                     }));
                 });
         });
     }
 
-    savePhotoImage(img: File): Promise<Photo> {
+    savePhotoImage(img: File, position: IPosition | null, name: string, missionGroupId: string): Promise<Photo> {
         const url = DataProvider.getInstance().getApiUrl() + '/photos';
 
         const formData = new FormData();
         formData.append('file', img);
+        formData.append('latitude', position ? position.latitude.toString() : '');
+        formData.append('longitude', position ? position.longitude.toString() : '');
+        formData.append('name', name);
+        formData.append('missionGroupId', missionGroupId);
+
 
         return new Promise<Photo>((resolve, reject) => {
             fetch(url, {
@@ -579,7 +588,9 @@ export class ApiProvider implements StorageInterface {
                             longitude: data.position.longitude,
                             accuracy: data.position.accuracy,
                             timestamp: data.position.timestamp
-                        } : undefined
+                        } : undefined,
+                        authorId: data.authorId,
+                        missionGroupId: data.missionGroupId
                     });
                     return resolve(photo);
                 })

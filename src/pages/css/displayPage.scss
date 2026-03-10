@@ -1,0 +1,17 @@
+.display-page {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+
+    >:first-child {
+        height: 100%;
+        flex-grow: 1;
+    }
+
+    >:last-child {
+        height: 100%;
+        width: 300px;
+    }
+}

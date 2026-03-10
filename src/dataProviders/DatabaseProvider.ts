@@ -14,7 +14,7 @@ import { MapItem } from '../enitities/MapItem.ts';
 import { MapGroup } from '../enitities/MapGroup.ts';
 import { ApplicationLogger } from '../ApplicationLogger.ts';
 import { Unit } from '../enitities/Unit.ts';
-import type { Photo } from '../enitities/Photo.ts';
+import { Photo } from '../enitities/Photo.ts';
 import { User } from '../enitities/User.ts';
 import { MissionGroup } from '../enitities/MissionGroup.ts';
 
@@ -27,6 +27,7 @@ enum DB_TABLES {
     units = 'units',
     users = 'users',
     missionGroups = 'missionGroups',
+    photos = 'photos'
 }
 
 export class DatabaseProvider implements StorageInterface {
@@ -41,7 +42,7 @@ export class DatabaseProvider implements StorageInterface {
 
     public async setUp(): Promise<void> {
 
-        const dbVersion = 12;
+        const dbVersion = 14;
         this.db = await openDB(this.DB_NAME, dbVersion, {
             upgrade(db) {
                 console.log(`Upgrading database to version ${dbVersion}`);
@@ -66,6 +67,9 @@ export class DatabaseProvider implements StorageInterface {
                 }
                 if (!db.objectStoreNames.contains(DB_TABLES.missionGroups)) {
                     db.createObjectStore(DB_TABLES.missionGroups, { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains(DB_TABLES.photos)) {
+                    db.createObjectStore(DB_TABLES.photos, { keyPath: 'id' });
                 }
             }
         });
@@ -184,7 +188,20 @@ export class DatabaseProvider implements StorageInterface {
     }
 
     loadAllPhotos(): Promise<Record<string, Photo>> {
-        return Promise.reject(new Error('Method not implemented.'));
+        return new Promise<Record<string, Photo>>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.photos, 'readonly');
+
+            void tx.objectStore(DB_TABLES.photos).getAll()
+                .then((result: Record<string, string | number>[]) => {
+                    const photos: Record<string, Photo> = {};
+                    for (const record of result) {
+                        const photo = Photo.of(record);
+                        photos[photo.getId()!] = photo;
+                    }
+                    resolve(photos);
+                });
+        });
     }
 
     loadAllMissionGroups(): Promise<Record<string, MissionGroup>> {
@@ -309,7 +326,18 @@ export class DatabaseProvider implements StorageInterface {
     }
 
     loadPhoto(id: string): Promise<Photo> {
-        return Promise.reject(new Error(`Method not implemented. loadPhoto(${id}`));
+        return new Promise<Photo>((resolve, reject) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.photos, 'readonly');
+            void tx.objectStore(DB_TABLES.photos).get(id).then((result: Record<string, string | number> | undefined) => {
+                if (result) {
+                    const photo = Photo.of(result);
+                    return resolve(photo);
+                } else {
+                    reject(new Error('Not Exist'));
+                }
+            });
+        });
     }
 
     loadMissionGroup(id: string): Promise<MissionGroup> {
@@ -486,7 +514,30 @@ export class DatabaseProvider implements StorageInterface {
     }
 
     replaceAllPhotos(photos: Photo[]): Promise<void> {
-        return Promise.reject(new Error(`Method not implemented. replaceAllPhotos(${photos.length} photos)`));
+        return new Promise<void>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.photos, 'readwrite');
+            void tx.objectStore(DB_TABLES.photos).getAllKeys().then(result => {
+                const existingKeys = result as string[];
+                const newKeys = photos.map(entry => entry.getId());
+
+                for (const existingKey of existingKeys) {
+                    if (!newKeys.includes(existingKey)) {
+                        void tx.objectStore(DB_TABLES.photos).delete(existingKey);
+                    }
+                }
+
+                for (const photo of photos) {
+                    const photoRecord = photo.record();
+                    if (existingKeys.includes(photo.getId()!)) {
+                        void tx.objectStore(DB_TABLES.photos).put(photoRecord);
+                    } else {
+                        void tx.objectStore(DB_TABLES.photos).add(photoRecord);
+                    }
+                }
+                resolve();
+            });
+        });
     }
 
     replaceAllMissionGroups(missionGroups: MissionGroup[]): Promise<void> {
@@ -505,7 +556,7 @@ export class DatabaseProvider implements StorageInterface {
 
                 for (const missionGroup of missionGroups) {
                     const missionGroupRecord = missionGroup.record();
-                    if (existingKeys.includes(missionGroup.getId())) {
+                    if (existingKeys.includes(missionGroup.getId()!)) {
                         void tx.objectStore(DB_TABLES.missionGroups).put(missionGroupRecord);
                     } else {
                         void tx.objectStore(DB_TABLES.missionGroups).add(missionGroupRecord);
@@ -640,7 +691,21 @@ export class DatabaseProvider implements StorageInterface {
     }
 
     savePhoto(photo: Photo): Promise<Photo> {
-        return Promise.reject(new Error(`Method not implemented. savePhoto(${photo.id})`));
+        return new Promise<Photo>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+
+            const photoRecord = photo.record();
+            const tx = this.db.transaction(DB_TABLES.photos, 'readwrite');
+
+            void tx.objectStore(DB_TABLES.photos).getKey(photo.getId()!).then(result => {
+                if (result) {
+                    void tx.objectStore(DB_TABLES.photos).put(photoRecord);
+                } else {
+                    void tx.objectStore(DB_TABLES.photos).add(photoRecord);
+                }
+                resolve(photo);
+            });
+        });
     }
 
     savePhotoImage(image: File): Promise<Photo> {
@@ -768,7 +833,19 @@ export class DatabaseProvider implements StorageInterface {
     }
 
     deletePhoto(id: string): Promise<void> {
-        return Promise.reject(new Error(`Method not implemented. deletePhoto(${id})`));
+        return new Promise((resolve, reject) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.photos, 'readwrite');
+
+            void tx.objectStore(DB_TABLES.photos).getKey(id).then(result => {
+                if (result) {
+                    void tx.objectStore(DB_TABLES.photos).delete(id);
+                    resolve();
+                } else {
+                    reject(new Error('Not Exist'));
+                }
+            });
+        });
     }
 
     deleteMissionGroup(id: string): Promise<void> {

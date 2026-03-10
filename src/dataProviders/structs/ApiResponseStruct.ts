@@ -64,6 +64,8 @@ export interface UnitStruct extends AbstractEntityStruct{
 export interface PhotoStruct extends AbstractEntityStruct{
     name: string
     position?: PositionStruct
+    authorId: string;
+    missionGroupId: string;
 }
 
 export interface UserStruct extends AbstractEntityStruct{
