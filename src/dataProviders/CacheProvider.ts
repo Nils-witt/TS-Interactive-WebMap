@@ -1,8 +1,9 @@
-import {ApiProvider} from './ApiProvider.ts';
-import {DataProvider} from './DataProvider.ts';
-import {Utilities} from '../Utilities.ts';
-import type {MapOverlay} from '../enitities/MapOverlay.ts';
-import type {MapBaseLayer} from '../enitities/MapBaseLayer.ts';
+import { ApiProvider } from './ApiProvider.ts';
+import { DataProvider } from './DataProvider.ts';
+import { Utilities } from '../Utilities.ts';
+import type { MapOverlay } from '../enitities/MapOverlay.ts';
+import type { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
+import { cache } from 'react';
 
 class CacheProvider {
     private static instance: CacheProvider | null = null;
@@ -76,15 +77,16 @@ class CacheProvider {
             const source = styleJson.sources[sourceKey] as { type: string, url: string };
 
             const sourceRes = await fetch(source.url);
-            const sourceJson = await sourceRes.json() as { tiles: string[] };
-
+            const sourceJson = await sourceRes.json() as { tiles: string[], maxzoom: number };
             for (const tile of tiles) {
+                if (tile.z > sourceJson.maxzoom) {
+                    continue;
+                }
                 for (const tileUrlTemplate of sourceJson.tiles) {
                     const tileUrl = tileUrlTemplate.replace('{x}', tile.x.toString()).replace('{y}', tile.y.toString()).replace('{z}', tile.z.toString());
                     urls.push(tileUrl);
                 }
             }
-
         }
 
         for (let i = 0; i < urls.length; i = i + 10) {
@@ -134,40 +136,52 @@ class CacheProvider {
      */
     async cacheVectorForOverlays(): Promise<void> {
         const overlays = Array.from(DataProvider.getInstance().getAllMapOverlays().values());
-        const vectorMaxZoom = 14;
 
+        const mapStyle = DataProvider.getInstance().getMapStyle();
+        if (mapStyle == undefined) {
+            return;
+        }
+        for (const overlay of overlays) {
+            await this.cacheVectorForOverlay(overlay, mapStyle);
+        }
+    }
+
+    /**
+ * Caches vector background tiles for one overlays currently cached.
+ */
+    async cacheVectorForOverlay(overlay: MapOverlay, mapStyle: MapBaseLayer): Promise<void> {
         const pendingTiles: Record<number, Record<number, number[]>> = {};
 
-        for (const overlay of overlays) {
-            const cache = await caches.open(`overlay-${overlay.getId()}_${overlay.getLayerVersion()}`);
-            for (const tile of await cache.keys()) {
 
-                const {x, y, z} = Utilities.splitTileUrl(tile.url);
-                if (z <= vectorMaxZoom) {
-                    if (pendingTiles[z] === undefined) {
-                        pendingTiles[z] = {};
-                    }
-                    if (pendingTiles[z][x] === undefined) {
-                        pendingTiles[z][x] = [];
-                    }
-                    if (!pendingTiles[z][x].includes(y)) {
-                        pendingTiles[z][x].push(y);
-                    }
-                }
+        const cache = await caches.open(`overlay-${overlay.getId()}_${overlay.getLayerVersion()}`);
+        for (const tile of await cache.keys()) {
+
+            const { x, y, z } = Utilities.splitTileUrl(tile.url);
+            if (pendingTiles[z] === undefined) {
+                pendingTiles[z] = {};
             }
+            if (pendingTiles[z][x] === undefined) {
+                pendingTiles[z][x] = [];
+            }
+            if (!pendingTiles[z][x].includes(y)) {
+                pendingTiles[z][x].push(y);
+            }
+
         }
+
         const tilesToCache: { x: number, y: number, z: number }[] = [];
 
         for (const z of Object.keys(pendingTiles).map(k => parseInt(k, 10))) {
             for (const x of Object.keys(pendingTiles[z]).map(k => parseInt(k, 10))) {
                 for (const y of pendingTiles[z][x]) {
-                    tilesToCache.push({x: x, y: y, z: z});
+                    tilesToCache.push({ x: x, y: y, z: z });
                 }
             }
         }
-        const mapStyle = DataProvider.getInstance().getMapStyle();
         if (mapStyle != undefined) {
             await this.cacheVector(mapStyle, tilesToCache);
+        } else {
+            await this.cacheVector(DataProvider.getInstance().getMapStyle()!, tilesToCache);
         }
     }
 }

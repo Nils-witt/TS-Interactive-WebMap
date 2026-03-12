@@ -21,6 +21,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import { type MapOverlay } from '../enitities/MapOverlay.ts';
 import CacheProvider from '../dataProviders/CacheProvider.ts';
 import { MapOverlayContext } from '../contexts/MapOverlayContext.tsx';
+import { DataProvider } from '../dataProviders/DataProvider.ts';
 
 type SortField = 'name' | 'url' | 'opacity' | 'order';
 type SortOrder = 'asc' | 'desc';
@@ -64,6 +65,10 @@ function OverlayTableRow({ overlay }: { overlay: MapOverlay }): JSX.Element {
         await CacheProvider.getInstance().clearOverlayCache(overlay);
     };
 
+    const downloadVectorTiles = async (overlay: MapOverlay) => {
+        await CacheProvider.getInstance().cacheVectorForOverlay(overlay, DataProvider.getInstance().getMapStyle()!);
+    };
+
 
     return (
         <TableRow key={overlay.getId()} hover>
@@ -97,6 +102,7 @@ function OverlayTableRow({ overlay }: { overlay: MapOverlay }): JSX.Element {
                 <ButtonGroup size="small">
                     <Button ref={btnRef} onClick={() => void downloadLayer()}>Download</Button>
                     <Button onClick={() => void clearCacheOverlay(overlay)}>Delete Offline Cache</Button>
+                    <Button onClick={() => void downloadVectorTiles(overlay)}>Download Vector Tiles</Button>
                 </ButtonGroup>
             </TableCell>
         </TableRow>
