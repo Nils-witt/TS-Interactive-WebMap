@@ -124,7 +124,7 @@ export function SettingsPage(): JSX.Element {
             });
 
         }
-
+        (await navigator.serviceWorker.getRegistrations()).forEach((reg) => reg.unregister());
         window.location.href = '/';
     }
 
