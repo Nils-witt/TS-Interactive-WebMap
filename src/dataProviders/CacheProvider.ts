@@ -37,7 +37,7 @@ class CacheProvider {
     }> {
         const cache = await caches.open(`overlay-${overlay.getId()}_${overlay.getLayerVersion()}`);
         const localTiles = Array.from(await cache.keys()).map(rq => rq.url);
-        const remoteTiles = await ApiProvider.getInstance().getOverlayTiles(overlay);
+        const remoteTiles = await ApiProvider.getInstance().getMapOverlayTiles(overlay);
 
         const missingTiles = remoteTiles.filter(rt => !localTiles.includes(rt));
         return {
@@ -124,12 +124,16 @@ class CacheProvider {
 
     }
 
+    async clearOverlayCache(overlay: MapOverlay): Promise<void> {
+        await caches.delete(`overlay-${overlay.getId()}_${overlay.getLayerVersion()}`);
+    }
+
 
     /**
      * Caches vector background tiles for all overlays currently cached.
      */
     async cacheVectorForOverlays(): Promise<void> {
-        const overlays = Array.from(DataProvider.getInstance().getOverlays().values());
+        const overlays = Array.from(DataProvider.getInstance().getAllMapOverlays().values());
         const vectorMaxZoom = 14;
 
         const pendingTiles: Record<number, Record<number, number[]>> = {};

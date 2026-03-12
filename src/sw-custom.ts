@@ -15,55 +15,48 @@
 
 const sw = self as unknown as ServiceWorkerGlobalScope & typeof globalThis;
 
-let mapservicesBase = 'N/A';
-let apiBase = 'N/A';
 
-new BroadcastChannel('setMapServicesBase').addEventListener('message', (e) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const url = e.data.url as string;
 
-    if (mapservicesBase != url) {
-        mapservicesBase = url;
-        console.log(`[SW] Set mapservices base to ${mapservicesBase}`);
-        void caches.delete('mapservices').then(() => {
-            reloadClients();
-        });
-    } else {
-        console.log(`[SW] mapservices base is ${mapservicesBase}`);
-    }
+const vectorCacheUrls: Record<string, RegExp> = {};
+const overlayCacheUrls: Record<string, RegExp> = {};
+
+new BroadcastChannel('addVectorCacheUrl').addEventListener('message', (e: { data: { url: string; id: string } }) => {
+    const url = e.data.url;
+    const id = e.data.id;
+    vectorCacheUrls[id] = new RegExp(`^${url}.*$`);
+
+    console.log(`[SW] Added VectorCacheUrl ${id} is ${vectorCacheUrls[id]}`);
 });
 
-new BroadcastChannel('setApiBase').addEventListener('message', (e) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const url = e.data.url as string;
-    if (apiBase != url) {
-        apiBase = url;
-        console.log(`[SW] Set apibase base to ${apiBase}`);
-        void caches.keys().then(keys => {
-            keys.forEach(key => {
-                void caches.open(key).then(cache => {
-                    void cache.keys().then(reqKeys => {
-                        reqKeys.forEach(req => {
-                            const reqUrl = new URL(req.url);
-                            if (reqUrl.href.startsWith(apiBase)) {
-                                void cache.delete(req);
-                            }
-                        });
-                    });
-                });
-            });
-        });
-    } else {
-        console.log(`[SW] apibase base is ${apiBase}`);
-    }
+new BroadcastChannel('addOverlayCacheUrl').addEventListener('message', (e: { data: { url: string; id: string } }) => {
+    const url = e.data.url;
+    const id = e.data.id;
+
+    overlayCacheUrls[id] = overlayRegex(url);
+    console.log(`[SW] Added OverlayCacheUrl ${id} is ${overlayCacheUrls[id]}`);
 });
-
-
+new BroadcastChannel('removeOtherOverlayCaches').addEventListener('message', (e: { data: { version: string; id: string } }) => {
+    const id = e.data.id;
+    const version = e.data.version;
+    console.log(`[SW] Removing Old Overlays ${id} != ${version}`);
+    void caches.keys().then(keys => {
+        keys.forEach(key => {
+            if (key.startsWith(`overlay-${id}`) && key != `overlay-${id}_${version}`) {
+                void caches.delete(key);
+            }
+        });
+    });
+});
 sw.addEventListener('activate', () => {
-    console.log('Service Worker activated');
-    void caches.delete('api-cache');
+    console.log('Service Worker activated', sw.registration);
     reloadClients();
 });
+
+
+function overlayRegex(url: string): RegExp {
+    return new RegExp(`^${url.replaceAll('.', '\\.').replace('{x}', '\\d+').replace('{y}', '\\d+').replace('{z}', '\\d+')}(\\?.*)?$`);
+}
+
 
 function reloadClients() {
     void sw.clients.matchAll({
@@ -71,51 +64,21 @@ function reloadClients() {
     }).then((clients) => {
         clients.forEach(function (client) {
             console.log('Sending message to client:', client);
-            client.postMessage({cmd: 'reload'});
+            client.postMessage({ cmd: 'reload' });
         });
     });
 }
 
-/**
- * Cache strategy overview:
- * - admin: network-only (no cache)
- * - api-cache: network-first with cache fallback and backfill
- * - overlay-*: cache-first (tiles), no backfill by default
- * - vector-cache: cache-first with backfill on miss
- * - default/others: bypass (or simple fetch)
- */
-
-/**
- * Classify request URL into a semantic group used to select a cache.
- * overlay-<name> for /overlays/<name>/... paths, 'api' for /api, 'vector' for /vector, 'admin' for /admin, otherwise 'default'.
- */
-function getURLType(url: URL): string {
-    if (url.pathname.startsWith('/overlays/')) {
-        return 'overlay-tmp'; // Return overlay type
-    }
-    if (url.pathname.startsWith('/vector/')) {
-        return 'vector'; // Return overlay type
-    }
-    if (url.pathname.startsWith('/admin/')) {
-        return 'admin'; // Return overlay type
-    }
 
 
-    return 'default'; // Default type
-}
-
-/**
- * Some overlay caches use absolute URLs as keys. Normalize event.request.url accordingly.
- */
 function transformCacheUrl(cacheName: string, url: string): URL {
     const locURL = new URL(url);
     if (cacheName.startsWith('overlay-')) {
-
-        console.log(`Transform ${new URL(locURL.origin + locURL.pathname)}`);
         return new URL(locURL.origin + locURL.pathname);
     }
     return new URL(url);
 }
+
 
 /**
  *
@@ -127,13 +90,20 @@ function transformCacheUrl(cacheName: string, url: string): URL {
  * Returns tuple: [cacheName, networkFirst, useCache, putMissingInCache]
  */
 function getCacheName(url: URL): [string, boolean, boolean, boolean] {
-    const reqType = getURLType(url);
+    //const reqType = getURLType(url);
 
     if (sw.registration.scope.startsWith(url.origin)) {
-        return [reqType, true, false, false];
+        return ['never', true, false, false];
     }
-    if (url.href.startsWith(mapservicesBase) && !url.href.startsWith(apiBase)) {
-        return ['mapservices', true, true, true];
+    for (const [id, regex] of Object.entries(vectorCacheUrls)) {
+        if (regex.test(url.href)) {
+            return [`vector-cache-${id}`, true, true, true];
+        }
+    }
+    for (const [id, regex] of Object.entries(overlayCacheUrls)) {
+        if (regex.test(url.href)) {
+            return [`overlay-${id}`, true, true, true];
+        }
     }
     return ['never', true, false, false];
 
@@ -147,11 +117,10 @@ sw.addEventListener('fetch', (event) => {
     }
 
     const [useCacheName, networkFirst, useCache, putMissingInCache] = getCacheName(url);
-    console.log(`Fetch ${url} useCache ${useCacheName}; netForst: ${networkFirst}; useCache ${useCache}`);
     if (useCache) {
         if (networkFirst) {
             event.respondWith(new Promise((resolve, reject) => {
-                fetch(event.request, {signal: AbortSignal.timeout(2000)})
+                fetch(event.request, { signal: AbortSignal.timeout(2000) })
                     .then(async response => {
                         if (response && response.ok) {
                             const responseToCache = response.clone();
@@ -181,7 +150,7 @@ sw.addEventListener('fetch', (event) => {
                             if (cachedResponse) {
                                 resolve(cachedResponse);
                             } else {
-                                resolve(new Response('Not found', {status: 404}));
+                                resolve(new Response('Not found', { status: 404 }));
                             }
                         });
                     });
@@ -192,7 +161,6 @@ sw.addEventListener('fetch', (event) => {
                     if (cachedResponse) {
                         return cachedResponse;
                     }
-                    console.log(`Locally not found: ${url}`);
                     return fetch(event.request.url).then((fetchedResponse) => {
                         if (fetchedResponse && fetchedResponse.ok && putMissingInCache) {
                             cache.put(event.request, fetchedResponse.clone())

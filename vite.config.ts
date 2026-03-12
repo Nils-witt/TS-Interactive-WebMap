@@ -40,7 +40,6 @@ export default defineConfig({
             registerType: 'autoUpdate',
             workbox: {
                 importScripts: ['./sw-custom.js'],
-                navigateFallbackDenylist: [/^\/(api|admin|vector|overlays)/]
             },
             devOptions: {
                 enabled: false

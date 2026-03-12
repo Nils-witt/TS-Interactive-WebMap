@@ -6,16 +6,17 @@
  * Purpose: bridge DataProvider overlays to UI controls on the map.
  */
 
-import {type ControlPosition, Evented, type IControl, Map as MapLibreMap} from 'maplibre-gl';
-import {icon} from '@fortawesome/fontawesome-svg-core';
-import {faMap} from '@fortawesome/free-solid-svg-icons/faMap';
-import {faXmark} from '@fortawesome/free-solid-svg-icons/faXmark';
-import {DOM} from 'maplibre-gl/src/util/dom';
-import {DataProvider, DataProviderEventType} from '../dataProviders/DataProvider';
-import {useControl} from '@vis.gl/react-maplibre';
-import {type MapOverlay, OverlayEvent} from '../enitities/MapOverlay.ts';
+import { type ControlPosition, Evented, type IControl, Map as MapLibreMap } from 'maplibre-gl';
+import { icon } from '@fortawesome/fontawesome-svg-core';
+import { faMap } from '@fortawesome/free-solid-svg-icons/faMap';
+import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
+import { DOM } from 'maplibre-gl/src/util/dom';
+import { useControl } from '@vis.gl/react-maplibre';
+import { type MapOverlay, OverlayEvent } from '../enitities/MapOverlay.ts';
 
 import './css/layer.scss';
+import { MapOverlayContext } from '../contexts/MapOverlayContext.tsx';
+import { useContext, useEffect } from 'react';
 
 /**
  * LayersControl provides a UI to toggle overlays and open per-layer settings.
@@ -29,13 +30,17 @@ import './css/layer.scss';
 
 interface ReactLayerControlProps {
     position: ControlPosition;
-    dataProvider: DataProvider;
 }
 
 function ReactLayerControl(props: ReactLayerControlProps): null {
-    useControl(() => new LayersControl(props as LayerControlOptions), {
+    const overlays = useContext(MapOverlayContext);
+    const control = useControl(() => new LayersControl(props as LayerControlOptions), {
         position: props.position
     });
+
+    useEffect(() => {
+        control.setOverlays(overlays);
+    }, [overlays]);
 
     return null;
 }
@@ -43,7 +48,7 @@ function ReactLayerControl(props: ReactLayerControlProps): null {
 export default ReactLayerControl;
 
 interface LayerControlOptions {
-    dataProvider: DataProvider;
+    overlays?: MapOverlay[]; // Optional initial overlays, can also be set via setOverlays method
 }
 
 /**
@@ -112,18 +117,7 @@ export class LayersControl extends Evented implements IControl {
             this.setOpen(!this.isOpen);
         });
 
-        // Restore previously active overlays from DataProvider (backed by localStorage)
-        for (const id of this.options.dataProvider.getActiveOverlays()) {
-            this.activeOverlays.set(id, true);
-        }
-
-        this.options.dataProvider.on(DataProviderEventType.OVERLAY_ADDED, () => {
-            this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
-        });
-        this.options.dataProvider.on(DataProviderEventType.OVERLAY_UPDATED, () => {
-            this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
-        });
-        this.setOverlays(Array.from(this.options.dataProvider.getOverlays().values()));
+        this.setOverlays(options.overlays || []);
     }
 
     private setOpen(open: boolean): void {
@@ -150,7 +144,7 @@ export class LayersControl extends Evented implements IControl {
             if (!this.map.getSource(layer.getId())) {
                 this.map.addSource(layer.getId(), {
                     type: 'raster',           // Use raster tiles
-                    tiles: [layer.getUrl() + '?accesstoken=' + this.options.dataProvider.getApiToken()],       // URL template for the tiles
+                    tiles: [layer.getUrl() + '?accesstoken='],       // URL template for the tiles
                     tileSize: 256             // Standard tile size
                 });
             }
@@ -213,9 +207,11 @@ export class LayersControl extends Evented implements IControl {
                     this.activeOverlays.delete(layer.getId());
                 }
                 // Persist the updated active-overlay set via DataProvider
-                this.options.dataProvider.setActiveOverlays(
+                /*
+                this.options.dataProvider.setActiveMapOverlays(
                     new Set(Array.from(this.activeOverlays.entries()).filter(([, v]) => v).map(([k]) => k))
                 );
+                */
             }
         });
 
@@ -296,6 +292,7 @@ export class LayersControl extends Evented implements IControl {
      * Required method for MapLibre IControl interface
      */
     public onRemove(): void {
+
         // Remove the container from its parent element
         if (this.container.parentNode) {
             this.container.parentNode.removeChild(this.container);

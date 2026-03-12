@@ -1,7 +1,6 @@
-import { type JSX } from 'react';
+import { useContext, useEffect, useState, type JSX } from 'react';
 import { AppBar, Box, SvgIcon, Toolbar, Typography } from '@mui/material';
 import { Outlet, useNavigate } from 'react-router-dom';
-import * as React from 'react';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -14,6 +13,7 @@ import { Utilities } from '../Utilities.ts';
 
 // @ts-expect-error Custom plugin to compile this line correctly not recognized by TypeScript
 import APPICON from '../svg/ts-interactive-webmap-icon.svg?react';
+import { ActiveUserContext } from '../contexts/ActiveUserContext.tsx';
 
 interface NavRoute {
     path: string;
@@ -21,10 +21,12 @@ interface NavRoute {
 }
 
 const NAV_ROUTES: NavRoute[] = [
-    { path: '/map', label: 'Map' },
+    { path: '/', label: 'Map' },
     { path: '/locations', label: 'Locations' },
     { path: '/photo', label: 'Photo' },
     { path: '/units', label: 'Units' },
+    { path: '/overlays', label: 'Overlays' },
+    { path: '/mission-groups', label: 'Mission Groups' },
 ];
 
 const USER_ACTIONS: { label: string, path?: string, onClick?: () => void }[] = [
@@ -35,8 +37,20 @@ const USER_ACTIONS: { label: string, path?: string, onClick?: () => void }[] = [
 export function NavLayout(): JSX.Element {
     const navigate = useNavigate();
 
-    const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
-    const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
+    const activeUser = useContext(ActiveUserContext);
+
+    const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
+    const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
+
+    const [userDisplayName, setUserDisplayName] = useState<string>('');
+
+    useEffect(() => {
+        if (activeUser) {
+            setUserDisplayName(activeUser.getUsername());
+        } else {
+            setUserDisplayName('Err');
+        }
+    }, [activeUser]);
 
     const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorElNav(event.currentTarget);
@@ -166,7 +180,9 @@ export function NavLayout(): JSX.Element {
                                 open={Boolean(anchorElUser)}
                                 onClose={handleCloseUserMenu}
                             >
-
+                                    <MenuItem key={'user_self'} >
+                                        <Typography sx={{ textAlign: 'center' }}>{userDisplayName}</Typography>
+                                    </MenuItem>
                                 {USER_ACTIONS.map(r => (
                                     <MenuItem key={r.label} onClick={() => { if (r.path) { void navigate(r.path); } else { r.onClick?.(); } handleCloseUserMenu(); }}>
                                         <Typography sx={{ textAlign: 'center' }}>{r.label}</Typography>

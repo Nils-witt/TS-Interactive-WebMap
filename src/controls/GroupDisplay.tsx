@@ -13,12 +13,11 @@ import type { MapItem } from '../enitities/MapItem.ts';
 
 interface GroupDisplayProps {
     /** The ID of the group whose items should be shown, or null to show nothing. */
-    groupId: string | null;
+    groupId: string | null | undefined;
 }
 
 export function GroupDisplay({ groupId }: GroupDisplayProps): React.JSX.Element {
     const [items, setItems] = useState<MapItem[]>([]);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
 
     /** (Re)compute the filtered item list whenever the groupId or data changes. */
     const refreshItems = () => {
@@ -26,7 +25,7 @@ export function GroupDisplay({ groupId }: GroupDisplayProps): React.JSX.Element 
             setItems([]);
             return;
         }
-        const all = DataProvider.getInstance().getMapLocations();
+        const all = DataProvider.getInstance().getAllMapItems();
         setItems(Array.from(all.values()).filter(i => i.getGroupId() === groupId));
     };
 
@@ -47,10 +46,6 @@ export function GroupDisplay({ groupId }: GroupDisplayProps): React.JSX.Element 
         };
     }, [groupId]);
 
-    useEffect(() => {
-        console.log('Selected Item ID:', selectedId);
-    }, [selectedId]);
-
     return (
         <>
             {items.map(item => (
@@ -58,7 +53,6 @@ export function GroupDisplay({ groupId }: GroupDisplayProps): React.JSX.Element 
                     <Marker
                         longitude={item.getLongitude()}
                         latitude={item.getLatitude()}
-                        onClick={() => setSelectedId(item.getId())}
                     />
                     <Popup
                         longitude={item.getLongitude()}

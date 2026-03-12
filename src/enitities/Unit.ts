@@ -82,8 +82,6 @@ export class Unit extends AbstractEntity {
 
 
     record(): DBRecord {
-        const record: DBRecord = {};
-        record['id'] = this.id;
         return {
             id: this.id,
             pos_latitude: this.position ? this.position.latitude : 0,
@@ -110,7 +108,7 @@ export class Unit extends AbstractEntity {
             return dataUrl;
         } catch (e) {
             ApplicationLogger.error('Error generating icon element for Unit: ' + (e as Error).message, {service: 'Unit'});
-            return 'error';
+            return '';
         }
     }
 

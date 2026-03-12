@@ -52,8 +52,6 @@ export class MapItem extends AbstractEntity {
 
 
     record(): DBRecord {
-        const record: DBRecord = {};
-        record['id'] = this.id;
         return {
             id: this.id,
             latitude: this.latitude,

@@ -1,7 +1,8 @@
-import { type JSX, useEffect, useMemo, useState } from 'react';
+import { type JSX, useContext, useMemo, useRef, useState } from 'react';
 import {
     Box,
     Button,
+    Checkbox,
     Chip,
     Dialog,
     DialogActions,
@@ -31,49 +32,31 @@ import EditIcon from '@mui/icons-material/Edit';
 import IconButton from '@mui/material/IconButton';
 import MapIcon from '@mui/icons-material/Map';
 import { useNavigate } from 'react-router-dom';
-import { DataProvider, DataProviderEventType } from '../dataProviders/DataProvider.ts';
+import { DataProvider } from '../dataProviders/DataProvider.ts';
 import { type MapItem } from '../enitities/MapItem.ts';
-import { type MapGroup } from '../enitities/MapGroup.ts';
-import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler.ts';
-import { DatabaseProvider } from '../dataProviders/DatabaseProvider.ts';
 import { ApiProvider } from '../dataProviders/ApiProvider.ts';
+import { MapItemContext } from '../contexts/MapItemContext.tsx';
+import { MapGroupContext } from '../contexts/MapGroupContext.tsx';
+import { DataBaseContext } from '../contexts/DataBaseContext.tsx';
 
 type SortField = 'name' | 'groupId' | 'latitude' | 'longitude' | 'zoomLevel';
 type SortOrder = 'asc' | 'desc';
 
 export function MapLocationPage(): JSX.Element {
     const navigate = useNavigate();
-    const dp = DataProvider.getInstance();
-    const [items, setItems] = useState<MapItem[]>(() => Array.from(dp.getMapLocations().values()));
-    const [groups, setGroups] = useState<MapGroup[]>(() => Array.from(dp.getMapGroups().values()));
+
+    const items = useContext(MapItemContext);
+    const groups = useContext(MapGroupContext);
+    const databaseProvider = useContext(DataBaseContext);
 
     const [nameFilter, setNameFilter] = useState('');
     const [groupFilter, setGroupFilter] = useState<string>('');
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
-    useEffect(() => {
-        const refresh = () => {
-            setItems(Array.from(dp.getMapLocations().values()));
-            setGroups(Array.from(dp.getMapGroups().values()));
-        };
-
-        const events = [
-            DataProviderEventType.MAP_ITEM_CREATED,
-            DataProviderEventType.MAP_ITEM_UPDATED,
-            DataProviderEventType.MAP_ITEM_DELETED,
-            DataProviderEventType.MAP_GROUPS_UPDATED,
-            DataProviderEventType.MAP_GROUPS_CREATED,
-            DataProviderEventType.MAP_GROUPS_DELETED,
-        ];
-
-        events.forEach((e) => GlobalEventHandler.getInstance().on(e, refresh));
-        return () => events.forEach((e) => GlobalEventHandler.getInstance().off(e, refresh));
-    }, []);
-
     const groupMap = useMemo(() => {
         const m = new Map<string, string>();
-        groups.forEach((g) => m.set(g.getID(), g.getName()));
+        groups.forEach((g) => m.set(g.getId(), g.getName()));
         return m;
     }, [groups]);
 
@@ -142,6 +125,99 @@ export function MapLocationPage(): JSX.Element {
     const [editZoomLevel, setEditZoomLevel] = useState('');
     const [editShowOnMap, setEditShowOnMap] = useState(false);
     const [editGroupId, setEditGroupId] = useState<string>('');
+    const [confirmDelete, setConfirmDelete] = useState(false);
+
+    // ── Multiselect state ──────────────────────────────────────────────────
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+    const lastSelectedId = useRef<string | null>(null);
+
+    // ── Bulk-edit state ────────────────────────────────────────────────────
+    const [bulkEditOpen, setBulkEditOpen] = useState(false);
+    // '' means "keep current value"
+    const [bulkEditGroupId, setBulkEditGroupId] = useState<string>('__keep__');
+    const [bulkEditShowOnMap, setBulkEditShowOnMap] = useState<'' | 'true' | 'false'>('');
+    const [bulkEditZoomLevel, setBulkEditZoomLevel] = useState<string>('');
+
+    const openBulkEdit = () => {
+        setBulkEditGroupId('__keep__');
+        setBulkEditShowOnMap('');
+        setBulkEditZoomLevel('');
+        setBulkEditOpen(true);
+    };
+
+    const saveBulkEdit = () => {
+        const selectedItems = items.filter((item) => item.getId() !== null && selectedIds.has(item.getId()!));
+        for (const item of selectedItems) {
+            if (bulkEditGroupId !== '__keep__') {
+                item.setGroupId(bulkEditGroupId === '' ? null : bulkEditGroupId);
+            }
+            if (bulkEditShowOnMap !== '') {
+                item.setShowOnMap(bulkEditShowOnMap === 'true');
+            }
+            if (bulkEditZoomLevel.trim() !== '') {
+                const z = parseInt(bulkEditZoomLevel, 10);
+                if (!isNaN(z)) item.setZoomLevel(z);
+            }
+            DataProvider.getInstance().addMapItem(item);
+            if (databaseProvider) {
+                void databaseProvider.saveMapItem(item);
+            }
+            void ApiProvider.getInstance().saveMapItem(item);
+        }
+        setBulkEditOpen(false);
+    };
+
+    const allFilteredSelected =
+        filtered.length > 0 && filtered.every((item) => item.getId() !== null && selectedIds.has(item.getId()!));
+    const someFilteredSelected =
+        !allFilteredSelected && filtered.some((item) => item.getId() !== null && selectedIds.has(item.getId()!));
+
+    const toggleAll = () => {
+        if (allFilteredSelected) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(filtered.filter((item) => item.getId() !== null).map((item) => item.getId()!)));
+        }
+    };
+
+    const handleRowCheck = (id: string, shiftKey: boolean) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (shiftKey && lastSelectedId.current !== null && lastSelectedId.current !== id) {
+                const ids = filtered.map((item) => item.getId()!).filter(Boolean);
+                const anchorIdx = ids.indexOf(lastSelectedId.current);
+                const targetIdx = ids.indexOf(id);
+                if (anchorIdx !== -1 && targetIdx !== -1) {
+                    const [from, to] = anchorIdx < targetIdx ? [anchorIdx, targetIdx] : [targetIdx, anchorIdx];
+                    // Determine intent: if target is not yet selected, add the range; otherwise remove it
+                    const adding = !prev.has(id);
+                    for (let i = from; i <= to; i++) {
+                        if (adding) next.add(ids[i]);
+                        else next.delete(ids[i]);
+                    }
+                    lastSelectedId.current = id;
+                    return next;
+                }
+            }
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            lastSelectedId.current = id;
+            return next;
+        });
+    };
+
+    const bulkDeleteItems = () => {
+        for (const id of selectedIds) {
+            void ApiProvider.getInstance().deleteMapItem(id);
+            void DataProvider.getInstance().deleteMapItem(id);
+            if (databaseProvider) {
+                void databaseProvider.deleteMapItem(id);
+            }
+        }
+        setSelectedIds(new Set());
+        setConfirmBulkDelete(false);
+    };
 
     const openEditDialog = (item: MapItem) => {
         setEditingItem(item);
@@ -166,11 +242,22 @@ export function MapLocationPage(): JSX.Element {
         editingItem.setGroupId(editGroupId || null);
 
         DataProvider.getInstance().addMapItem(editingItem);
-        void DatabaseProvider.getInstance().then((db) =>
-            db.saveNamedGeoReferencedObject(editingItem)
-        );
+        if(databaseProvider){
+            void databaseProvider.saveMapItem(editingItem);
+        }
         void ApiProvider.getInstance().saveMapItem(editingItem);
         closeEditDialog();
+    };
+
+    const confirmDeleteItem = () => {
+        if (!editingItem || !editingItem.getId()) return;
+        setConfirmDelete(false);
+        closeEditDialog();
+        void ApiProvider.getInstance().deleteMapItem(editingItem.getId()!);
+        void DataProvider.getInstance().deleteMapItem(editingItem.getId()!);
+        if (databaseProvider) {
+            void databaseProvider.deleteMapItem(editingItem.getId()!);
+        }
     };
 
     return (
@@ -209,7 +296,7 @@ export function MapLocationPage(): JSX.Element {
                                 <em>All groups</em>
                             </MenuItem>
                             {groups.map((g) => (
-                                <MenuItem key={g.getID()} value={g.getID()}>
+                                <MenuItem key={g.getId()} value={g.getId()}>
                                     {g.getName()}
                                 </MenuItem>
                             ))}
@@ -225,12 +312,46 @@ export function MapLocationPage(): JSX.Element {
                     >
                         Show all on Map
                     </Button>
+                    {selectedIds.size > 0 && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
+                            <Typography variant="body2" color="text.secondary">
+                                {selectedIds.size} selected
+                            </Typography>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={openBulkEdit}
+                            >
+                                Edit Selected
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="error"
+                                size="small"
+                                onClick={() => setConfirmBulkDelete(true)}
+                            >
+                                Delete Selected
+                            </Button>
+                            <Button size="small" onClick={() => setSelectedIds(new Set())}>
+                                Clear
+                            </Button>
+                        </Box>
+                    )}
                 </Box>
 
                 <TableContainer component={Paper} sx={{ flex: 1, overflow: 'auto' }}>
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow>
+                                <TableCell padding="checkbox">
+                                    <Checkbox
+                                        size="small"
+                                        checked={allFilteredSelected}
+                                        indeterminate={someFilteredSelected}
+                                        onChange={toggleAll}
+                                        disabled={filtered.length === 0}
+                                    />
+                                </TableCell>
                                 <TableCell sortDirection={sortField === 'name' ? sortOrder : false}>
                                     <TableSortLabel
                                         active={sortField === 'name'}
@@ -283,13 +404,24 @@ export function MapLocationPage(): JSX.Element {
                         <TableBody>
                             {filtered.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} align="center" sx={{ color: 'text.secondary', py: 4 }}>
+                                    <TableCell colSpan={8} align="center" sx={{ color: 'text.secondary', py: 4 }}>
                                         No map locations match the current filters.
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 filtered.map((item) => (
-                                    <TableRow key={item.getId()} hover>
+                                    <TableRow
+                                        key={item.getId()}
+                                        hover
+                                        selected={item.getId() !== null && selectedIds.has(item.getId()!)}
+                                    >
+                                        <TableCell padding="checkbox">
+                                            <Checkbox
+                                                size="small"
+                                                checked={item.getId() !== null && selectedIds.has(item.getId()!)}
+                                                onChange={(e) => item.getId() !== null && handleRowCheck(item.getId()!, (e.nativeEvent as MouseEvent).shiftKey)}
+                                            />
+                                        </TableCell>
                                         <TableCell>{item.getName()}</TableCell>
                                         <TableCell>
                                             {item.getGroupId()
@@ -325,7 +457,87 @@ export function MapLocationPage(): JSX.Element {
                     </Table>
                 </TableContainer>
             </Box>
-
+            {/* --- bulk edit dialog --- */}
+            <Dialog open={bulkEditOpen} onClose={() => setBulkEditOpen(false)} fullWidth maxWidth="xs">
+                <DialogTitle>Edit {selectedIds.size} Selected Item(s)</DialogTitle>
+                <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '16px !important' }}>
+                    <Typography variant="body2" color="text.secondary">
+                        Only fields you change will be updated. Leave a field at "Keep current" to leave it unchanged.
+                    </Typography>
+                    <FormControl size="small" fullWidth>
+                        <InputLabel>Group</InputLabel>
+                        <Select
+                            value={bulkEditGroupId}
+                            label="Group"
+                            onChange={(e) => setBulkEditGroupId(e.target.value)}
+                        >
+                            <MenuItem value="__keep__"><em>Keep current</em></MenuItem>
+                            <MenuItem value=""><em>No group</em></MenuItem>
+                            {groups.map((g) => (
+                                <MenuItem key={g.getId()} value={g.getId()}>{g.getName()}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <FormControl size="small" fullWidth>
+                        <InputLabel>Show on Map</InputLabel>
+                        <Select
+                            value={bulkEditShowOnMap}
+                            label="Show on Map"
+                            onChange={(e) => setBulkEditShowOnMap(e.target.value as '' | 'true' | 'false')}
+                        >
+                            <MenuItem value=""><em>Keep current</em></MenuItem>
+                            <MenuItem value="true">Yes</MenuItem>
+                            <MenuItem value="false">No</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <TextField
+                        label="Zoom Level"
+                        type="number"
+                        value={bulkEditZoomLevel}
+                        onChange={(e) => setBulkEditZoomLevel(e.target.value)}
+                        size="small"
+                        placeholder="Keep current"
+                        slotProps={{ htmlInput: { min: 1, max: 22 } }}
+                        fullWidth
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setBulkEditOpen(false)}>Cancel</Button>
+                    <Button variant="contained" onClick={saveBulkEdit}>
+                        Apply
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            {/* --- confirm bulk delete dialog --- */}
+            <Dialog open={confirmBulkDelete} onClose={() => setConfirmBulkDelete(false)}>
+                <DialogTitle>Delete Selected Items</DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        Are you sure you want to delete <strong>{selectedIds.size}</strong> selected item(s)? This cannot be undone.
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setConfirmBulkDelete(false)}>Cancel</Button>
+                    <Button variant="contained" color="error" onClick={bulkDeleteItems}>
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            {/* --- confirm delete dialog --- */}
+            <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)}>
+                <DialogTitle>Delete Map Item</DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        Are you sure you want to delete <strong>{editingItem?.getName()}</strong>? This cannot be undone.
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setConfirmDelete(false)}>Cancel</Button>
+                    <Button variant="contained" color="error" onClick={confirmDeleteItem}>
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
             {/* ── Edit MapItem Dialog ──────────────────────────────────── */}
             <Dialog open={editingItem !== null} onClose={closeEditDialog} fullWidth maxWidth="sm">
                 <DialogTitle>Edit Map Item</DialogTitle>
@@ -375,7 +587,7 @@ export function MapLocationPage(): JSX.Element {
                         >
                             <MenuItem value=""><em>No group</em></MenuItem>
                             {groups.map((g) => (
-                                <MenuItem key={g.getID()} value={g.getID()}>{g.getName()}</MenuItem>
+                                <MenuItem key={g.getId()} value={g.getId()}>{g.getName()}</MenuItem>
                             ))}
                         </Select>
                     </FormControl>
@@ -390,6 +602,10 @@ export function MapLocationPage(): JSX.Element {
                     />
                 </DialogContent>
                 <DialogActions>
+                    <Button onClick={() => {
+                        if (!editingItem) return;
+                        setConfirmDelete(true);
+                    }}>Delete</Button>
                     <Button onClick={closeEditDialog}>Cancel</Button>
                     <Button
                         variant="contained"

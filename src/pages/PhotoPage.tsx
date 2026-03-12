@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, type JSX } from 'react';
+import { useContext, useEffect, useState, type JSX } from 'react';
 import {
     Box,
     Button,
@@ -7,10 +7,14 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    FormControl,
     IconButton,
     ImageList,
     ImageListItem,
     ImageListItemBar,
+    InputLabel,
+    MenuItem,
+    Select,
     TextField,
     Tooltip,
     Typography,
@@ -25,6 +29,9 @@ import PlaceIcon from '@mui/icons-material/Place';
 import { styled } from '@mui/material/styles';
 import { ApiProvider } from '../dataProviders/ApiProvider';
 import { Photo } from '../enitities/Photo';
+import { DataProvider } from '../dataProviders/DataProvider';
+import { PhotoContext } from '../contexts/PhotoContext';
+import { MissionGroupContext } from '../contexts/MissionGroupContext'
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -43,10 +50,13 @@ export function PhotoPage(): JSX.Element {
     const isXs = useMediaQuery(theme.breakpoints.down('sm'));
     const isSm = useMediaQuery(theme.breakpoints.down('md'));
 
-    const [photos, setPhotos] = useState<Photo[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [uploading, setUploading] = useState<boolean>(false);
+    const dp = DataProvider.getInstance();
+
+    const photos = useContext(PhotoContext);
     const [selected, setSelected] = useState<Photo | null>(null);
+
+    const missionGroups = useContext(MissionGroupContext);
+    const [missionGroupFilter, setMissionGroupFilter] = useState<string>('');
 
     // ── Edit dialog state ──────────────────────────────────────────────────
     const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null);
@@ -56,6 +66,71 @@ export function PhotoPage(): JSX.Element {
     const [editSaving, setEditSaving] = useState(false);
     const [geolocating, setGeolocating] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
+
+    // ── Create dialog state ────────────────────────────────────────────────
+    const [createOpen, setCreateOpen] = useState(false);
+    const [createFile, setCreateFile] = useState<File | null>(null);
+    const [createName, setCreateName] = useState('');
+    const [createLatitude, setCreateLatitude] = useState('');
+    const [createLongitude, setCreateLongitude] = useState('');
+    const [createGeolocating, setCreateGeolocating] = useState(false);
+    const [creating, setCreating] = useState(false);
+    const [createPreview, setCreatePreview] = useState<string | null>(null);
+
+    const openCreateDialog = () => {
+        setCreateFile(null);
+        setCreateName('');
+        setCreateLatitude('');
+        setCreateLongitude('');
+        setCreatePreview(null);
+        setCreateOpen(true);
+    };
+
+    const closeCreateDialog = () => {
+        setCreateOpen(false);
+        if (createPreview) URL.revokeObjectURL(createPreview);
+        setCreatePreview(null);
+    };
+
+    const handleCreateFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        setCreateFile(file);
+        if (file) {
+            setCreateName(file.name.replace(/\.[^.]+$/, ''));
+            if (createPreview) URL.revokeObjectURL(createPreview);
+            setCreatePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const useCurrentLocationCreate = () => {
+        if (!window.navigator.geolocation) return;
+        setCreateGeolocating(true);
+        window.navigator.geolocation.getCurrentPosition(
+            (pos: GeolocationPosition) => {
+                setCreateLatitude(String(pos.coords.latitude));
+                setCreateLongitude(String(pos.coords.longitude));
+                setCreateGeolocating(false);
+            },
+            (err: GeolocationPositionError) => {
+                console.error('Geolocation error:', err);
+                setCreateGeolocating(false);
+            },
+            { enableHighAccuracy: true }
+        );
+    };
+
+    const submitCreateDialog = () => {
+        if (!createFile) return;
+        setCreating(true);
+        ApiProvider.getInstance()
+            .savePhotoImage(createFile, createLatitude || createLongitude ? { latitude: parseFloat(createLatitude), longitude: parseFloat(createLongitude), accuracy: 0, timestamp: new Date().toISOString() } : null, createName.trim(), missionGroupFilter)
+            .then((photo) => {
+                dp.addPhoto(photo);
+                closeCreateDialog();
+            })
+            .catch((e) => console.error('Failed to create photo:', e))
+            .finally(() => setCreating(false));
+    };
 
     const useCurrentLocation = () => {
         if (!window.navigator.geolocation) return;
@@ -93,7 +168,7 @@ export function PhotoPage(): JSX.Element {
         if (!editingPhoto || !editingPhoto.id) return;
         ApiProvider.getInstance().deletePhoto(editingPhoto.id)
             .then(() => {
-                setPhotos((prev) => prev.filter((p) => p.id !== editingPhoto.id));
+                dp.removePhoto(editingPhoto.id);
                 setConfirmDelete(false);
                 closeEditDialog();
             })
@@ -115,12 +190,14 @@ export function PhotoPage(): JSX.Element {
                     timestamp: editingPhoto.position?.getTimestamp().toISOString() ?? new Date().toISOString(),
                 }
                 : undefined,
+            authorId: editingPhoto.authorId,
+            missionGroupId: editingPhoto.missionGroupId,
         });
         setEditSaving(true);
         ApiProvider.getInstance()
-            .updatePhoto(updated)
+            .savePhoto(updated)
             .then((saved) => {
-                setPhotos((prev) => prev.map((p) => p.id === saved.id ? saved : p));
+                dp.addPhoto(saved);
                 closeEditDialog();
             })
             .catch((e) => console.error('Failed to save photo:', e))
@@ -129,36 +206,20 @@ export function PhotoPage(): JSX.Element {
 
     const cols = isXs ? 2 : isSm ? 3 : 4;
 
-    const loadPhotos = useCallback(() => {
-        setLoading(true);
-        ApiProvider.getInstance()
-            .loadAllPictures()
-            .then((pictures) => {
-                setPhotos(Object.values(pictures));
-            })
-            .catch((e) => console.error('Failed to load photos:', e))
-            .finally(() => setLoading(false));
-    }, []);
-
     useEffect(() => {
-        loadPhotos();
-    }, [loadPhotos]);
+        if (missionGroupFilter.trim() == '') {
+            if (missionGroups.length > 0) {
+                setMissionGroupFilter(missionGroups[0].getId());
+            }
+        } else if (missionGroups.filter(mg => mg.getId() === missionGroupFilter).length === 0) {
+            if (missionGroups.length > 0) {
+                setMissionGroupFilter(missionGroups[0].getId());
+            } else {
+                setMissionGroupFilter('');
+            }
+        }
+    }, [missionGroups]);
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (!files) return;
-        setUploading(true);
-        Promise.all(
-            Array.from(files).map((file) => ApiProvider.getInstance().createPhoto(file))
-        )
-            .then(() => loadPhotos())
-            .catch((e) => console.error('Upload failed:', e))
-            .finally(() => {
-                setUploading(false);
-                // Reset input so the same file can be re-uploaded
-                event.target.value = '';
-            });
-    };
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -167,38 +228,41 @@ export function PhotoPage(): JSX.Element {
                 <Typography variant="h5" sx={{ flexGrow: 1 }}>
                     Photos
                 </Typography>
-                <Button onClick={loadPhotos}>Refresh</Button>
-                <Button
-                    component="label"
-                    variant="contained"
-                    startIcon={uploading ? <CircularProgress size={18} color="inherit" /> : <CloudUploadIcon />}
-                    disabled={uploading}
-                >
-                    {uploading ? 'Uploading…' : 'Upload'}
-                    <VisuallyHiddenInput type="file" accept="image/*" onChange={handleFileChange} multiple />
+                <FormControl size="small" sx={{ minWidth: 200 }}>
+                    <InputLabel>Filter by Mission Group</InputLabel>
+                    <Select
+                        value={missionGroupFilter}
+                        label="Filter by Group"
+                        onChange={(e) => setMissionGroupFilter(e.target.value)}
+                    >
+                        {missionGroups.map((g) => (
+                            <MenuItem key={g.getId()} value={g.getId()}>
+                                {g.getName()}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <Button variant="contained" onClick={openCreateDialog}>
+                    Create
                 </Button>
             </Box>
 
             {/* --- gallery --- */}
             <Box sx={{ flex: 1, overflowY: 'auto', px: 2, pb: 2 }}>
-                {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}>
-                        <CircularProgress />
-                    </Box>
-                ) : photos.length === 0 ? (
+                {photos.length === 0 ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}>
                         <Typography color="text.secondary">No photos yet. Upload the first one!</Typography>
                     </Box>
                 ) : (
                     <ImageList variant="masonry" cols={cols} gap={8}>
-                        {photos.map((photo) => (
+                        {photos.filter((photo) => photo.missionGroupId === missionGroupFilter).map((photo) => (
                             <ImageListItem
                                 key={photo.id ?? photo.name}
                                 sx={{ cursor: 'pointer', borderRadius: 1, overflow: 'hidden' }}
                                 onClick={() => setSelected(photo)}
                             >
                                 <img
-                                    src={photo.id ? ApiProvider.getInstance().getPhotoImageSrc(photo.id) : ''}
+                                    src={photo.getImageSrc()}
                                     alt={photo.name}
                                     loading="lazy"
                                     style={{ display: 'block', width: '100%' }}
@@ -235,6 +299,84 @@ export function PhotoPage(): JSX.Element {
                     </ImageList>
                 )}
             </Box>
+
+            {/* --- create dialog --- */}
+            <Dialog open={createOpen} onClose={closeCreateDialog} fullWidth maxWidth="xs">
+                <DialogTitle>Create Photo</DialogTitle>
+                <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '16px !important' }}>
+                    <Button
+                        component="label"
+                        variant="outlined"
+                        startIcon={<CloudUploadIcon />}
+                        fullWidth
+                    >
+                        {createFile ? createFile.name : 'Select image…'}
+                        <VisuallyHiddenInput type="file" accept="image/*" onChange={handleCreateFileChange} />
+                    </Button>
+                    {createPreview && (
+                        <Box
+                            component="img"
+                            src={createPreview}
+                            alt="preview"
+                            sx={{ width: '100%', maxHeight: 200, objectFit: 'contain', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+                        />
+                    )}
+                    <TextField
+                        label="Name"
+                        value={createName}
+                        onChange={(e) => setCreateName(e.target.value)}
+                        fullWidth
+                        size="small"
+                    />
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+                            <TextField
+                                label="Latitude"
+                                type="number"
+                                value={createLatitude}
+                                onChange={(e) => setCreateLatitude(e.target.value)}
+                                fullWidth
+                                size="small"
+                                slotProps={{ htmlInput: { step: 'any' } }}
+                                helperText="Optional"
+                            />
+                            <TextField
+                                label="Longitude"
+                                type="number"
+                                value={createLongitude}
+                                onChange={(e) => setCreateLongitude(e.target.value)}
+                                fullWidth
+                                size="small"
+                                slotProps={{ htmlInput: { step: 'any' } }}
+                            />
+                        </Box>
+                        <Tooltip title="Use current location">
+                            <span>
+                                <IconButton
+                                    onClick={useCurrentLocationCreate}
+                                    disabled={createGeolocating || !window.navigator.geolocation}
+                                    sx={{ mt: 0.5 }}
+                                >
+                                    {createGeolocating
+                                        ? <CircularProgress size={20} />
+                                        : <GpsFixedIcon />}
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={closeCreateDialog} disabled={creating}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        onClick={submitCreateDialog}
+                        disabled={creating || !createFile}
+                        startIcon={creating ? <CircularProgress size={16} color="inherit" /> : undefined}
+                    >
+                        Create
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* --- confirm delete dialog --- */}
             <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)}>
@@ -345,7 +487,7 @@ export function PhotoPage(): JSX.Element {
                         </DialogTitle>
                         <DialogContent sx={{ p: 0, textAlign: 'center', backgroundColor: '#000' }}>
                             <img
-                                src={ApiProvider.getInstance().getPhotoImageSrc(selected.id!)}
+                                src={selected.getImageSrc()}
                                 alt={selected.name}
                                 style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }}
                             />

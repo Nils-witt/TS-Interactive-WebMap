@@ -14,6 +14,9 @@ import { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
 import { type MapGroup } from '../enitities/MapGroup.ts';
 import type { Unit } from '../enitities/Unit.ts';
 import { MapConfig } from '../enitities/MapConfig.ts';
+import type { User } from '../enitities/User.ts';
+import type { MissionGroup } from '../enitities/MissionGroup.ts';
+import type { Photo } from '../enitities/Photo.ts';
 
 /**
  * Interface representing an event dispatched by the DataProvider.
@@ -24,11 +27,14 @@ export class DataProviderEvent extends Event {
     eventType: string;
     /** Data payload associated with the event */
     data: number | object | string | boolean;
+    /** Data payload associated with the event */
+    oldData?: number | object | string | boolean;
 
-    constructor(eventType: string, data: string | object | number | boolean) {
+    constructor(eventType: string, data: string | object | number | boolean, oldData?: string | object | number | boolean) {
         super(eventType);
         this.eventType = eventType;
         this.data = data;
+        this.oldData = oldData;
     }
 }
 
@@ -62,6 +68,20 @@ export enum DataProviderEventType {
     UNIT_UPDATED = 'unit-updated',
     UNIT_DELETED = 'unit-deleted',
 
+    USER_ADDED = 'user-added',
+    USER_UPDATED = 'user-updated',
+    USER_DELETED = 'user-deleted',
+
+    MISSION_GROUPS_CREATED = 'missionGroups-created',
+    MISSION_GROUPS_UPDATED = 'missionGroups-updated',
+    MISSION_GROUPS_DELETED = 'missionGroups-deleted',
+
+    PHOTO_CREATED = 'photo-created',
+    PHOTO_UPDATED = 'photo-updated',
+    PHOTO_DELETED = 'photo-deleted',
+
+    ACTIVE_USER_UPDATED = 'active-user-updated',
+
     MAP_CENTER_UPDATED = 'map-center-updated',
     MAP_ZOOM_UPDATED = 'map-zoom-updated',
     API_URL_UPDATED = 'api-url-updated',
@@ -90,7 +110,14 @@ export class DataProvider {
     /** Collection of map groups for organizing map elements */
     private mapGroups: Map<string, MapGroup> = new Map<string, MapGroup>();
 
+    /** Collection of mission groups for organizing mission-related data */
+    private missionGroups: Map<string, MissionGroup> = new Map<string, MissionGroup>();
+
     private units: Map<string, Unit> = new Map<string, Unit>();
+
+    private users: Map<string, User> = new Map<string, User>();
+
+    private photos: Map<string, Photo> = new Map<string, Photo>();
 
     private mapCenter: LngLat = new LngLat(0.0, 0.0); // Default center of the map
     private mapZoom: number;
@@ -131,8 +158,8 @@ export class DataProvider {
      * @param eventType - The type of event to trigger
      * @param data - The data to include with the event
      */
-    private triggerEvent(eventType: string, data: object | string | number): void {
-        GlobalEventHandler.getInstance().emit(eventType, new DataProviderEvent(eventType, data));
+    private triggerEvent(event: DataProviderEvent): void {
+        GlobalEventHandler.getInstance().emit(event.eventType, event);
     }
 
     /**
@@ -143,11 +170,12 @@ export class DataProvider {
      */
     public addMapItem(item: MapItem): void {
         if (this.mapLocations.has(item.getId() as string)) {
+            const oldItem = this.mapLocations.get(item.getId() as string);
             this.mapLocations.set(item.getId() as string, item);
-            this.triggerEvent(DataProviderEventType.MAP_ITEM_UPDATED, item);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_ITEM_UPDATED, item, oldItem));
         } else {
             this.mapLocations.set(item.getId() as string, item);
-            this.triggerEvent(DataProviderEventType.MAP_ITEM_CREATED, item);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_ITEM_CREATED, item));
         }
     }
 
@@ -156,16 +184,16 @@ export class DataProvider {
      *
      * @returns Map of all location objects indexed by their IDs
      */
-    public getMapLocations(): Map<string, MapItem> {
+    public getAllMapItems(): Map<string, MapItem> {
         return this.mapLocations;
     }
 
 
-    public deleteMapLocation(id: string): void {
+    public deleteMapItem(id: string): void {
         if (this.mapLocations.has(id)) {
             const item = this.mapLocations.get(id);
             this.mapLocations.delete(id);
-            this.triggerEvent(DataProviderEventType.MAP_ITEM_DELETED, [item]);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_ITEM_DELETED, [item]));
         } else {
             console.warn(`Map location with ID ${id} does not exist.`);
         }
@@ -178,13 +206,14 @@ export class DataProvider {
      * @param group - The map group object to store
      */
     public addMapGroup(group: MapGroup): void {
-        const id = group.getID();
+        const id = group.getId();
         if (this.mapGroups.has(id)) {
+            const oldGroup = this.mapGroups.get(id);
             this.mapGroups.set(id, group);
-            this.triggerEvent(DataProviderEventType.MAP_GROUPS_UPDATED, group);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_GROUPS_UPDATED, group, oldGroup));
         } else {
             this.mapGroups.set(id, group);
-            this.triggerEvent(DataProviderEventType.MAP_GROUPS_CREATED, group);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_GROUPS_CREATED, group));
         }
     }
 
@@ -193,7 +222,7 @@ export class DataProvider {
      *
      * @returns Map of all group objects indexed by their IDs
      */
-    public getMapGroups(): Map<string, MapGroup> {
+    public getAllMapGroups(): Map<string, MapGroup> {
         return this.mapGroups;
     }
 
@@ -204,7 +233,7 @@ export class DataProvider {
      */
     public setMapStyle(style: MapBaseLayer): void {
         this.mapStyle = style;
-        this.triggerEvent(DataProviderEventType.MAP_STYLE_UPDATED, style);
+        this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_STYLE_UPDATED, style));
     }
 
     /**
@@ -222,22 +251,23 @@ export class DataProvider {
      * @param id - Unique identifier for the overlay
      * @param overlay - The overlay configuration to store
      */
-    public addOverlay(overlay: MapOverlay): void {
+    public addMapOverlay(overlay: MapOverlay): void {
         if (this.overlays.has(overlay.getId())) {
+            const oldOverlay = this.overlays.get(overlay.getId());
             this.overlays.set(overlay.getId(), overlay);
-            this.triggerEvent(DataProviderEventType.OVERLAY_UPDATED, overlay);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.OVERLAY_UPDATED, overlay, oldOverlay));
         } else {
             this.overlays.set(overlay.getId(), overlay);
-            this.triggerEvent(DataProviderEventType.OVERLAY_ADDED, overlay);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.OVERLAY_ADDED, overlay));
         }
     }
 
-    public removeOverlay(id: string): void {
+    public removeMapOverlay(id: string): void {
         if (this.overlays.has(id)) {
             const overlay = this.overlays.get(id);
             if (!overlay) return;
             this.overlays.delete(id);
-            this.triggerEvent(DataProviderEventType.OVERLAY_DELETED, overlay);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.OVERLAY_DELETED, overlay));
         } else {
             console.warn(`Overlay with ID ${id} does not exist.`);
         }
@@ -248,23 +278,24 @@ export class DataProvider {
      *
      * @returns Map of all overlay configurations indexed by their IDs
      */
-    public getOverlays(): Map<string, MapOverlay> {
+    public getAllMapOverlays(): Map<string, MapOverlay> {
         return this.overlays;
     }
 
     public addUnit(unit: Unit): void {
         if (unit.getId()) {
             if (this.units.has(unit.getId() as string)) {
+                const oldUnit = this.units.get(unit.getId() as string);
                 this.units.set(unit.getId() as string, unit);
-                this.triggerEvent(DataProviderEventType.UNIT_UPDATED, unit);
+                this.triggerEvent(new DataProviderEvent(DataProviderEventType.UNIT_UPDATED, unit, oldUnit));
             } else {
                 this.units.set(unit.getId() as string, unit);
-                this.triggerEvent(DataProviderEventType.UNIT_ADDED, unit);
+                this.triggerEvent(new DataProviderEvent(DataProviderEventType.UNIT_ADDED, unit));
             }
         }
     }
 
-    public getUnits(): Map<string, Unit> {
+    public getAllUnits(): Map<string, Unit> {
         return this.units;
     }
 
@@ -273,7 +304,7 @@ export class DataProvider {
             const unit = this.units.get(id);
             if (!unit) return;
             this.units.delete(id);
-            this.triggerEvent(DataProviderEventType.UNIT_DELETED, unit);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.UNIT_DELETED, unit));
         }
     }
 
@@ -283,7 +314,7 @@ export class DataProvider {
 
     public setMapCenter(center: LngLat): void {
         this.mapCenter = center;
-        this.triggerEvent(DataProviderEventType.MAP_CENTER_UPDATED, center);
+        this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_CENTER_UPDATED, center));
     }
 
     public getMapZoom(): number {
@@ -292,13 +323,13 @@ export class DataProvider {
 
     public setMapZoom(zoom: number): void {
         this.mapZoom = zoom;
-        this.triggerEvent(DataProviderEventType.MAP_ZOOM_UPDATED, zoom);
+        this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_ZOOM_UPDATED, zoom));
 
     }
 
     public setApiUrl(url: string): void {
         localStorage.setItem('apiUrl', url);
-        this.triggerEvent(DataProviderEventType.API_URL_UPDATED, url);
+        this.triggerEvent(new DataProviderEvent(DataProviderEventType.API_URL_UPDATED, url));
     }
 
     public getApiUrl(): string {
@@ -307,7 +338,7 @@ export class DataProvider {
 
     public setApiToken(token: string): void {
         localStorage.setItem('apiToken', token);
-        this.triggerEvent(DataProviderEventType.API_TOKEN_UPDATED, token);
+        this.triggerEvent(new DataProviderEvent(DataProviderEventType.API_TOKEN_UPDATED, token));
     }
 
     public getApiToken(): string {
@@ -321,11 +352,11 @@ export class DataProvider {
 
     public setMapConfig(value: MapConfig) {
         this.mapConfig = value;
-        this.triggerEvent(DataProviderEventType.MAP_CONFIG_UPDATED, value);
+        this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_CONFIG_UPDATED, value));
     }
 
     /** Returns the set of overlay IDs that are currently marked as visible. */
-    public getActiveOverlays(): Set<string> {
+    public getActiveMapOverlays(): Set<string> {
         return this.activeOverlays;
     }
 
@@ -334,10 +365,10 @@ export class DataProvider {
      *
      * @param ids - Set of overlay IDs that should be visible
      */
-    public setActiveOverlays(ids: Set<string>): void {
+    public setActiveMapOverlays(ids: Set<string>): void {
         this.activeOverlays = ids;
         localStorage.setItem('activeOverlays', JSON.stringify(Array.from(ids)));
-        this.triggerEvent(DataProviderEventType.ACTIVE_OVERLAYS_UPDATED, Array.from(ids));
+        this.triggerEvent(new DataProviderEvent(DataProviderEventType.ACTIVE_OVERLAYS_UPDATED, Array.from(ids)));
     }
 
     public on(eventType: string, listener: (event: DataProviderEvent) => void): void {
@@ -348,4 +379,78 @@ export class DataProvider {
         GlobalEventHandler.getInstance().off(eventType, listener as ((event: Event) => void));
     }
 
+    public addUser(user: User): void {
+        if (this.users.has(user.getId())) {
+            const oldUser = this.users.get(user.getId());
+            this.users.set(user.getId(), user);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.USER_UPDATED, user, oldUser));
+        } else {
+            this.users.set(user.getId(), user);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.USER_ADDED, user));
+        }
+    }
+
+    public getAllUsers(): Map<string, User> {
+        return this.users;
+    }
+
+    public removeUser(id: string): void {
+        if (this.users.has(id)) {
+            const user = this.users.get(id);
+            if (!user) return;
+            this.users.delete(id);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.USER_DELETED, user));
+        }
+    }
+
+    public addMissionGroup(missionGroup: MissionGroup): void {
+        if (this.missionGroups.has(missionGroup.getId())) {
+            this.missionGroups.set(missionGroup.getId(), missionGroup);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MISSION_GROUPS_UPDATED, missionGroup));
+        } else {
+            this.missionGroups.set(missionGroup.getId(), missionGroup);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MISSION_GROUPS_CREATED, missionGroup));
+        }
+    }
+
+    public getAllMissionGroups(): Map<string, MissionGroup> {
+        return this.missionGroups;
+    }
+
+    public removeMissionGroup(id: string): void {
+        if (this.missionGroups.has(id)) {
+            const missionGroup = this.missionGroups.get(id);
+            if (!missionGroup) return;
+            this.missionGroups.delete(id);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MISSION_GROUPS_DELETED, missionGroup));
+        }
+    }
+
+    public addPhoto(photo: Photo): void {
+        if (!photo.getId()) {
+            console.warn('Trying to add photo without ID');
+            return;
+        }
+        if (this.photos.has(photo.getId())) {
+            const oldPhoto = this.photos.get(photo.getId());
+            this.photos.set(photo.getId(), photo);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.PHOTO_UPDATED, photo, oldPhoto));
+        } else {
+            this.photos.set(photo.getId(), photo);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.PHOTO_CREATED, photo));
+        }
+    }
+
+    public getAllPhotos(): Map<string, Photo> {
+        return this.photos;
+    }
+
+    public removePhoto(id: string): void {
+        if (this.photos.has(id)) {
+            const photo = this.photos.get(id);
+            if (!photo) return;
+            this.photos.delete(id);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.PHOTO_DELETED, photo));
+        }
+    }
 }

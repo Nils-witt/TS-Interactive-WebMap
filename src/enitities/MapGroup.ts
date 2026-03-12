@@ -32,7 +32,7 @@ export class MapGroup extends AbstractEntity {
         };
     }
 
-    public getID(): string {
+    public getId(): string {
         return this.id;
     }
 

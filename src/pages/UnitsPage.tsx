@@ -1,13 +1,21 @@
-import { type JSX, useEffect, useMemo, useState } from 'react';
+import { type JSX, useContext, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Avatar,
     Box,
+    Button,
     Chip,
+    CircularProgress,
     Container,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
     InputAdornment,
     IconButton,
+    MenuItem,
     Paper,
+    Select,
     Table,
     TableBody,
     TableCell,
@@ -18,12 +26,16 @@ import {
     TextField,
     Tooltip,
     Typography,
+    FormControl,
+    InputLabel,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import MapIcon from '@mui/icons-material/Map';
-import { DataProvider, DataProviderEventType } from '../dataProviders/DataProvider.ts';
-import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler.ts';
-import { type Unit } from '../enitities/Unit.ts';
+import EditIcon from '@mui/icons-material/Edit';
+import { DataProvider } from '../dataProviders/DataProvider.ts';
+import { Unit } from '../enitities/Unit.ts';
+import { ApiProvider } from '../dataProviders/ApiProvider.ts';
+import { UnitsContext } from '../contexts/UnitsContext.tsx';
 
 // ---------------------------------------------------------------------------
 // Status helpers
@@ -62,23 +74,48 @@ export function UnitsPage(): JSX.Element {
     const dp = DataProvider.getInstance();
     const navigate = useNavigate();
 
-    const [units, setUnits] = useState<Unit[]>(() => Array.from(dp.getUnits().values()));
+    const units = useContext(UnitsContext);
+
     const [nameFilter, setNameFilter] = useState('');
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
-    // Subscribe to live updates
-    useEffect(() => {
-        const refresh = () => setUnits(Array.from(dp.getUnits().values()));
+    // ── Edit dialog state ──────────────────────────────────────────────────
+    const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
+    const [editName, setEditName] = useState('');
+    const [editStatus, setEditStatus] = useState<string>('');
+    const [editSaving, setEditSaving] = useState(false);
 
-        const events = [
-            DataProviderEventType.UNIT_ADDED,
-            DataProviderEventType.UNIT_UPDATED,
-            DataProviderEventType.UNIT_DELETED,
-        ];
-        events.forEach((e) => GlobalEventHandler.getInstance().on(e, refresh));
-        return () => events.forEach((e) => GlobalEventHandler.getInstance().off(e, refresh));
-    }, []);
+    const openEditDialog = (unit: Unit, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setEditingUnit(unit);
+        setEditName(unit.getName());
+        setEditStatus(unit.getStatus() != null ? String(unit.getStatus()) : '');
+    };
+
+    const closeEditDialog = () => setEditingUnit(null);
+
+    const saveEditDialog = () => {
+        if (!editingUnit) return;
+        const status = editStatus !== '' ? parseInt(editStatus) : null;
+        const updated = new Unit({
+            id: editingUnit.getId() ?? undefined,
+            name: editName.trim() || editingUnit.getName(),
+            position: editingUnit.getPosition()?.record() as never ?? { latitude: 0, longitude: 0, accuracy: 0, timestamp: new Date().toISOString() },
+            groupId: editingUnit.getGroupId(),
+            unit_status: status,
+            symbol: editingUnit.getSymbol() ?? undefined,
+        });
+        setEditSaving(true);
+        ApiProvider.getInstance()
+            .saveUnit(updated)
+            .then((saved) => {
+                dp.addUnit(saved);
+                closeEditDialog();
+            })
+            .catch((e) => console.error('Failed to save unit:', e))
+            .finally(() => setEditSaving(false));
+    };
 
     // Sort toggle
     const handleSort = (field: SortField) => {
@@ -266,27 +303,32 @@ export function UnitsPage(): JSX.Element {
                                                 </Typography>
                                             </TableCell>
 
-                                            {/* Show on map */}
+                                            {/* Actions */}
                                             <TableCell align="center">
-                                                <Tooltip title={pos ? 'Show on map' : 'No position available'}>
-                                                    <span>
-                                                        <IconButton
-                                                            size="small"
-                                                            disabled={!pos}
-                                                            onClick={() => {
-                                                                if (!pos) return;
-                                                                const params = new URLSearchParams({
-                                                                    lat: pos.getLatitude().toString(),
-                                                                    lng: pos.getLongitude().toString(),
-                                                                    zoom: '16',
-                                                                });
-                                                                void navigate(`/map?${params.toString()}`);
-                                                            }}
-                                                        >
-                                                            <MapIcon fontSize="small" />
+                                                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                                                    <Tooltip title={pos ? 'Show on map' : 'No position available'}>
+                                                        <span>
+                                                            <IconButton
+                                                                size="small"
+                                                                disabled={!pos}
+                                                                onClick={() => {
+                                                                    if (!pos) return;
+                                                                    const params = new URLSearchParams({
+                                                                        unitId: unit.getId() || ''
+                                                                    });
+                                                                    void navigate(`/map?${params.toString()}`);
+                                                                }}
+                                                            >
+                                                                <MapIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </span>
+                                                    </Tooltip>
+                                                    <Tooltip title="Edit">
+                                                        <IconButton size="small" onClick={(e) => openEditDialog(unit, e)}>
+                                                            <EditIcon fontSize="small" />
                                                         </IconButton>
-                                                    </span>
-                                                </Tooltip>
+                                                    </Tooltip>
+                                                </Box>
                                             </TableCell>
                                         </TableRow>
                                     );
@@ -296,6 +338,44 @@ export function UnitsPage(): JSX.Element {
                     </Table>
                 </TableContainer>
             </Container>
+
+            {/* ── Edit unit dialog ── */}
+            <Dialog open={editingUnit !== null} onClose={closeEditDialog} fullWidth maxWidth="xs">
+                <DialogTitle>Edit Unit</DialogTitle>
+                <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '16px !important' }}>
+                    <TextField
+                        label="Name"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        fullWidth
+                        size="small"
+                    />
+                    <FormControl fullWidth size="small">
+                        <InputLabel>Status</InputLabel>
+                        <Select
+                            label="Status"
+                            value={editStatus}
+                            onChange={(e) => setEditStatus(e.target.value)}
+                        >
+                            <MenuItem value=""><em>None</em></MenuItem>
+                            {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                                <MenuItem key={key} value={key}>{key} – {label}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={closeEditDialog} disabled={editSaving}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        onClick={saveEditDialog}
+                        disabled={editSaving || !editName.trim()}
+                        startIcon={editSaving ? <CircularProgress size={16} color="inherit" /> : undefined}
+                    >
+                        Save
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
