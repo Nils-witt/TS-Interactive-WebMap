@@ -7,8 +7,6 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import type { Unit } from "../../enitities/Unit";
 
 
-
-
 export interface SettingsDialogProps {
     open: boolean;
     onClose: () => void;
@@ -87,8 +85,8 @@ export function SettingsDialog(props: SettingsDialogProps): JSX.Element {
             <Accordion>
                 <AccordionSummary
                     expandIcon={<ArrowDownwardIcon />}
-                    aria-controls="panel1-content"
-                    id="panel1-header"
+                    aria-controls="panel2-content"
+                    id="panel2-header"
                 >
                     <Typography component="span">Units</Typography>
                 </AccordionSummary>

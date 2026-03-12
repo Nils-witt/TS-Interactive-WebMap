@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import TuneIcon from '@mui/icons-material/Tune';
 import { DisplayMapComponent } from '../components/DisplayMapComponent';
-import { EventList } from '../components/EventList';
+import { NotificationList } from '../components/NotificationList.tsx';
 import { MapOverlayContext } from '../contexts/MapOverlayContext.tsx';
 
 import './css/displayPage.scss';
@@ -49,7 +49,7 @@ export function DisplayPage() {
                 </Button>
             </Box>
 
-            <EventList />
+            <NotificationList />
             <SettingsDialog
                 open={settingsDialogOpen}
                 onClose={() => setSettingsDialogOpen(false)}
