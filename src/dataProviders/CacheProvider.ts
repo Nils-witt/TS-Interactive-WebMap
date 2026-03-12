@@ -3,7 +3,6 @@ import { DataProvider } from './DataProvider.ts';
 import { Utilities } from '../Utilities.ts';
 import type { MapOverlay } from '../enitities/MapOverlay.ts';
 import type { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
-import { cache } from 'react';
 
 class CacheProvider {
     private static instance: CacheProvider | null = null;
