@@ -230,7 +230,7 @@ export function UnitsPage(): JSX.Element {
                                 );
                             }}
                             renderValue={(selected) => {
-                                const values = selected as string[];
+                                const values = selected;
                                 return values
                                     .map((v) => {
                                         const status = parseInt(v, 10);
