@@ -124,7 +124,10 @@ export function SettingsPage(): JSX.Element {
             });
 
         }
-
+        const swRegistrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of swRegistrations) {
+            await reg.unregister();
+        }
         window.location.href = '/';
     }
 
