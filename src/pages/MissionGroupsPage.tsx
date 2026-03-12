@@ -3,7 +3,14 @@ import {
     Box,
     Chip,
     Container,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    Divider,
     InputAdornment,
+    List,
+    ListItem,
+    ListItemText,
     Paper,
     Table,
     TableBody,
@@ -17,6 +24,7 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { MissionGroupContext } from '../contexts/MissionGroupContext';
+import { UnitsContext } from '../contexts/UnitsContext';
 
 type SortField = 'name' | 'startTime' | 'endTime' | 'units' | 'mapGroups';
 type SortOrder = 'asc' | 'desc';
@@ -24,10 +32,12 @@ type SortOrder = 'asc' | 'desc';
 export function MissionGroupsPage(): JSX.Element {
 
     const missionGroups = useContext(MissionGroupContext);
+    const units = useContext(UnitsContext);
 
     const [nameFilter, setNameFilter] = useState('');
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+    const [unitsDialogIds, setUnitsDialogIds] = useState<string[] | null>(null);
 
     const handleSort = (field: SortField) => {
         if (field === sortField) {
@@ -145,7 +155,12 @@ export function MissionGroupsPage(): JSX.Element {
                                         <TableCell>{formatDate(mg.getStartTime())}</TableCell>
                                         <TableCell>{formatDate(mg.getEndTime())}</TableCell>
                                         <TableCell align="center">
-                                            <Chip label={mg.getUnitIds().length} size="small" />
+                                            <Chip
+                                                label={mg.getUnitIds().length}
+                                                size="small"
+                                                clickable={mg.getUnitIds().length > 0}
+                                                onClick={mg.getUnitIds().length > 0 ? () => setUnitsDialogIds(mg.getUnitIds()) : undefined}
+                                            />
                                         </TableCell>
                                         <TableCell align="center">
                                             <Chip label={mg.getMapGroupIds().length} size="small" />
@@ -157,6 +172,27 @@ export function MissionGroupsPage(): JSX.Element {
                     </Table>
                 </TableContainer>
             </Container>
+
+            {/* Units dialog */}
+            <Dialog open={unitsDialogIds !== null} onClose={() => setUnitsDialogIds(null)} maxWidth="xs" fullWidth>
+                <DialogTitle>Units in Mission Group</DialogTitle>
+                <Divider />
+                <DialogContent sx={{ p: 0 }}>
+                    <List dense disablePadding>
+                        {(unitsDialogIds ?? []).map((id) => {
+                            const unit = units.find((u) => u.getId() === id);
+                            return (
+                                <ListItem key={id}>
+                                    <ListItemText
+                                        primary={unit ? unit.getName() : id}
+                                        secondary={unit ? null : 'Unknown unit'}
+                                    />
+                                </ListItem>
+                            );
+                        })}
+                    </List>
+                </DialogContent>
+            </Dialog>
         </Box>
     );
 }
