@@ -99,7 +99,7 @@ export class ApiProvider implements StorageInterface {
             if (res.ok) {
                 const data: { token: string; userId: string } = await res.json() as { token: string; userId: string };
                 DataProvider.getInstance().setApiToken(data.token); // Store the token for future requests
-                DataProvider.getInstance().setActiveUserId(data.userId); // Store the active user ID
+                localStorage.setItem('activeUser', data.userId);
                 this.notifyListeners(ApiProviderEventTypes.LOGIN_SUCCESS, { message: 'Login successful' });
             } else {
                 throw new Error(`HTTP error! status: ${res.status}`);
@@ -482,7 +482,40 @@ export class ApiProvider implements StorageInterface {
 
     //-- Save Single
     saveUnit(unit: Unit): Promise<Unit> {
-        return Promise.reject(new Error(`Method not implemented. saveUnit(${unit.getId()})`));
+        return new Promise<Unit>((resolve, reject) => {
+            const url = DataProvider.getInstance().getApiUrl() + '/units/' + unit.getId();
+            const body: Record<string, unknown> = {
+                name: unit.getName(),
+                status: unit.getStatus(),
+            };
+            if (unit.getPosition()) {
+                body['position'] = {
+                    latitude: unit.getPosition()!.getLatitude(),
+                    longitude: unit.getPosition()!.getLongitude(),
+                    accuracy: unit.getPosition()!.getAccuracy(),
+                    timestamp: unit.getPosition()!.getTimestamp().toISOString(),
+                };
+            }
+            if (unit.getGroupId()) {
+                body['groupId'] = unit.getGroupId();
+            }
+            this.callApi(url, 'PATCH', new Headers(), body)
+                .then((raw) => {
+                    const data = raw as { id: string; name: string; status?: number; position?: { latitude: number; longitude: number; accuracy: number; timestamp: string }; groupId?: string };
+                    return resolve(Unit.of({
+                        id: data.id,
+                        name: data.name,
+                        pos_latitude: data.position?.latitude ?? unit.getPosition()?.getLatitude() ?? 0,
+                        pos_longitude: data.position?.longitude ?? unit.getPosition()?.getLongitude() ?? 0,
+                        pos_accuracy: data.position?.accuracy ?? unit.getPosition()?.getAccuracy() ?? 0,
+                        pos_timestamp: data.position?.timestamp ?? unit.getPosition()?.getTimestamp().toISOString() ?? new Date().toISOString(),
+                        unit_status: data.status ?? unit.getStatus(),
+                        group_id: data.groupId ?? unit.getGroupId(),
+                        symbol: unit.getSymbol() ? JSON.stringify(unit.getSymbol()) : null,
+                    }));
+                })
+                .catch((e) => reject(new Error('Failed to save unit', { cause: e })));
+        });
     }
 
     saveMapGroup(mapGroup: MapGroup): Promise<MapGroup> {

@@ -6,8 +6,7 @@
  * as a regular page inside NavLayout rather than a modal overlay.
  */
 
-import { type JSX, useEffect } from 'react';
-import * as React from 'react';
+import { type JSX, useEffect, useContext, useState } from 'react';
 import {
     Box,
     Button,
@@ -18,48 +17,35 @@ import {
     Paper,
     Typography,
 } from '@mui/material';
-import { DataProvider, DataProviderEvent, DataProviderEventType } from '../dataProviders/DataProvider.ts';
-import { MapConfig, MapConfigEvents } from '../enitities/MapConfig.ts';
+import { DataProvider, DataProviderEvent } from '../dataProviders/DataProvider.ts';
+import { MapConfigEvents } from '../enitities/MapConfig.ts';
 import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler.ts';
 import { Utilities } from '../Utilities.ts';
+import { MapConfigContext } from '../contexts/MapConfigContext.tsx';
 
 // ---------------------------------------------------------------------------
 // SettingsPage
 // ---------------------------------------------------------------------------
 
 export function SettingsPage(): JSX.Element {
-    const [unitIconSize, setUnitIconSizeState] = React.useState<string>();
-    const [mapConfig, setMapConfig] = React.useState<MapConfig>();
+    const [unitIconSize, setUnitIconSizeState] = useState<string>();
+    const mapConfig = useContext(MapConfigContext);
 
-    const [excludeStatus6, setExcludeStatus6] = React.useState<boolean>(false);
-    const [hideUnitsAfterPositionUpdate, setHideUnitsAfterPositionUpdate] = React.useState<number>(21600);
-    const [showUnitStatus, setShowUnitStatus] = React.useState<boolean>(false);
+    const [excludeStatus6, setExcludeStatus6] = useState<boolean>(false);
+    const [hideUnitsAfterPositionUpdate, setHideUnitsAfterPositionUpdate] = useState<number>(21600);
+    const [showUnitStatus, setShowUnitStatus] = useState<boolean>(false);
 
     // --------------------------------------------------
     // Bootstrap
     // --------------------------------------------------
     useEffect(() => {
-        const lcConfig = DataProvider.getInstance().getMapConfig();
-        setMapConfig(lcConfig);
-        setUnitIconSizeState(lcConfig.getUnitIconSize().toString());
-        setExcludeStatus6(lcConfig.getExcludeStatuses().includes(6));
-        setHideUnitsAfterPositionUpdate(lcConfig.getHideUnitsAfterPositionUpdate());
-        setShowUnitStatus(lcConfig.getShowUnitStatus());
 
-        const onMapConfigUpdated = (event: DataProviderEvent) => {
-            const config = event.data as MapConfig;
-            setMapConfig(config);
-            setUnitIconSizeState(config.getUnitIconSize().toString());
-            setExcludeStatus6(config.getExcludeStatuses().includes(6));
-            setHideUnitsAfterPositionUpdate(config.getHideUnitsAfterPositionUpdate());
-            setShowUnitStatus(config.getShowUnitStatus());
-        };
-        DataProvider.getInstance().on(DataProviderEventType.MAP_CONFIG_UPDATED, onMapConfigUpdated);
+        setUnitIconSizeState(mapConfig.getUnitIconSize().toString());
+        setExcludeStatus6(mapConfig.getExcludeStatuses().includes(6));
+        setHideUnitsAfterPositionUpdate(mapConfig.getHideUnitsAfterPositionUpdate());
+        setShowUnitStatus(mapConfig.getShowUnitStatus());
 
-        return () => {
-            DataProvider.getInstance().off(DataProviderEventType.MAP_CONFIG_UPDATED, onMapConfigUpdated);
-        };
-    }, []);
+    }, [mapConfig]);
 
     // --------------------------------------------------
     // Sync individual settings back to DataProvider

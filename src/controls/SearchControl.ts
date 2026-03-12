@@ -7,13 +7,11 @@
  */
 
 import {type ControlPosition, Evented, type IControl, Map as MapLibreMap, Marker} from 'maplibre-gl';
-import {DataProvider, DataProviderEventType} from '../dataProviders/DataProvider';
 import type {MapItem} from '../enitities/MapItem.ts';
 import {icon} from '@fortawesome/fontawesome-svg-core';
 import {faMagnifyingGlass} from '@fortawesome/free-solid-svg-icons/faMagnifyingGlass';
 import {faMapLocationDot} from '@fortawesome/free-solid-svg-icons/faMapLocationDot';
 import {faXmark} from '@fortawesome/free-solid-svg-icons/faXmark';
-import {GlobalEventHandler} from '../dataProviders/GlobalEventHandler';
 import {useControl} from '@vis.gl/react-maplibre';
 
 import './css/search.scss';
@@ -28,20 +26,22 @@ import './css/search.scss';
 
 interface ReactSearchControlProps {
     position: ControlPosition;
-    dataProvider: DataProvider;
-    globalEventHandler: GlobalEventHandler;
 }
 
 interface SearchControlOptions {
-    dataProvider: DataProvider;
-    globalEventHandler: GlobalEventHandler;
+    searchCallback: (query: string) => MapItem[]; // Optional callback to perform search, defaults to searching all MapItems by name
 }
 
 let searchControlInstance: SearchControl | null = null;
 
 export function ReactSearchControl(props: ReactSearchControlProps): null {
     if (searchControlInstance === null) {
-        searchControlInstance = new SearchControl(props as SearchControlOptions);
+        searchControlInstance = new SearchControl({
+            searchCallback: (query: string) => {
+                console.warn('Performing search for query: NIY', query);
+                return [];
+            }
+        });
     }
     useControl(() => searchControlInstance as SearchControl, {
         position: props.position
@@ -114,13 +114,6 @@ export class SearchControl extends Evented implements IControl {
             'searchcontrol-root',         // Custom class for styling
         );
         this.createSearchContainer();
-
-        options.globalEventHandler.on(DataProviderEventType.MAP_ITEM_UPDATED, () => {
-            if (this.searchInput && this.searchInput.value.trim().length > 0) {
-                this.onSearchBoxUpdate(this.searchInput.value);
-            }
-        });
-
     }
 
     /**
@@ -199,7 +192,7 @@ export class SearchControl extends Evented implements IControl {
         this.resultsContainer.classList.remove('hidden');
         let resultCount = 0;
 
-        let entries = Array.from(this.options.dataProvider.getAllMapItems().values()).filter(entity => entity.getName().toLowerCase().includes(query.toLowerCase()));
+        let entries: MapItem[] = this.options.searchCallback(query);
         entries = entries.sort((a, b) => a.getName().localeCompare(b.getName())); // Sort results by name
         if (entries.length === 0) {
             this.resultsContainer.classList.add('hidden');

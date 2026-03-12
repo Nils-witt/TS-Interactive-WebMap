@@ -1,4 +1,4 @@
-import { type JSX, useEffect, useMemo, useState } from 'react';
+import { type JSX, useContext, useMemo, useState } from 'react';
 import {
     Box,
     Chip,
@@ -16,34 +16,18 @@ import {
     Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { DataProvider, DataProviderEventType } from '../dataProviders/DataProvider.ts';
-import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler.ts';
-import { type MissionGroup } from '../enitities/MissionGroup.ts';
+import { MissionGroupContext } from '../contexts/MissionGroupContext';
 
 type SortField = 'name' | 'startTime' | 'endTime' | 'units' | 'mapGroups';
 type SortOrder = 'asc' | 'desc';
 
 export function MissionGroupsPage(): JSX.Element {
-    const dp = DataProvider.getInstance();
 
-    const [missionGroups, setMissionGroups] = useState<MissionGroup[]>(() =>
-        Array.from(dp.getAllMissionGroups().values())
-    );
+    const missionGroups = useContext(MissionGroupContext);
+
     const [nameFilter, setNameFilter] = useState('');
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-
-    useEffect(() => {
-        const refresh = () => setMissionGroups(Array.from(dp.getAllMissionGroups().values()));
-
-        const events = [
-            DataProviderEventType.MISSION_GROUPS_CREATED,
-            DataProviderEventType.MISSION_GROUPS_UPDATED,
-            DataProviderEventType.MISSION_GROUPS_DELETED,
-        ];
-        events.forEach((e) => GlobalEventHandler.getInstance().on(e, refresh));
-        return () => events.forEach((e) => GlobalEventHandler.getInstance().off(e, refresh));
-    }, []);
 
     const handleSort = (field: SortField) => {
         if (field === sortField) {

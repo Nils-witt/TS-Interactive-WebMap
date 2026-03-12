@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Unit } from "../enitities/Unit";
+import { DataProvider, DataProviderEvent, DataProviderEventType } from "../dataProviders/DataProvider";
 
 
 export interface ActionEvent {
@@ -7,15 +9,36 @@ export interface ActionEvent {
     text: string;
 }
 
-export interface EventListProps {
-    events?: ActionEvent[];
-}
+export function EventList() {
+    const [events, setEvents] = useState<ActionEvent[]>([]);
 
-export function EventList(props: EventListProps) {
+    const unitChangedHandler = (event: DataProviderEvent) => {
+        console.log("Unit updated:", event.data, "Old Unit:", event.oldData);
+        if (event.oldData){
+            const oldUnit = event.oldData as Unit;
+            const newUnit = event.data as Unit;
+            if (oldUnit.getStatus() !== newUnit.getStatus()) {
+                setEvents(prevEvents => [
+                    {
+                        unit: newUnit,
+                        timestamp: new Date(),
+                        text: `New Status: ${newUnit.getStatus()}`
+                    },
+                    ...prevEvents
+                ]);
+            }
+        }
+    };
+    useEffect(() => {
+        DataProvider.getInstance().on(DataProviderEventType.UNIT_UPDATED, unitChangedHandler);
+        return () => {
+            DataProvider.getInstance().off(DataProviderEventType.UNIT_UPDATED, unitChangedHandler);
+        };
+    }, []);
 
     return <div className="event-list">
-        {props.events?.map((event, index) => (
-        <EventItem key={index} event={event}/>
+        {events.map((event, index) => (
+            <EventItem key={index} event={event} />
         ))}
     </div>;
 }

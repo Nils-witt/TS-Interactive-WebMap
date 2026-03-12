@@ -108,7 +108,7 @@ export class Unit extends AbstractEntity {
             return dataUrl;
         } catch (e) {
             ApplicationLogger.error('Error generating icon element for Unit: ' + (e as Error).message, {service: 'Unit'});
-            return 'error';
+            return '';
         }
     }
 

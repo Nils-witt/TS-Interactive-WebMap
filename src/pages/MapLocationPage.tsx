@@ -1,4 +1,4 @@
-import { type JSX, useEffect, useMemo, useRef, useState } from 'react';
+import { type JSX, useContext, useMemo, useRef, useState } from 'react';
 import {
     Box,
     Button,
@@ -32,45 +32,27 @@ import EditIcon from '@mui/icons-material/Edit';
 import IconButton from '@mui/material/IconButton';
 import MapIcon from '@mui/icons-material/Map';
 import { useNavigate } from 'react-router-dom';
-import { DataProvider, DataProviderEventType } from '../dataProviders/DataProvider.ts';
+import { DataProvider } from '../dataProviders/DataProvider.ts';
 import { type MapItem } from '../enitities/MapItem.ts';
-import { type MapGroup } from '../enitities/MapGroup.ts';
-import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler.ts';
-import { DatabaseProvider } from '../dataProviders/DatabaseProvider.ts';
 import { ApiProvider } from '../dataProviders/ApiProvider.ts';
+import { MapItemContext } from '../contexts/MapItemContext.tsx';
+import { MapGroupContext } from '../contexts/MapGroupContext.tsx';
+import { DataBaseContext } from '../contexts/DataBaseContext.tsx';
 
 type SortField = 'name' | 'groupId' | 'latitude' | 'longitude' | 'zoomLevel';
 type SortOrder = 'asc' | 'desc';
 
 export function MapLocationPage(): JSX.Element {
     const navigate = useNavigate();
-    const dp = DataProvider.getInstance();
-    const [items, setItems] = useState<MapItem[]>(() => Array.from(dp.getAllMapItems().values()));
-    const [groups, setGroups] = useState<MapGroup[]>(() => Array.from(dp.getAllMapGroups().values()));
+
+    const items = useContext(MapItemContext);
+    const groups = useContext(MapGroupContext);
+    const databaseProvider = useContext(DataBaseContext);
 
     const [nameFilter, setNameFilter] = useState('');
     const [groupFilter, setGroupFilter] = useState<string>('');
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-
-    useEffect(() => {
-        const refresh = () => {
-            setItems(Array.from(dp.getAllMapItems().values()));
-            setGroups(Array.from(dp.getAllMapGroups().values()));
-        };
-
-        const events = [
-            DataProviderEventType.MAP_ITEM_CREATED,
-            DataProviderEventType.MAP_ITEM_UPDATED,
-            DataProviderEventType.MAP_ITEM_DELETED,
-            DataProviderEventType.MAP_GROUPS_UPDATED,
-            DataProviderEventType.MAP_GROUPS_CREATED,
-            DataProviderEventType.MAP_GROUPS_DELETED,
-        ];
-
-        events.forEach((e) => GlobalEventHandler.getInstance().on(e, refresh));
-        return () => events.forEach((e) => GlobalEventHandler.getInstance().off(e, refresh));
-    }, []);
 
     const groupMap = useMemo(() => {
         const m = new Map<string, string>();
@@ -178,7 +160,9 @@ export function MapLocationPage(): JSX.Element {
                 if (!isNaN(z)) item.setZoomLevel(z);
             }
             DataProvider.getInstance().addMapItem(item);
-            void DatabaseProvider.getInstance().then((db) => db.saveMapItem(item));
+            if (databaseProvider) {
+                void databaseProvider.saveMapItem(item);
+            }
             void ApiProvider.getInstance().saveMapItem(item);
         }
         setBulkEditOpen(false);
@@ -227,7 +211,9 @@ export function MapLocationPage(): JSX.Element {
         for (const id of selectedIds) {
             void ApiProvider.getInstance().deleteMapItem(id);
             void DataProvider.getInstance().deleteMapItem(id);
-            void DatabaseProvider.getInstance().then((db) => db.deleteMapItem(id));
+            if (databaseProvider) {
+                void databaseProvider.deleteMapItem(id);
+            }
         }
         setSelectedIds(new Set());
         setConfirmBulkDelete(false);
@@ -256,21 +242,23 @@ export function MapLocationPage(): JSX.Element {
         editingItem.setGroupId(editGroupId || null);
 
         DataProvider.getInstance().addMapItem(editingItem);
-        void DatabaseProvider.getInstance().then((db) =>
-            db.saveMapItem(editingItem)
-        );
+        if(databaseProvider){
+            void databaseProvider.saveMapItem(editingItem);
+        }
         void ApiProvider.getInstance().saveMapItem(editingItem);
         closeEditDialog();
     };
 
-        const confirmDeleteItem = () => {
-            if (!editingItem || !editingItem.getId()) return;
-            setConfirmDelete(false);
-            closeEditDialog();
-            void ApiProvider.getInstance().deleteMapItem(editingItem.getId()!);
-            void DataProvider.getInstance().deleteMapItem(editingItem.getId()!);
-            void DatabaseProvider.getInstance().then((db) => db.deleteMapItem(editingItem.getId()!));
-        };
+    const confirmDeleteItem = () => {
+        if (!editingItem || !editingItem.getId()) return;
+        setConfirmDelete(false);
+        closeEditDialog();
+        void ApiProvider.getInstance().deleteMapItem(editingItem.getId()!);
+        void DataProvider.getInstance().deleteMapItem(editingItem.getId()!);
+        if (databaseProvider) {
+            void databaseProvider.deleteMapItem(editingItem.getId()!);
+        }
+    };
 
     return (
         <>

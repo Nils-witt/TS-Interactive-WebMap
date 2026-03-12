@@ -31,16 +31,33 @@ enum DB_TABLES {
 }
 
 export class DatabaseProvider implements StorageInterface {
-    private static instance: DatabaseProvider;
+    private static instance: DatabaseProvider | null = null;
     private db: IDBPDatabase | undefined;
     private isSetUp = false;
-    private listeners = new Map<string, (() => void)[]>();
+    setUpDoneCallbacks: ((db: DatabaseProvider) => void)[] = [];
 
     private readonly DB_NAME = 'mapDB';
 
-    private constructor() { /* empty */ }
+    public constructor() { /* empty */ }
+
+    public static getInstance(): DatabaseProvider {
+        if (!DatabaseProvider.instance) {
+            DatabaseProvider.instance = new DatabaseProvider();
+        }
+        return DatabaseProvider.instance;
+    }
+
+    public setUpDone(callback: (db: DatabaseProvider) => void): void {
+        this.setUpDoneCallbacks.push(callback);
+        if (this.isSetUp) {
+            callback(this);
+        }
+    }
 
     public async setUp(): Promise<void> {
+        if(this.isSetUp) {
+            return;
+        }
 
         const dbVersion = 14;
         this.db = await openDB(this.DB_NAME, dbVersion, {
@@ -74,23 +91,8 @@ export class DatabaseProvider implements StorageInterface {
             }
         });
         this.isSetUp = true;
+        this.setUpDoneCallbacks.forEach(callback => callback(this));
         ApplicationLogger.info('IndexedDB setup complete.', { service: 'DatabaseProvider' });
-    }
-
-    public static async getInstance(): Promise<DatabaseProvider> {
-        if (!DatabaseProvider.instance) {
-            DatabaseProvider.instance = new DatabaseProvider();
-            await DatabaseProvider.instance.setUp();
-        }
-        if (!DatabaseProvider.instance.isSetUp) {
-            await new Promise<void>(resolve => {
-                if (!DatabaseProvider.instance.listeners.has('setup')) {
-                    DatabaseProvider.instance.listeners.set('setup', []);
-                }
-                DatabaseProvider.instance.listeners.get('setup')?.push(() => resolve());
-            });
-        }
-        return DatabaseProvider.instance;
     }
 
     // -- loadAll

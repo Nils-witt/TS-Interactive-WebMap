@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react';
+import { useContext, useEffect, useState, type JSX } from 'react';
 import {
     Box,
     Button,
@@ -29,9 +29,9 @@ import PlaceIcon from '@mui/icons-material/Place';
 import { styled } from '@mui/material/styles';
 import { ApiProvider } from '../dataProviders/ApiProvider';
 import { Photo } from '../enitities/Photo';
-import type { MissionGroup } from '../enitities/MissionGroup';
-import { DataProvider, DataProviderEventType } from '../dataProviders/DataProvider';
-import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler';
+import { DataProvider } from '../dataProviders/DataProvider';
+import { PhotoContext } from '../contexts/PhotoContext';
+import { MissionGroupContext } from '../contexts/MissionGroupContext'
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -50,11 +50,12 @@ export function PhotoPage(): JSX.Element {
     const isXs = useMediaQuery(theme.breakpoints.down('sm'));
     const isSm = useMediaQuery(theme.breakpoints.down('md'));
 
-    const [photos, setPhotos] = useState<Photo[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
+    const dp = DataProvider.getInstance();
+
+    const photos = useContext(PhotoContext);
     const [selected, setSelected] = useState<Photo | null>(null);
 
-    const [missionGroups, setMissionGroups] = useState<MissionGroup[]>([]);
+    const missionGroups = useContext(MissionGroupContext);
     const [missionGroupFilter, setMissionGroupFilter] = useState<string>('');
 
     // ── Edit dialog state ──────────────────────────────────────────────────
@@ -124,7 +125,7 @@ export function PhotoPage(): JSX.Element {
         ApiProvider.getInstance()
             .savePhotoImage(createFile, createLatitude || createLongitude ? { latitude: parseFloat(createLatitude), longitude: parseFloat(createLongitude), accuracy: 0, timestamp: new Date().toISOString() } : null, createName.trim(), missionGroupFilter)
             .then((photo) => {
-                setPhotos((prev) => [photo, ...prev]);
+                dp.addPhoto(photo);
                 closeCreateDialog();
             })
             .catch((e) => console.error('Failed to create photo:', e))
@@ -167,7 +168,7 @@ export function PhotoPage(): JSX.Element {
         if (!editingPhoto || !editingPhoto.id) return;
         ApiProvider.getInstance().deletePhoto(editingPhoto.id)
             .then(() => {
-                setPhotos((prev) => prev.filter((p) => p.id !== editingPhoto.id));
+                dp.removePhoto(editingPhoto.id);
                 setConfirmDelete(false);
                 closeEditDialog();
             })
@@ -196,7 +197,7 @@ export function PhotoPage(): JSX.Element {
         ApiProvider.getInstance()
             .savePhoto(updated)
             .then((saved) => {
-                setPhotos((prev) => prev.map((p) => p.id === saved.id ? saved : p));
+                dp.addPhoto(saved);
                 closeEditDialog();
             })
             .catch((e) => console.error('Failed to save photo:', e))
@@ -205,32 +206,19 @@ export function PhotoPage(): JSX.Element {
 
     const cols = isXs ? 2 : isSm ? 3 : 4;
 
-    const dp = DataProvider.getInstance();
-
-    const refresh = () => {
-        const pMissionGroups = Array.from(dp.getAllMissionGroups().values());
-        setPhotos(Array.from(dp.getAllPhotos().values()));
-        setMissionGroups(pMissionGroups);
-        setLoading(false);
-        console.log('PhotoPage refreshed, ', missionGroupFilter, pMissionGroups);
-        if (missionGroupFilter.trim() == '' && pMissionGroups.length > 0) {
-            setMissionGroupFilter(pMissionGroups[0].getId());
-        }
-    };
-
     useEffect(() => {
-        const events = [
-            DataProviderEventType.PHOTO_UPDATED,
-            DataProviderEventType.PHOTO_DELETED,
-            DataProviderEventType.PHOTO_CREATED,
-            DataProviderEventType.MISSION_GROUPS_CREATED,
-            DataProviderEventType.MISSION_GROUPS_UPDATED,
-            DataProviderEventType.MISSION_GROUPS_DELETED,
-        ];
-        refresh();
-        events.forEach((event) => GlobalEventHandler.getInstance().on(event, refresh));
-        return () => events.forEach((event) => GlobalEventHandler.getInstance().off(event, refresh));
-    }, []);
+        if (missionGroupFilter.trim() == '') {
+            if (missionGroups.length > 0) {
+                setMissionGroupFilter(missionGroups[0].getId());
+            }
+        } else if (missionGroups.filter(mg => mg.getId() === missionGroupFilter).length === 0) {
+            if (missionGroups.length > 0) {
+                setMissionGroupFilter(missionGroups[0].getId());
+            } else {
+                setMissionGroupFilter('');
+            }
+        }
+    }, [missionGroups]);
 
 
     return (
@@ -254,7 +242,6 @@ export function PhotoPage(): JSX.Element {
                         ))}
                     </Select>
                 </FormControl>
-                <Button onClick={refresh}>Refresh</Button>
                 <Button variant="contained" onClick={openCreateDialog}>
                     Create
                 </Button>
@@ -262,11 +249,7 @@ export function PhotoPage(): JSX.Element {
 
             {/* --- gallery --- */}
             <Box sx={{ flex: 1, overflowY: 'auto', px: 2, pb: 2 }}>
-                {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}>
-                        <CircularProgress />
-                    </Box>
-                ) : photos.length === 0 ? (
+                {photos.length === 0 ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}>
                         <Typography color="text.secondary">No photos yet. Upload the first one!</Typography>
                     </Box>

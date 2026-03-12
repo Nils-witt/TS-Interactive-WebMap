@@ -2,6 +2,7 @@ import { Map as MapLibreMap } from '@vis.gl/react-maplibre';
 import { useEffect, useState } from 'react';
 import { DataProvider, DataProviderEvent, DataProviderEventType } from '../dataProviders/DataProvider';
 import type { MapBaseLayer } from '../enitities/MapBaseLayer';
+import { UnitDisplay } from '../controls/UnitDisplay';
 
 
 
@@ -51,7 +52,7 @@ export function DisplayMapComponent() {
                 mapStyle={mapStyle.getUrl()}
                 attributionControl={false}
             >
-
+                <UnitDisplay />
             </MapLibreMap>
         </div>
     );

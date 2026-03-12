@@ -1,5 +1,4 @@
-import { type JSX, useEffect, useMemo, useRef, useState } from 'react';
-import * as React from 'react';
+import { type JSX, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Box,
     Button,
@@ -19,17 +18,16 @@ import {
     Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { DataProvider, DataProviderEventType } from '../dataProviders/DataProvider.ts';
-import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler.ts';
 import { type MapOverlay } from '../enitities/MapOverlay.ts';
 import CacheProvider from '../dataProviders/CacheProvider.ts';
+import { MapOverlayContext } from '../contexts/MapOverlayContext.tsx';
 
 type SortField = 'name' | 'url' | 'opacity' | 'order';
 type SortOrder = 'asc' | 'desc';
 
 function OverlayTableRow({ overlay }: { overlay: MapOverlay }): JSX.Element {
     const btnRef = useRef<HTMLButtonElement | null>(null);
-    const [order, setOrder] = React.useState<number>(overlay.getOrder());
+    const [order, setOrder] = useState<number>(overlay.getOrder());
 
     const downloadLayer = async () => {
         if (btnRef.current) {
@@ -105,25 +103,12 @@ function OverlayTableRow({ overlay }: { overlay: MapOverlay }): JSX.Element {
     );
 }
 
-export function OverlaysPage(): JSX.Element {
-    const dp = DataProvider.getInstance();
-    const [overlays, setOverlays] = useState<MapOverlay[]>(() =>
-        Array.from(dp.getAllMapOverlays().values())
-    );
+export function OverlaysPage(): JSX.Element {    
+    const overlays = useContext(MapOverlayContext);
+
     const [nameFilter, setNameFilter] = useState('');
     const [sortField, setSortField] = useState<SortField>('order');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-
-    useEffect(() => {
-        const refresh = () => setOverlays(Array.from(DataProvider.getInstance().getAllMapOverlays().values()));
-        const events = [
-            DataProviderEventType.OVERLAY_ADDED,
-            DataProviderEventType.OVERLAY_UPDATED,
-            DataProviderEventType.OVERLAY_DELETED,
-        ] as const;
-        events.forEach((e) => GlobalEventHandler.getInstance().on(e, refresh));
-        return () => events.forEach((e) => GlobalEventHandler.getInstance().off(e, refresh));
-    }, []);
 
     const filtered = useMemo(() => {
         let result = overlays;

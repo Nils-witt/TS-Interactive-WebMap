@@ -74,8 +74,6 @@ function reloadClients() {
 function transformCacheUrl(cacheName: string, url: string): URL {
     const locURL = new URL(url);
     if (cacheName.startsWith('overlay-')) {
-
-        console.log(`[SW] Transform ${new URL(locURL.origin + locURL.pathname)}`);
         return new URL(locURL.origin + locURL.pathname);
     }
     return new URL(url);
@@ -119,7 +117,6 @@ sw.addEventListener('fetch', (event) => {
     }
 
     const [useCacheName, networkFirst, useCache, putMissingInCache] = getCacheName(url);
-    console.log(`Fetch ${url} useCache ${useCacheName}; netForst: ${networkFirst}; useCache ${useCache}`);
     if (useCache) {
         if (networkFirst) {
             event.respondWith(new Promise((resolve, reject) => {
@@ -164,7 +161,6 @@ sw.addEventListener('fetch', (event) => {
                     if (cachedResponse) {
                         return cachedResponse;
                     }
-                    console.log(`Locally not found: ${url}`);
                     return fetch(event.request.url).then((fetchedResponse) => {
                         if (fetchedResponse && fetchedResponse.ok && putMissingInCache) {
                             cache.put(event.request, fetchedResponse.clone())

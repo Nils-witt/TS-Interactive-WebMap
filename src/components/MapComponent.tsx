@@ -14,15 +14,13 @@
  */
 
 import * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { GeolocateControl, Map as MapLibreMap, Marker, NavigationControl, Popup, type MapRef } from '@vis.gl/react-maplibre';
 import ReactLayerControl from "../controls/LayerControl";
 import ReactSearchControl from "../controls/SearchControl";
 import { DataProvider, DataProviderEvent, DataProviderEventType } from "../dataProviders/DataProvider";
-import { GlobalEventHandler } from "../dataProviders/GlobalEventHandler";
 import type { MapBaseLayer } from "../enitities/MapBaseLayer.ts";
-import type { KeyValueInterface } from "../dataProviders/KeyValueInterface.ts";
 import { RouteDisplay } from "../controls/RouteDisplay.tsx";
 import { UnitDisplay } from "../controls/UnitDisplay.tsx";
 import { GroupDisplay } from "../controls/GroupDisplay.tsx";
@@ -42,25 +40,21 @@ import {
     TextField,
 } from '@mui/material';
 import { MapItem } from "../enitities/MapItem.ts";
-import type { MapGroup } from "../enitities/MapGroup.ts";
 import { ApiProvider } from "../dataProviders/ApiProvider.ts";
 import './css/mapContextMenu.scss';
 import type { Unit } from '../enitities/Unit.ts';
+import { UnitsContext } from '../contexts/UnitsContext.tsx';
+import { LocalStorageProvider } from '../dataProviders/LocalStorageProvider.ts';
+import { MapItemContext } from '../contexts/MapItemContext.tsx';
+import { MapGroupContext } from '../contexts/MapGroupContext.tsx';
 
-interface MapComponentProps {
-    keyValueStore: KeyValueInterface;
-    dataProvider: DataProvider;
-    eventHandler: GlobalEventHandler;
-    showSettings?: boolean;
-}
-
-export function MapComponent(props: MapComponentProps) {
-
-
-    const { keyValueStore, dataProvider, eventHandler } = props;
+export function MapComponent() {
+    const keyValueStore = new LocalStorageProvider();
 
     const [searchParams] = useSearchParams();
-
+    const [qUnit, setQUnit] = useState<string | null>(searchParams.get('unitId'));
+    const [qItem, setQItem] = useState<string | null>(searchParams.get('mapItemId'));
+    const [qGroup, setQGroup] = useState<string | null>(searchParams.get('groupId'));
 
     const [showItem, setShowItem] = useState<MapItem | undefined>(undefined);
     const [showUnit, setShowUnit] = useState<Unit | undefined>(undefined);
@@ -72,71 +66,58 @@ export function MapComponent(props: MapComponentProps) {
 
     const mapRef = React.useRef<MapRef | null>(null);
 
-    /**
-     * Query params
-     */
+    const units = useContext(UnitsContext);
+    const items = useContext(MapItemContext);
+    const groups = useContext(MapGroupContext);
+
+
     useEffect(() => {
-        const qUnit = searchParams.get('unitId');
-        const qItem = searchParams.get('mapItemId');
-        const qGroup = searchParams.get('groupId');
-        // If unitId or groupId is present in the URL, we could set some state here to filter displayed units/groups on the map.
-        // For now, we'll just log them.
+        setQUnit(searchParams.get('unitId'));
+        setQItem(searchParams.get('mapItemId'));
+        setQGroup(searchParams.get('groupId'));
+    }, [searchParams]);
+
+
+    useEffect(() => {
         if (qUnit) {
-            const unit = dataProvider.getAllUnits().get(qUnit);
-            setShowUnit(unit || undefined);
-            if (unit) {
-                setZoom(16);
-                if (unit.getPosition()) {
-                    setMapCenter([unit.getPosition()!.getLongitude(), unit.getPosition()!.getLatitude()]);
+            units.forEach((u) => {
+                if (u.getId() === qUnit) {
+                    setShowUnit(u);
+                    if (u.getPosition()) {
+                        setZoom(16);
+                        setMapCenter([u.getPosition()!.getLongitude(), u.getPosition()!.getLatitude()]);
+                    }
                 }
-            } else {
-                dataProvider.on(DataProviderEventType.UNIT_ADDED, (event: DataProviderEvent) => {
-                    const updatedUnit = event.data as Unit;
-                    if (updatedUnit.getId() == qUnit) {
-                        console.log('Unit position updated:', updatedUnit.getPosition());
-                        setShowUnit(updatedUnit);
-                        if (updatedUnit.getPosition()) {
-                            if (mapRef.current) {
-                                mapRef.current.getMap().flyTo({
-                                    center: [updatedUnit.getPosition()!.getLongitude(), updatedUnit.getPosition()!.getLatitude()],
-                                    zoom: 16,
-                                    essential: true,
-                                });
-                            }
-                        }
-                    }
-                });
-            }
+            });
         }
 
-        if (qItem) {
-            const item = dataProvider.getAllMapItems().get(qItem);
-            setShowItem(item || undefined);
-            if (item) {
-                setZoom(item.getZoomLevel());
-                setMapCenter([item.getLongitude(), item.getLatitude()]);
+    }, [qUnit, units]);
 
-            } else {
-                dataProvider.on(DataProviderEventType.MAP_ITEM_UPDATED, (event: DataProviderEvent) => {
-                    const updatedItem = event.data as MapItem;
-                    if (updatedItem.getId() === qItem) {
-                        setShowItem(updatedItem);
-                        if (mapRef.current) {
-                            mapRef.current.getMap().flyTo({
-                                center: [updatedItem.getLongitude(), updatedItem.getLatitude()],
-                                zoom: updatedItem.getZoomLevel(),
-                                essential: true,
-                            });
-                        }
-                    }
-                });
-            }
-        }
+
+    useEffect(() => {
         if (qGroup) {
             setShowGroupId(qGroup);
+        }else {
+            setShowGroupId(undefined);
+        }
+    }, [qGroup]);
+
+
+    useEffect(() => {
+        if(qItem){
+            items.forEach((i) => {
+                if (i.getId() === qItem) {
+                    setShowItem(i);
+                    setZoom(i.getZoomLevel());
+                    setMapCenter([i.getLongitude(), i.getLatitude()]);
+                }
+            });
+        }else {
+            setShowItem(undefined);
         }
 
-    }, []);
+    }, [qItem, items]);
+
 
     const mapMoved = (e: { viewState: { longitude: number, latitude: number, zoom: number } }) => {
         void keyValueStore.setItem('mapCenter', JSON.stringify([e.viewState.longitude, e.viewState.latitude]));
@@ -158,18 +139,7 @@ export function MapComponent(props: MapComponentProps) {
     const [createZoom, setCreateZoom] = useState('14');
     const [createShowOnMap, setCreateShowOnMap] = useState(false);
     const [createGroupId, setCreateGroupId] = useState('');
-    const [groups, setGroups] = useState<MapGroup[]>(() => Array.from(dataProvider.getAllMapGroups().values()));
 
-    useEffect(() => {
-        const refresh = () => setGroups(Array.from(DataProvider.getInstance().getAllMapGroups().values()));
-        const events = [
-            DataProviderEventType.MAP_GROUPS_UPDATED,
-            DataProviderEventType.MAP_GROUPS_CREATED,
-            DataProviderEventType.MAP_GROUPS_DELETED,
-        ] as const;
-        events.forEach((e) => GlobalEventHandler.getInstance().on(e, refresh));
-        return () => events.forEach((e) => GlobalEventHandler.getInstance().off(e, refresh));
-    }, []);
 
     const openCreateDialog = (lng: number, lat: number) => {
         setContextMenu(null);
@@ -251,8 +221,8 @@ export function MapComponent(props: MapComponentProps) {
             >
                 <GeolocateControl />
                 <NavigationControl />
-                <ReactLayerControl position="bottom-left" dataProvider={dataProvider} />
-                <ReactSearchControl position="top-left" dataProvider={dataProvider} globalEventHandler={eventHandler} />
+                <ReactLayerControl position="bottom-left"/>
+                <ReactSearchControl position="top-left"/>
 
                 <RouteDisplay></RouteDisplay>
                 <UnitDisplay showId={showUnit ? showUnit.getId() : undefined} />

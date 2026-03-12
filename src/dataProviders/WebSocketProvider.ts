@@ -14,12 +14,15 @@ import { DatabaseProvider } from './DatabaseProvider.ts';
 export class WebSocketProvider {
 
 
-    constructor() { /* empty */
+    constructor(options: { databaseProvider: DatabaseProvider | null }) { 
+        this.databaseProvider = options.databaseProvider;
     }
 
     private lastMessageRecived: number | null = null;
     private socket: WebSocket | null = null;
     private pingInterval: NodeJS.Timeout | null = null;
+
+    private databaseProvider: DatabaseProvider | null;
 
     getConnectionURL() {
         const base = DataProvider.getInstance().getApiUrl().replace('http', 'ws');
@@ -41,9 +44,10 @@ export class WebSocketProvider {
             if (action === 'DELETED') {
                 const itemId = (data.entity as UnitStruct).id;
                 dataProvider.removeUnit(itemId);
-                void DatabaseProvider.getInstance().then(instance => {
-                    void instance.deleteUnit(itemId);
-                });
+
+                if(this.databaseProvider) {
+                    void this.databaseProvider.deleteUnit(itemId);
+                }
                 return;
             }
             const unitData = data.entity as UnitStruct;
@@ -60,16 +64,16 @@ export class WebSocketProvider {
                 symbol: unitData.icon as never
             });
             dataProvider.addUnit(item);
-            void DatabaseProvider.getInstance().then(instance => {
-                void instance.saveUnit(item);
-            });
+            if(this.databaseProvider) {
+                void this.databaseProvider.saveUnit(item);
+            }
         } else if (entityType === 'mapoverlay') {
             if (action === 'DELETED') {
                 const itemId = (data.entity as MapOverlayStruct).id;
                 dataProvider.removeMapOverlay(itemId);
-                void DatabaseProvider.getInstance().then(instance => {
-                    void instance.deleteMapOverlay(itemId);
-                });
+                if(this.databaseProvider) {
+                    void this.databaseProvider.deleteMapOverlay(itemId);
+                }
                 return;
             }
             const overlayData = data.entity as MapOverlayStruct;
@@ -82,15 +86,16 @@ export class WebSocketProvider {
                 }
             );
             dataProvider.addMapOverlay(item);
-            void DatabaseProvider.getInstance().then(instance => {
-                void instance.saveMapOverlay(item);
-            });
+
+            if(this.databaseProvider) {
+                void this.databaseProvider.saveMapOverlay(item);
+            }
         } else if (entityType === 'mapbaselayer') {
             if (action === 'DELETED') {
                 const itemId = (data.entity as MapBaseLayerStruct).id;
-                void DatabaseProvider.getInstance().then(instance => {
-                    void instance.deleteMapStyle(itemId);
-                });
+                if(this.databaseProvider) {
+                    void this.databaseProvider.deleteMapStyle(itemId);
+                }
                 return;
             }
             const layerData = data.entity as MapBaseLayerStruct;
@@ -100,16 +105,16 @@ export class WebSocketProvider {
                 url: layerData.url,
             });
             dataProvider.setMapStyle(item);
-            void DatabaseProvider.getInstance().then(instance => {
-                void instance.saveMapStyle(item);
-            });
+            if(this.databaseProvider) {
+                void this.databaseProvider.saveMapStyle(item);
+            }
         } else if (entityType === 'mapitem') {
             if (action === 'DELETED') {
                 const itemId = (data.entity as MapItemStruct).id;
                 dataProvider.deleteMapItem(itemId);
-                void DatabaseProvider.getInstance().then(instance => {
-                    void instance.deleteMapItem(itemId);
-                });
+                if(this.databaseProvider) {
+                    void this.databaseProvider.deleteMapItem(itemId);
+                }
                 return;
             }
             const itemData = data.entity as MapItemStruct;
@@ -123,9 +128,9 @@ export class WebSocketProvider {
             });
 
             dataProvider.addMapItem(item);
-            void DatabaseProvider.getInstance().then(instance => {
-                void instance.saveMapItem(item);
-            });
+            if(this.databaseProvider) {
+                void this.databaseProvider.saveMapItem(item);
+            }
         } else {
             console.log('Unknown entity type:', entityType);
         }
@@ -184,4 +189,15 @@ export class WebSocketProvider {
         };
     }
 
+    public stop() {
+        if (this.socket) {
+            this.socket.close();
+            this.socket = null;
+        }
+        if (this.pingInterval) {
+            clearInterval(this.pingInterval);
+            this.pingInterval = null;
+        }
+        ApplicationLogger.info('WebSocket Stopped', { service: 'WebSocket' });
+    }
 }
