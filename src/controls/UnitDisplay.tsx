@@ -13,9 +13,6 @@ export function UnitDisplay(props: UnitDisplayProps): React.JSX.Element {
     const mapConfig = useContext(MapConfigContext);
     const activeUser = useContext(ActiveUserContext);
 
-
-    console.log('Rendering UnitDisplay with activeUser: ' + (activeUser ? activeUser.getUsername() : 'null') );
-
     return <>
         {units.map((unit) => {
             return <UnitRepresentation 
