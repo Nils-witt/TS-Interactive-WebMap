@@ -52,7 +52,7 @@ export function ReactSearchControl(props: ReactSearchControlProps): null {
     const searchControlInstance = new SearchControl({
         searchCallback: (query: string) => {
             const unitResults: SearchResult[] = units.filter((unit) => unit.getName().toLowerCase().includes(query.toLowerCase()) && unit.getPosition()).map((unit) => ({
-                id: unit.getId() as string,
+                id: unit.getId(),
                 name: unit.getName(),
                 longitude: unit.getPosition()!.getLongitude(),
                 latitude: unit.getPosition()!.getLatitude(),

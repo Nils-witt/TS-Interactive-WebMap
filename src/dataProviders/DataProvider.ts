@@ -284,12 +284,12 @@ export class DataProvider {
 
     public addUnit(unit: Unit): void {
         if (unit.getId()) {
-            if (this.units.has(unit.getId() as string)) {
-                const oldUnit = this.units.get(unit.getId() as string);
-                this.units.set(unit.getId() as string, unit);
+            if (this.units.has(unit.getId())) {
+                const oldUnit = this.units.get(unit.getId());
+                this.units.set(unit.getId(), unit);
                 this.triggerEvent(new DataProviderEvent(DataProviderEventType.UNIT_UPDATED, unit, oldUnit));
             } else {
-                this.units.set(unit.getId() as string, unit);
+                this.units.set(unit.getId(), unit);
                 this.triggerEvent(new DataProviderEvent(DataProviderEventType.UNIT_ADDED, unit));
             }
         }

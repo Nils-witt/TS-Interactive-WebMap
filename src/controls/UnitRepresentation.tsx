@@ -39,7 +39,7 @@ export function UnitRepresentation(props: UnitRepresentationProps): React.JSX.El
         }
 
         return () => {
-            if(interval){
+            if (interval) {
                 clearInterval(interval);
             }
         }
@@ -50,11 +50,12 @@ export function UnitRepresentation(props: UnitRepresentationProps): React.JSX.El
     return <>
         {show && props.unit.getImgSrc() != '' ? (
             <Marker latitude={props.unit.getPosition()!.latitude} longitude={props.unit.getPosition()!.longitude}>
-                <div style={{ position: 'relative', width: props.iconSize, height: props.iconSize }}>
+                <div style={{ position: 'relative', width: props.iconSize }}>
                     <img
                         src={props.unit.getImgSrc()}
                         alt={props.unit.getName()}
                         style={{ width: '100%', height: '100%' }} />
+                    <div style={{ backgroundColor: 'white' }}>Status: {props.unit.getStatus()}</div>
                 </div>
             </Marker>
         ) : <></>}

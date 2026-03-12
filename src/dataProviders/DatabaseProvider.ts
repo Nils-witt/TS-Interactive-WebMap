@@ -55,7 +55,7 @@ export class DatabaseProvider implements StorageInterface {
     }
 
     public async setUp(): Promise<void> {
-        if(this.isSetUp) {
+        if (this.isSetUp) {
             return;
         }
 
@@ -108,7 +108,7 @@ export class DatabaseProvider implements StorageInterface {
                     const units: Record<string, Unit> = {};
                     for (const record of result) {
                         const unit = Unit.of(record);
-                        units[unit.getId() as string] = unit;
+                        units[unit.getId()] = unit;
                     }
                     resolve(units);
                 });
@@ -394,7 +394,7 @@ export class DatabaseProvider implements StorageInterface {
 
                 for (const unit of units) {
                     const unitRecord = unit.record();
-                    if (existingKeys.includes(unit.getId() as string)) {
+                    if (existingKeys.includes(unit.getId())) {
                         void tx.objectStore(DB_TABLES.units).put(unitRecord);
                     } else {
                         void tx.objectStore(DB_TABLES.units).add(unitRecord);
@@ -605,7 +605,7 @@ export class DatabaseProvider implements StorageInterface {
             const unitRecord = unit.record();
             const tx = this.db.transaction(DB_TABLES.units, 'readwrite');
 
-            void tx.objectStore(DB_TABLES.units).getKey(unit.getId() as string).then(result => {
+            void tx.objectStore(DB_TABLES.units).getKey(unit.getId()).then(result => {
                 if (result) {
                     void tx.objectStore(DB_TABLES.units).put(unitRecord);
                 } else {
