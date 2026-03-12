@@ -6,15 +6,18 @@
  * Purpose: allow quick map navigation / zoom to named geo-referenced objects.
  */
 
-import {type ControlPosition, Evented, type IControl, Map as MapLibreMap, Marker} from 'maplibre-gl';
-import type {MapItem} from '../enitities/MapItem.ts';
-import {icon} from '@fortawesome/fontawesome-svg-core';
-import {faMagnifyingGlass} from '@fortawesome/free-solid-svg-icons/faMagnifyingGlass';
-import {faMapLocationDot} from '@fortawesome/free-solid-svg-icons/faMapLocationDot';
-import {faXmark} from '@fortawesome/free-solid-svg-icons/faXmark';
-import {useControl} from '@vis.gl/react-maplibre';
+import { type ControlPosition, Evented, type IControl, Map as MapLibreMap, Marker } from 'maplibre-gl';
+import type { MapItem } from '../enitities/MapItem.ts';
+import { icon } from '@fortawesome/fontawesome-svg-core';
+import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons/faMagnifyingGlass';
+import { faMapLocationDot } from '@fortawesome/free-solid-svg-icons/faMapLocationDot';
+import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
+import { useControl } from '@vis.gl/react-maplibre';
 
 import './css/search.scss';
+import { MapItemContext } from '../contexts/MapItemContext.tsx';
+import { useContext } from 'react';
+import { UnitsContext } from '../contexts/UnitsContext.tsx';
 
 /**
  * SearchControl provides a lightweight search UI for NamedGeoReferencedObject entries.
@@ -29,21 +32,47 @@ interface ReactSearchControlProps {
 }
 
 interface SearchControlOptions {
-    searchCallback: (query: string) => MapItem[]; // Optional callback to perform search, defaults to searching all MapItems by name
+    searchCallback: (query: string) => SearchResult[]; // Optional callback to perform search, defaults to searching all MapItems by name
 }
 
-let searchControlInstance: SearchControl | null = null;
+export interface SearchResult {
+    id: string;
+    name: string;
+    longitude: number;
+    latitude: number;
+    zoomLevel?: number;
+}
 
 export function ReactSearchControl(props: ReactSearchControlProps): null {
-    if (searchControlInstance === null) {
-        searchControlInstance = new SearchControl({
-            searchCallback: (query: string) => {
-                console.warn('Performing search for query: NIY', query);
-                return [];
-            }
-        });
-    }
-    useControl(() => searchControlInstance as SearchControl, {
+
+
+    const mapItems: MapItem[] = useContext(MapItemContext);
+    const units = useContext(UnitsContext);
+
+    const searchControlInstance = new SearchControl({
+        searchCallback: (query: string) => {
+            const unitResults: SearchResult[] = units.filter((unit) => unit.getName().toLowerCase().includes(query.toLowerCase()) && unit.getPosition()).map((unit) => ({
+                id: unit.getId() as string,
+                name: unit.getName(),
+                longitude: unit.getPosition()!.getLongitude(),
+                latitude: unit.getPosition()!.getLatitude(),
+                zoomLevel: 15
+            }));
+
+            const mapItemResults: SearchResult[] = mapItems.filter((item) => item.getName().toLowerCase().includes(query.toLowerCase())).map((item) => ({
+                id: item.getId()!,
+                name: item.getName(),
+                longitude: item.getLongitude(),
+                latitude: item.getLatitude(),
+                zoomLevel: 15
+            }));
+
+
+            return [...unitResults, ...mapItemResults];
+        }
+    });
+
+    useControl(() => searchControlInstance, {
         position: props.position
     });
     return null;
@@ -78,11 +107,7 @@ export class SearchControl extends Evented implements IControl {
      */
     private resultLimit = 5;
 
-    /**
-     * Map of shown entity IDs to their corresponding Marker objects for quick lookup
-     * @private
-     */
-    private shownMarkers: Map<string, Marker> = new Map<string, Marker>();
+    private selectedItemMarker = new Marker();
 
     /**
      * Flag to track if the control is currently open
@@ -120,30 +145,18 @@ export class SearchControl extends Evented implements IControl {
      * Shows a single entity on the map by creating a marker at its location.
      * @param entity
      */
-    private showSingleEntity(entity: MapItem): void {
+    private showSingleEntity(entity: SearchResult): void {
 
         if (!this.map) {
             return;
         }
-        if (this.shownMarkers.has(entity.getId() as string)) {
-            return; // Entity is already shown, no need to add again
-        }
-        const marker = new Marker()
-            .setLngLat([entity.getLongitude(), entity.getLatitude()])
-            .addTo(this.map);
-        this.shownMarkers.set(entity.getId() as string, marker);
 
-        for (const otherMarker of this.shownMarkers.keys()) {
-            if (otherMarker === entity.getId()) {
-                continue; // Skip the current entity
-            }
-            this.shownMarkers.get(otherMarker)?.remove();
-            this.shownMarkers.delete(otherMarker);
-        }
+        this.selectedItemMarker
+            .setLngLat([entity.longitude, entity.latitude])
+            .addTo(this.map);
 
         this.internalClickAbortHandler = (): void => {
-            marker.remove();
-            this.shownMarkers.delete(entity.getId() as string);
+            this.selectedItemMarker.remove();
             this.internalClickAbortHandler = undefined;
         };
 
@@ -153,7 +166,7 @@ export class SearchControl extends Evented implements IControl {
      * Creates a button that, when clicked, will show the entity on the map and fly to its location.
      * @param entity
      */
-    private showMarkerButton(entity: MapItem): HTMLButtonElement {
+    private showMarkerButton(entity: SearchResult): HTMLButtonElement {
         const button = document.createElement('button');
 
         //button.textContent = "<>";
@@ -161,8 +174,8 @@ export class SearchControl extends Evented implements IControl {
         button.onclick = (): void => {
             this.showSingleEntity(entity);
             this.map?.flyTo({
-                center: [entity.getLongitude(), entity.getLatitude()],
-                zoom: entity.getZoomLevel() || 15, // Adjust zoom level as needed
+                center: [entity.longitude, entity.latitude],
+                zoom: entity.zoomLevel || 15, // Adjust zoom level as needed
                 essential: true // This ensures the animation is not interrupted
             });
             this.setOpen(false); // Close the search control after selecting an entity
@@ -192,8 +205,8 @@ export class SearchControl extends Evented implements IControl {
         this.resultsContainer.classList.remove('hidden');
         let resultCount = 0;
 
-        let entries: MapItem[] = this.options.searchCallback(query);
-        entries = entries.sort((a, b) => a.getName().localeCompare(b.getName())); // Sort results by name
+        let entries: SearchResult[] = this.options.searchCallback(query);
+        entries = entries.sort((a, b) => a.name.localeCompare(b.name)); // Sort results by name
         if (entries.length === 0) {
             this.resultsContainer.classList.add('hidden');
             return; // No results found, exit early
@@ -205,7 +218,7 @@ export class SearchControl extends Evented implements IControl {
             actionCell.appendChild(this.showMarkerButton(entity));
 
             const nameCell = row.insertCell();
-            nameCell.innerText = entity.getName();
+            nameCell.innerText = entity.name;
             resultCount++;
             if (resultCount >= this.resultLimit) {
                 break; // Stop after reaching the result limit
