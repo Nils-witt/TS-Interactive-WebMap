@@ -22,12 +22,15 @@ import { MapConfigEvents } from '../enitities/MapConfig.ts';
 import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler.ts';
 import { Utilities } from '../Utilities.ts';
 import { MapConfigContext } from '../contexts/MapConfigContext.tsx';
+import { useNavigate } from 'react-router';
 
 // ---------------------------------------------------------------------------
 // SettingsPage
 // ---------------------------------------------------------------------------
 
 export function SettingsPage(): JSX.Element {
+    const navigate = useNavigate();
+
     const [unitIconSize, setUnitIconSizeState] = useState<string>();
     const mapConfig = useContext(MapConfigContext);
 
@@ -98,6 +101,34 @@ export function SettingsPage(): JSX.Element {
         );
     }, [showUnitStatus]);
 
+
+    const resetPWA = async () => {
+        localStorage.clear();
+
+
+        const keys = await caches.keys();
+        for (const key of keys) {
+            await caches.delete(key);
+        }
+
+        const dbs = await indexedDB.databases();
+        const names = [...new Set(dbs.map((d) => d && d.name).filter(Boolean))];
+        for (const name of names) {
+            if (!name) continue;
+            await new Promise((resolve, reject) => {
+                const req = indexedDB.deleteDatabase(name);
+
+                req.onsuccess = () => resolve({ name, status: "deleted" });
+                req.onerror = () =>
+                    reject(Object.assign(new Error(`Failed to delete IndexedDB: ${name}`), { name, event: req.error }));
+                req.onblocked = () => resolve({ name, status: "blocked" }); // typically means another tab has it open
+            });
+
+        }
+
+        window.location.href = '/';
+    }
+
     // --------------------------------------------------
     // Render
     // --------------------------------------------------
@@ -114,11 +145,11 @@ export function SettingsPage(): JSX.Element {
                         Cache
                     </Typography>
                     <ButtonGroup variant="outlined" color="warning">
-                        <Button size="small" onClick={() => void Utilities.clearMapCache()}>
-                            Clear Map Cache
+                        <Button size="small" onClick={() => navigate('/caches')}>
+                            Open Cache Manager
                         </Button>
-                        <Button size="small" onClick={() => void Utilities.clearCache()}>
-                            Clear Full Cache
+                        <Button size="small" onClick={resetPWA}>
+                            Reset PWA
                         </Button>
                         <Button size="small" onClick={() => window.location.reload()}>
                             Reload

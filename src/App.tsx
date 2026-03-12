@@ -12,6 +12,7 @@ import { SettingsPage } from './pages/SettingsPage.tsx';
 import { UnitsPage } from './pages/UnitsPage.tsx';
 import { OverlaysPage } from './pages/OverlaysPage.tsx';
 import { MissionGroupsPage } from './pages/MissionGroupsPage.tsx';
+import { CachePage } from './pages/CachePage.tsx';
 import { NavLayout } from './components/NavLayout.tsx';
 import { DatabaseProvider } from './dataProviders/DatabaseProvider.ts';
 import { WebSocketProvider } from './dataProviders/WebSocketProvider.ts';
@@ -27,13 +28,25 @@ import { ActiveUserProvider } from './contexts/ActiveUserContext.tsx';
 import { MapBaseLayerProvider } from './contexts/MapBaseLayerContext.tsx';
 import { DataBaseContext } from './contexts/DataBaseContext.tsx';
 import { UsersProvider } from './contexts/UsersContext.tsx';
+import { isNonNullChain } from 'typescript';
 
 function ProtectedRoute({ loggedin, children }: { loggedin: boolean; children: JSX.Element }) {
     if (!loggedin) return <Navigate to="/login" replace />;
     return children;
 }
 
+function LoadingScreen() {
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+            <div className="loader" />
+            <p>Loading...</p>
+        </div>
+    );
+}
+
+
 function App() {
+    const [isLoading, setLoading] = useState(true);
     const [loggedin, setLoggedin] = useState<boolean>(false);
     const [databaseProvider, setDatabaseProvider] = useState<DatabaseProvider | null>(null);
 
@@ -77,7 +90,7 @@ function App() {
         if (pKey) {
             setLoggedin(true);
         }
-
+        setLoading(false);
         return () => {
             GlobalEventHandler.getInstance().off(ApiProviderEventTypes.UNAUTHORIZED, onUnauthorized);
             GlobalEventHandler.getInstance().off(ApiProviderEventTypes.LOGIN_SUCCESS, onLoginSuccess);
@@ -85,6 +98,10 @@ function App() {
     }, []);
 
     return (
+        <>
+        {isLoading || databaseProvider == null ? (
+            <LoadingScreen />
+        ):(
         <DataBaseContext.Provider value={databaseProvider}>
             <MapBaseLayerProvider>
                 <MapConfigProvider>
@@ -120,6 +137,9 @@ function App() {
                                                             <Route path="/mission-groups" element={
                                                                 <ProtectedRoute loggedin={loggedin}><MissionGroupsPage /></ProtectedRoute>
                                                             } />
+                                                            <Route path="/caches" element={
+                                                                <ProtectedRoute loggedin={loggedin}><CachePage /></ProtectedRoute>
+                                                            } />
                                                             <Route path="*" element={
                                                                 <ProtectedRoute loggedin={loggedin}><MapPage /></ProtectedRoute>
                                                             } />
@@ -136,6 +156,8 @@ function App() {
                 </MapConfigProvider>
             </MapBaseLayerProvider>
         </DataBaseContext.Provider>
+        )}
+        </>
     );
 }
 
