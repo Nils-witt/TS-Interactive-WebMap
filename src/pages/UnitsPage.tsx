@@ -4,6 +4,7 @@ import {
     Avatar,
     Box,
     Button,
+    Checkbox,
     Chip,
     CircularProgress,
     Container,
@@ -67,6 +68,7 @@ const STATUS_COLORS: Record<number, 'success' | 'primary' | 'warning' | 'error' 
 
 type SortField = 'name' | 'status' | 'group' | 'latitude' | 'longitude' | 'timestamp';
 type SortOrder = 'asc' | 'desc';
+const STATUS_FILTER_OPTIONS = [1, 2, 3, 4, 6, 7, 8] as const;
 
 // ---------------------------------------------------------------------------
 
@@ -77,6 +79,7 @@ export function UnitsPage(): JSX.Element {
     const units = useContext(UnitsContext);
 
     const [nameFilter, setNameFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState<number[]>([...STATUS_FILTER_OPTIONS]);
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
@@ -137,6 +140,13 @@ export function UnitsPage(): JSX.Element {
             result = result.filter((u) => u.getName().toLowerCase().includes(lower));
         }
 
+        if (statusFilter.length > 0) {
+            result = result.filter((u) => {
+                const status = u.getStatus();
+                return status != null && statusFilter.includes(status);
+            });
+        }
+
         return [...result].sort((a, b) => {
             switch (sortField) {
                 case 'name':
@@ -167,7 +177,7 @@ export function UnitsPage(): JSX.Element {
                     return 0;
             }
         });
-    }, [units, nameFilter, sortField, sortOrder]);
+    }, [units, nameFilter, statusFilter, sortField, sortOrder]);
 
     const col = (field: SortField, label: string) => (
         <TableCell sortDirection={sortField === field ? sortOrder : false}>
@@ -204,6 +214,39 @@ export function UnitsPage(): JSX.Element {
                         }}
                         sx={{ width: 240 }}
                     />
+                    <FormControl size="small" sx={{ minWidth: 300 }}>
+                        <InputLabel id="units-status-filter-label">Status Filter</InputLabel>
+                        <Select
+                            labelId="units-status-filter-label"
+                            multiple
+                            label="Status Filter"
+                            value={statusFilter.map(String)}
+                            onChange={(e) => {
+                                const value = e.target.value as string[];
+                                setStatusFilter(
+                                    value
+                                        .map((v) => parseInt(v, 10))
+                                        .filter((v) => !isNaN(v)),
+                                );
+                            }}
+                            renderValue={(selected) => {
+                                const values = selected;
+                                return values
+                                    .map((v) => {
+                                        const status = parseInt(v, 10);
+                                        return `${status}`;
+                                    })
+                                    .join(', ');
+                            }}
+                        >
+                            {STATUS_FILTER_OPTIONS.map((status) => (
+                                <MenuItem key={status} value={String(status)}>
+                                    <Checkbox checked={statusFilter.includes(status)} size="small" />
+                                    {status} – {STATUS_LABELS[status]}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                 </Box>
 
                 {/* Table */}
@@ -214,7 +257,6 @@ export function UnitsPage(): JSX.Element {
                                 <TableCell sx={{ width: 48 }}>Symbol</TableCell>
                                 {col('name', 'Name')}
                                 {col('status', 'Status')}
-                                {col('group', 'Group')}
                                 {col('latitude', 'Latitude')}
                                 {col('longitude', 'Longitude')}
                                 {col('timestamp', 'Last Update')}
@@ -273,13 +315,6 @@ export function UnitsPage(): JSX.Element {
                                                 ) : (
                                                     <Typography variant="body2" color="text.disabled">—</Typography>
                                                 )}
-                                            </TableCell>
-
-                                            {/* Group */}
-                                            <TableCell>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    {unit.getGroupId() ?? '—'}
-                                                </Typography>
                                             </TableCell>
 
                                             {/* Lat / Lng */}
