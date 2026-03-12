@@ -20,7 +20,6 @@ import {
 import { DataProvider, DataProviderEvent } from '../dataProviders/DataProvider.ts';
 import { MapConfigEvents } from '../enitities/MapConfig.ts';
 import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler.ts';
-import { Utilities } from '../Utilities.ts';
 import { MapConfigContext } from '../contexts/MapConfigContext.tsx';
 import { useNavigate } from 'react-router';
 
@@ -145,10 +144,10 @@ export function SettingsPage(): JSX.Element {
                         Cache
                     </Typography>
                     <ButtonGroup variant="outlined" color="warning">
-                        <Button size="small" onClick={() => navigate('/caches')}>
+                        <Button size="small" onClick={() => void navigate('/caches')}>
                             Open Cache Manager
                         </Button>
-                        <Button size="small" onClick={resetPWA}>
+                        <Button size="small" onClick={ () => void resetPWA()}>
                             Reset PWA
                         </Button>
                         <Button size="small" onClick={() => window.location.reload()}>

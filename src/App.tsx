@@ -28,7 +28,6 @@ import { ActiveUserProvider } from './contexts/ActiveUserContext.tsx';
 import { MapBaseLayerProvider } from './contexts/MapBaseLayerContext.tsx';
 import { DataBaseContext } from './contexts/DataBaseContext.tsx';
 import { UsersProvider } from './contexts/UsersContext.tsx';
-import { isNonNullChain } from 'typescript';
 
 function ProtectedRoute({ loggedin, children }: { loggedin: boolean; children: JSX.Element }) {
     if (!loggedin) return <Navigate to="/login" replace />;
