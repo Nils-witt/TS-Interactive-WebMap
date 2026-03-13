@@ -11,10 +11,11 @@ import './css/displayMapComponent.scss';
 export interface DisplayMapComponentProps {
     visibleOverlayIds: string[];
     visibleUnitIds: string[];
+    showUnitsStatusBar?: boolean;
 }
 
 
-export function DisplayMapComponent({ visibleOverlayIds, visibleUnitIds }: DisplayMapComponentProps) {
+export function DisplayMapComponent({ visibleOverlayIds, visibleUnitIds, showUnitsStatusBar }: DisplayMapComponentProps) {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [mapCenter, setMapCenter] = useState<[number, number]>(localStorage.getItem('mapCenterDisplay')
@@ -144,7 +145,7 @@ export function DisplayMapComponent({ visibleOverlayIds, visibleUnitIds }: Displ
                 }}
                 onLoad={() => setMapLoaded(true)}
             >
-                <UnitDisplay showOnly={Array.from(visibleUnits)} showAlways={true} iconSize={75} showStatusBar={true} />
+                <UnitDisplay showOnly={Array.from(visibleUnits)} showAlways={true} iconSize={75} showStatusBar={showUnitsStatusBar || false} />
             </MapLibreMap>
         </div>
     );

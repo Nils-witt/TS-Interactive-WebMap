@@ -21,6 +21,7 @@ export function DisplayPage() {
 
     const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
+    const [showUnitsStatusBar, setShowUnitsStatusBar] = useState<boolean>(() => JSON.parse(localStorage.getItem('displayShowUnitsStatusBar') || "false") as boolean || false);
 
     useEffect(() => {
         localStorage.setItem('displayOverlaysShown', JSON.stringify(selectedOverlayIds));
@@ -30,10 +31,14 @@ export function DisplayPage() {
         localStorage.setItem('displayUnitsShown', JSON.stringify(selectedUnitIds));
     }, [selectedUnitIds]);
 
+    useEffect(() => {
+        localStorage.setItem('displayShowUnitsStatusBar', JSON.stringify(showUnitsStatusBar));
+    }, [showUnitsStatusBar]);
+
     return (
         <div className="display-page" >
             <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
-                <DisplayMapComponent visibleOverlayIds={selectedOverlayIds} visibleUnitIds={selectedUnitIds} />
+                <DisplayMapComponent visibleOverlayIds={selectedOverlayIds} visibleUnitIds={selectedUnitIds} showUnitsStatusBar={showUnitsStatusBar} />
                 <Button
                     variant="contained"
                     size="small"
@@ -59,6 +64,8 @@ export function DisplayPage() {
                 units={units}
                 selectedUnitIds={selectedUnitIds}
                 onUpdateSelectedUnitIds={setSelectedUnitIds}
+                showUnitsStatusBar={showUnitsStatusBar}
+                onUpdateUnitsStatusBar={setShowUnitsStatusBar}
             />
         </div>
     );

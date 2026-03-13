@@ -37,34 +37,11 @@ import { DataProvider } from '../dataProviders/DataProvider.ts';
 import { Unit } from '../enitities/Unit.ts';
 import { ApiProvider } from '../dataProviders/ApiProvider.ts';
 import { UnitsContext } from '../contexts/UnitsContext.tsx';
+import { STATUS_COLORS, STATUS_LABELS } from '../gDefs.ts';
 
 // ---------------------------------------------------------------------------
 // Status helpers
 // ---------------------------------------------------------------------------
-
-const STATUS_LABELS: Record<number, string> = {
-    1: 'Funk Frei',
-    2: 'Einsatzbereit',
-    3: 'Einsatz übernommen',
-    4: 'Am Einsatzort',
-    5: 'Sprechwunsch',
-    6: 'Nicht Einsatzbereit',
-    7: 'Zum Transportziel',
-    8: 'Transportziel erreicht',
-    9: 'Priorisierter Sprechwunsch',
-};
-
-const STATUS_COLORS: Record<number, 'success' | 'primary' | 'warning' | 'error' | 'default'> = {
-    1: 'success',
-    2: 'success',
-    3: 'primary',
-    4: 'primary',
-    5: 'error',
-    6: 'error',
-    7: 'primary',
-    8: 'success',
-    9: 'error',
-};
 
 type SortField = 'name' | 'status' | 'group' | 'latitude' | 'longitude' | 'timestamp';
 type SortOrder = 'asc' | 'desc';

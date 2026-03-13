@@ -1,7 +1,7 @@
 import { DialogContent, Box, FormControlLabel, Checkbox, DialogActions, Button, Accordion, AccordionDetails, AccordionSummary, Typography } from "@mui/material";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
-import type { JSX } from "react";
+import type { ChangeEvent, JSX } from "react";
 import type { MapOverlay } from "../../enitities/MapOverlay";
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import type { Unit } from "../../enitities/Unit";
@@ -17,6 +17,9 @@ export interface SettingsDialogProps {
     units: Unit[];
     selectedUnitIds: string[];
     onUpdateSelectedUnitIds: (ids: string[]) => void;
+
+    showUnitsStatusBar: boolean;
+    onUpdateUnitsStatusBar: (active: boolean) => void;
 }
 
 export function SettingsDialog(props: SettingsDialogProps): JSX.Element {
@@ -91,6 +94,13 @@ export function SettingsDialog(props: SettingsDialogProps): JSX.Element {
                     <Typography component="span">Units</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
+                    <FormControlLabel
+                        key={"showStatusBar"}
+                        control={<Checkbox
+                            checked={props.showUnitsStatusBar}
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => props.onUpdateUnitsStatusBar(e.target.checked)} />}
+                        label="Show status bar"
+                    />
                     <Box sx={{ display: 'flex', flexDirection: 'column', mt: 1 }}>
                         {props.units.length === 0 ? (
                             <Box>No units available.</Box>
