@@ -11,6 +11,7 @@ import { MapOverlayContext } from '../contexts/MapOverlayContext.tsx';
 import './css/displayPage.scss';
 import { SettingsDialog } from '../components/display/SettingsDialog.tsx';
 import { UnitsContext } from '../contexts/UnitsContext.tsx';
+import { NotificationsProvider } from '../contexts/NotificationContext.tsx';
 
 export function DisplayPage() {
     const overlays = useContext(MapOverlayContext);
@@ -53,8 +54,9 @@ export function DisplayPage() {
                 >
                 </Button>
             </Box>
-
-            <NotificationList />
+            <NotificationsProvider>
+                <NotificationList />
+            </NotificationsProvider>
             <SettingsDialog
                 open={settingsDialogOpen}
                 onClose={() => setSettingsDialogOpen(false)}

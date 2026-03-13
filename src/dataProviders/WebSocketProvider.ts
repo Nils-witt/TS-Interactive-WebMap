@@ -6,7 +6,7 @@ import { MapOverlay } from '../enitities/MapOverlay.ts';
 import { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
 import { MapItem } from '../enitities/MapItem.ts';
 import { DatabaseProvider } from './DatabaseProvider.ts';
-
+import { Notification } from '../enitities/Notification.ts';
 /**
  * ToDo: Add update handling for map groups, users and photos if needed.
  * ToDo: Add error handling and reconnection logic for WebSocket connection. Including preauthentication disconnect.
@@ -14,7 +14,7 @@ import { DatabaseProvider } from './DatabaseProvider.ts';
 export class WebSocketProvider {
 
 
-    constructor(options: { databaseProvider: DatabaseProvider | null }) { 
+    constructor(options: { databaseProvider: DatabaseProvider }) { 
         this.databaseProvider = options.databaseProvider;
     }
 
@@ -23,6 +23,7 @@ export class WebSocketProvider {
     private pingInterval: NodeJS.Timeout | null = null;
 
     private databaseProvider: DatabaseProvider | null;
+    private dataProvider: DataProvider = DataProvider.getInstance();
 
     getConnectionURL() {
         const base = DataProvider.getInstance().getApiUrl().replace('http', 'ws');
@@ -32,8 +33,26 @@ export class WebSocketProvider {
     }
 
 
+    unitChangedSideEffects(oldUnit: Unit, newUnit: Unit){
+        console.log('SideEffects', oldUnit, newUnit);
+
+        if(newUnit.getStatus() != oldUnit.getStatus()){
+            const notification = new Notification({
+                id: window.crypto.randomUUID() as string,
+                title: newUnit.getName(),
+                timestamp: new Date().getTime(),
+                content: 'New Status ' + newUnit.getStatus()
+            });
+            if(this.databaseProvider){
+                void this.databaseProvider.saveNotification(notification);
+            }
+            this.dataProvider.addNotification(notification);
+        }
+
+    }
+
+
     updateModel(topic: string, data: { entity: never, changeType: 'CREATED' | 'UPDATED' | 'DELETED' }) {
-        const dataProvider = DataProvider.getInstance();
         ApplicationLogger.info('received update for topic: ' + topic, { service: 'WebSocket' });
         const modelType = topic.replace('/updates/entities/', '');
         const parts = modelType.split('/');
@@ -43,7 +62,7 @@ export class WebSocketProvider {
         if (entityType === 'unit') {
             if (action === 'DELETED') {
                 const itemId = (data.entity as UnitStruct).id;
-                dataProvider.removeUnit(itemId);
+                this.dataProvider.removeUnit(itemId);
 
                 if(this.databaseProvider) {
                     void this.databaseProvider.deleteUnit(itemId);
@@ -63,14 +82,15 @@ export class WebSocketProvider {
                 unit_status: unitData.status,
                 symbol: unitData.icon as never
             });
-            dataProvider.addUnit(item);
+            this.unitChangedSideEffects(this.dataProvider.getAllUnits().get(item.getId()) as Unit,item);
+            this.dataProvider.addUnit(item);
             if(this.databaseProvider) {
                 void this.databaseProvider.saveUnit(item);
             }
         } else if (entityType === 'mapoverlay') {
             if (action === 'DELETED') {
                 const itemId = (data.entity as MapOverlayStruct).id;
-                dataProvider.removeMapOverlay(itemId);
+                this.dataProvider.removeMapOverlay(itemId);
                 if(this.databaseProvider) {
                     void this.databaseProvider.deleteMapOverlay(itemId);
                 }
@@ -85,7 +105,7 @@ export class WebSocketProvider {
                     layerVersion: overlayData.layerVersion,
                 }
             );
-            dataProvider.addMapOverlay(item);
+            this.dataProvider.addMapOverlay(item);
 
             if(this.databaseProvider) {
                 void this.databaseProvider.saveMapOverlay(item);
@@ -104,14 +124,14 @@ export class WebSocketProvider {
                 name: layerData.name,
                 url: layerData.url,
             });
-            dataProvider.setMapStyle(item);
+            this.dataProvider.setMapStyle(item);
             if(this.databaseProvider) {
                 void this.databaseProvider.saveMapStyle(item);
             }
         } else if (entityType === 'mapitem') {
             if (action === 'DELETED') {
                 const itemId = (data.entity as MapItemStruct).id;
-                dataProvider.deleteMapItem(itemId);
+                this.dataProvider.deleteMapItem(itemId);
                 if(this.databaseProvider) {
                     void this.databaseProvider.deleteMapItem(itemId);
                 }
@@ -127,7 +147,7 @@ export class WebSocketProvider {
                 groupId: itemData.mapGroupId
             });
 
-            dataProvider.addMapItem(item);
+            this.dataProvider.addMapItem(item);
             if(this.databaseProvider) {
                 void this.databaseProvider.saveMapItem(item);
             }
@@ -164,7 +184,7 @@ export class WebSocketProvider {
                 return;
             }
             this.lastMessageRecived = Date.now();
-            ApplicationLogger.debug('WebSocket message received: ' + event.data, { service: 'WebSocket', event: event });
+            //ApplicationLogger.debug('WebSocket message received: ' + event.data, { service: 'WebSocket', event: event });
             if ((event.data as string).startsWith('Subscribed') || (event.data as string).startsWith('REQUEST_UPDATES_SINCE')) {
                 ApplicationLogger.info('WebSocket subscription confirmed: ' + event.data, { service: 'WebSocket' });
                 return;

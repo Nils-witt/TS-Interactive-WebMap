@@ -50,11 +50,13 @@ function App() {
     const [databaseProvider, setDatabaseProvider] = useState<DatabaseProvider | null>(null);
 
     useEffect(() => {
+        if(!databaseProvider) return;
         const webSocketProvider = new WebSocketProvider({databaseProvider: databaseProvider});
+        
         webSocketProvider.start();
 
         return () => webSocketProvider.stop();
-    }, []);
+    }, [databaseProvider]);
     useEffect(() => {
         const instance = DatabaseProvider.getInstance();
         void instance.setUpDone(() => {

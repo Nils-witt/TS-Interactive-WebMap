@@ -131,6 +131,17 @@ export function SettingsDialog(props: SettingsDialogProps): JSX.Element {
         </DialogContent>
         <DialogActions>
             <Button
+                onClick={() => {
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                    } else {
+                        document.documentElement.requestFullscreen();
+                    }
+                }}
+            >
+                Full Screen
+            </Button>
+            <Button
                 onClick={onSelectAll}
                 disabled={props.overlays.length === 0}
             >

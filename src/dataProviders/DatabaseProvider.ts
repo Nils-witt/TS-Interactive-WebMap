@@ -17,7 +17,7 @@ import { Unit } from '../enitities/Unit.ts';
 import { Photo } from '../enitities/Photo.ts';
 import { User } from '../enitities/User.ts';
 import { MissionGroup } from '../enitities/MissionGroup.ts';
-
+import { Notification } from '../enitities/Notification.ts';
 
 enum DB_TABLES {
     overlays = 'overlays',
@@ -27,7 +27,8 @@ enum DB_TABLES {
     units = 'units',
     users = 'users',
     missionGroups = 'missionGroups',
-    photos = 'photos'
+    photos = 'photos',
+    notifications = 'notifications',
 }
 
 export class DatabaseProvider implements StorageInterface {
@@ -59,7 +60,7 @@ export class DatabaseProvider implements StorageInterface {
             return;
         }
 
-        const dbVersion = 14;
+        const dbVersion = 15;
         this.db = await openDB(this.DB_NAME, dbVersion, {
             upgrade(db) {
                 console.log(`Upgrading database to version ${dbVersion}`);
@@ -87,6 +88,9 @@ export class DatabaseProvider implements StorageInterface {
                 }
                 if (!db.objectStoreNames.contains(DB_TABLES.photos)) {
                     db.createObjectStore(DB_TABLES.photos, { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains(DB_TABLES.notifications)) {
+                    db.createObjectStore(DB_TABLES.notifications, { keyPath: 'id' });
                 }
             }
         });
@@ -240,6 +244,24 @@ export class DatabaseProvider implements StorageInterface {
         });
     }
 
+    loadAllNotifications(): Promise<Record<string, Notification>> {
+        return new Promise<Record<string, Notification>>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.notifications, 'readonly');
+
+            void tx.objectStore(DB_TABLES.notifications).getAll()
+                .then((result: Record<string, string | number>[]) => {
+                    const notifications: Record<string, Notification> = {};
+                    for (const record of result) {
+                        const notification = Notification.of(record);
+                        notifications[notification.getId()] = notification;
+                    }
+                    resolve(notifications);
+                });
+        });
+
+    }
+
     // -- load single
 
     loadUnit(id: string): Promise<Unit> {
@@ -367,6 +389,22 @@ export class DatabaseProvider implements StorageInterface {
             void tx.objectStore(DB_TABLES.users).get(id).then((result: Record<string, string | number> | undefined) => {
                 if (result) {
                     return resolve(User.of(result));
+                } else {
+                    reject(new Error('Not Exist'));
+                }
+            });
+        });
+    }
+
+    loadNotification(id: string): Promise<Notification> {
+        return new Promise<Notification>((resolve, reject) => {
+            if (!this.db) throw new Error('Database not initialized');
+
+            const tx = this.db.transaction(DB_TABLES.notifications, 'readonly');
+
+            void tx.objectStore(DB_TABLES.notifications).get(id).then((result: Record<string, string | number> | undefined) => {
+                if (result) {
+                    return resolve(Notification.of(result));
                 } else {
                     reject(new Error('Not Exist'));
                 }
@@ -596,6 +634,33 @@ export class DatabaseProvider implements StorageInterface {
         });
     }
 
+    replaceAllNotifications(notifications: Notification[]): Promise<void> {
+        return new Promise<void>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.notifications, 'readwrite');
+            void tx.objectStore(DB_TABLES.notifications).getAllKeys().then(result => {
+                const existingKeys = result as string[];
+                const newKeys = notifications.map(entry => entry.getId());
+
+                for (const existingKey of existingKeys) {
+                    if (!newKeys.includes(existingKey)) {
+                        void tx.objectStore(DB_TABLES.notifications).delete(existingKey);
+                    }
+                }
+
+                for (const notification of notifications) {
+                    const notificationRecord = notification.record();
+                    if (existingKeys.includes(notification.getId())) {
+                        void tx.objectStore(DB_TABLES.notifications).put(notificationRecord);
+                    } else {
+                        void tx.objectStore(DB_TABLES.notifications).add(notificationRecord);
+                    }
+                }
+                resolve();
+            });
+        });
+    }
+
     // -- save single
 
     saveUnit(unit: Unit): Promise<Unit> {
@@ -750,6 +815,24 @@ export class DatabaseProvider implements StorageInterface {
         });
     }
 
+    saveNotification(notification: Notification): Promise<Notification> {
+        return new Promise((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+
+            const notificationRecord = notification.record();
+            const tx = this.db.transaction(DB_TABLES.notifications, 'readwrite');
+
+            void tx.objectStore(DB_TABLES.notifications).getKey(notification.getId()).then(result => {
+                if (result) {
+                    void tx.objectStore(DB_TABLES.notifications).put(notificationRecord);
+                } else {
+                    void tx.objectStore(DB_TABLES.notifications).add(notificationRecord);
+                }
+                resolve(notification);
+            });
+        });
+    }
+
     // -- delete single
 
     deleteUnit(id: string): Promise<void> {
@@ -874,6 +957,22 @@ export class DatabaseProvider implements StorageInterface {
             void tx.objectStore(DB_TABLES.users).getKey(id).then(result => {
                 if (result) {
                     void tx.objectStore(DB_TABLES.users).delete(id);
+                    resolve();
+                } else {
+                    reject(new Error('Not Exist'));
+                }
+            });
+        });
+    }
+
+    deleteNotification(id: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (!this.db) throw new Error('Database not initialized');
+            const tx = this.db.transaction(DB_TABLES.notifications, 'readwrite');
+
+            void tx.objectStore(DB_TABLES.notifications).getKey(id).then(result => {
+                if (result) {
+                    void tx.objectStore(DB_TABLES.notifications).delete(id);
                     resolve();
                 } else {
                     reject(new Error('Not Exist'));
