@@ -25,7 +25,7 @@ new BroadcastChannel('addVectorCacheUrl').addEventListener('message', (e: { data
     const id = e.data.id;
     vectorCacheUrls[id] = new RegExp(`^${url}.*$`);
 
-    console.log(`[SW] Added VectorCacheUrl ${id} is ${vectorCacheUrls[id]}`);
+    log(`[SW] Added VectorCacheUrl ${id} is ${vectorCacheUrls[id]}`);
 });
 
 new BroadcastChannel('addOverlayCacheUrl').addEventListener('message', (e: { data: { url: string; id: string } }) => {
@@ -33,12 +33,12 @@ new BroadcastChannel('addOverlayCacheUrl').addEventListener('message', (e: { dat
     const id = e.data.id;
 
     overlayCacheUrls[id] = overlayRegex(url);
-    console.log(`[SW] Added OverlayCacheUrl ${id} is ${overlayCacheUrls[id]}`);
+    log(`[SW] Added OverlayCacheUrl ${id} is ${overlayCacheUrls[id]}`);
 });
 new BroadcastChannel('removeOtherOverlayCaches').addEventListener('message', (e: { data: { version: string; id: string } }) => {
     const id = e.data.id;
     const version = e.data.version;
-    console.log(`[SW] Removing Old Overlays ${id} != ${version}`);
+    log(`[SW] Removing Old Overlays ${id} != ${version}`);
     void caches.keys().then(keys => {
         keys.forEach(key => {
             if (key.startsWith(`overlay-${id}`) && key != `overlay-${id}_${version}`) {
@@ -48,7 +48,7 @@ new BroadcastChannel('removeOtherOverlayCaches').addEventListener('message', (e:
     });
 });
 sw.addEventListener('activate', () => {
-    console.log('Service Worker activated', sw.registration);
+    log('Service Worker activated', sw.registration);
     reloadClients();
 });
 
@@ -175,3 +175,11 @@ sw.addEventListener('fetch', (event) => {
         }
     }
 });
+
+
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function log(...args: any[]) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    console.log('[SW]', ...args);
+}

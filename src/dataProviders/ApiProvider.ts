@@ -260,12 +260,6 @@ export class ApiProvider implements StorageInterface {
                             url: layer.url,
                             cacheUrl: layer.cacheUrl
                         });
-                        new BroadcastChannel('addVectorCacheUrl').postMessage(
-                            {
-                                id: layer.id,
-                                url: layer.cacheUrl
-                            }
-                        );
                     }
                     return resolve(mapStyles);
                 })
@@ -297,18 +291,6 @@ export class ApiProvider implements StorageInterface {
                                 order: 0,
                                 opacity: 1.0
                             });
-                            new BroadcastChannel('addOverlayCacheUrl').postMessage(
-                                {
-                                    id: layer.id + '_' + layer.layerVersion,
-                                    url: layer.fullTileUrl
-                                });
-
-                            new BroadcastChannel('removeOtherOverlayCaches').postMessage(
-                                {
-                                    id: layer.id,
-                                    version: layer.layerVersion
-                                });
-
                         }
                         return resolve(overlays);
                     })
