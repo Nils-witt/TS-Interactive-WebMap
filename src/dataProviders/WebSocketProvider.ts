@@ -11,19 +11,32 @@ import { Notification } from '../enitities/Notification.ts';
  * ToDo: Add update handling for map groups, users and photos if needed.
  * ToDo: Add error handling and reconnection logic for WebSocket connection. Including preauthentication disconnect.
  */
+
+
+
 export class WebSocketProvider {
+    private static instance: WebSocketProvider | null = null;
 
-
-    constructor(options: { databaseProvider: DatabaseProvider }) { 
-        this.databaseProvider = options.databaseProvider;
+    private constructor() { 
     }
 
     private lastMessageRecived: number | null = null;
     private socket: WebSocket | null = null;
     private pingInterval: NodeJS.Timeout | null = null;
 
-    private databaseProvider: DatabaseProvider | null;
+    private databaseProvider: DatabaseProvider | null = null;
     private dataProvider: DataProvider = DataProvider.getInstance();
+
+
+    public static getInstance(): WebSocketProvider {
+        if (!WebSocketProvider.instance) {
+            WebSocketProvider.instance = new WebSocketProvider();
+        }
+        return WebSocketProvider.instance;
+    }
+    public setDatabaseProvider(databaseProvider: DatabaseProvider) {
+        this.databaseProvider = databaseProvider;
+    }
 
     getConnectionURL() {
         const base = DataProvider.getInstance().getApiUrl().replace('http', 'ws');
@@ -41,7 +54,7 @@ export class WebSocketProvider {
                 id: window.crypto.randomUUID() as string,
                 title: newUnit.getName(),
                 timestamp: new Date().getTime(),
-                content: 'New Status ' + newUnit.getStatus()
+                content: `Status: ${oldUnit.getStatus()} -> ${newUnit.getStatus()}`
             });
             if(this.databaseProvider){
                 void this.databaseProvider.saveNotification(notification);
@@ -158,6 +171,10 @@ export class WebSocketProvider {
 
     start() {
         ApplicationLogger.info('WebSocket Started', { service: 'WebSocket' });
+        if (this.socket) {
+            ApplicationLogger.info('WebSocket is already running', { service: 'WebSocket' });
+            return;
+        }
 
         this.socket = new WebSocket(this.getConnectionURL());
         const entityTypes = ['unit', 'mapoverlay', 'mapbaselayer', 'mapitem'];
@@ -199,10 +216,9 @@ export class WebSocketProvider {
             }
         };
         this.socket.onclose = (event) => {
+            this.socket = null;
+            ApplicationLogger.info('WebSocket connection closed', { service: 'WebSocket', event: event });
             this.start();
-            setTimeout(() => {
-                console.log('Reconnecting WebSocket...', event);
-            }, 1000);
         };
         this.socket.onerror = (event) => {
             console.error('WebSocket error:', event);
