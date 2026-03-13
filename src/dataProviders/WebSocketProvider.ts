@@ -17,8 +17,7 @@ import { Notification } from '../enitities/Notification.ts';
 export class WebSocketProvider {
     private static instance: WebSocketProvider | null = null;
 
-    private constructor() { 
-    }
+    private constructor() { /* empty private constructor to prevent direct instantiation */ }
 
     private lastMessageRecived: number | null = null;
     private socket: WebSocket | null = null;
@@ -46,17 +45,17 @@ export class WebSocketProvider {
     }
 
 
-    unitChangedSideEffects(oldUnit: Unit, newUnit: Unit){
+    unitChangedSideEffects(oldUnit: Unit, newUnit: Unit) {
         console.log('SideEffects', oldUnit, newUnit);
 
-        if(newUnit.getStatus() != oldUnit.getStatus()){
+        if (newUnit.getStatus() != oldUnit.getStatus()) {
             const notification = new Notification({
                 id: window.crypto.randomUUID() as string,
                 title: newUnit.getName(),
                 timestamp: new Date().getTime(),
                 content: `Status: ${oldUnit.getStatus()} -> ${newUnit.getStatus()}`
             });
-            if(this.databaseProvider){
+            if (this.databaseProvider) {
                 void this.databaseProvider.saveNotification(notification);
             }
             this.dataProvider.addNotification(notification);
@@ -77,7 +76,7 @@ export class WebSocketProvider {
                 const itemId = (data.entity as UnitStruct).id;
                 this.dataProvider.removeUnit(itemId);
 
-                if(this.databaseProvider) {
+                if (this.databaseProvider) {
                     void this.databaseProvider.deleteUnit(itemId);
                 }
                 return;
@@ -95,16 +94,16 @@ export class WebSocketProvider {
                 unit_status: unitData.status,
                 symbol: unitData.icon as never
             });
-            this.unitChangedSideEffects(this.dataProvider.getAllUnits().get(item.getId()) as Unit,item);
+            this.unitChangedSideEffects(this.dataProvider.getAllUnits().get(item.getId()) as Unit, item);
             this.dataProvider.addUnit(item);
-            if(this.databaseProvider) {
+            if (this.databaseProvider) {
                 void this.databaseProvider.saveUnit(item);
             }
         } else if (entityType === 'mapoverlay') {
             if (action === 'DELETED') {
                 const itemId = (data.entity as MapOverlayStruct).id;
                 this.dataProvider.removeMapOverlay(itemId);
-                if(this.databaseProvider) {
+                if (this.databaseProvider) {
                     void this.databaseProvider.deleteMapOverlay(itemId);
                 }
                 return;
@@ -120,13 +119,13 @@ export class WebSocketProvider {
             );
             this.dataProvider.addMapOverlay(item);
 
-            if(this.databaseProvider) {
+            if (this.databaseProvider) {
                 void this.databaseProvider.saveMapOverlay(item);
             }
         } else if (entityType === 'mapbaselayer') {
             if (action === 'DELETED') {
                 const itemId = (data.entity as MapBaseLayerStruct).id;
-                if(this.databaseProvider) {
+                if (this.databaseProvider) {
                     void this.databaseProvider.deleteMapStyle(itemId);
                 }
                 return;
@@ -138,14 +137,14 @@ export class WebSocketProvider {
                 url: layerData.url,
             });
             this.dataProvider.setMapStyle(item);
-            if(this.databaseProvider) {
+            if (this.databaseProvider) {
                 void this.databaseProvider.saveMapStyle(item);
             }
         } else if (entityType === 'mapitem') {
             if (action === 'DELETED') {
                 const itemId = (data.entity as MapItemStruct).id;
                 this.dataProvider.deleteMapItem(itemId);
-                if(this.databaseProvider) {
+                if (this.databaseProvider) {
                     void this.databaseProvider.deleteMapItem(itemId);
                 }
                 return;
@@ -161,7 +160,7 @@ export class WebSocketProvider {
             });
 
             this.dataProvider.addMapItem(item);
-            if(this.databaseProvider) {
+            if (this.databaseProvider) {
                 void this.databaseProvider.saveMapItem(item);
             }
         } else {

@@ -133,9 +133,9 @@ export function SettingsDialog(props: SettingsDialogProps): JSX.Element {
             <Button
                 onClick={() => {
                     if (document.fullscreenElement) {
-                        document.exitFullscreen();
+                        void document.exitFullscreen();
                     } else {
-                        document.documentElement.requestFullscreen();
+                        void document.documentElement.requestFullscreen();
                     }
                 }}
             >
