@@ -53,7 +53,7 @@ function App() {
         if(!databaseProvider) return;
         const webSocketProvider = WebSocketProvider.getInstance();
         webSocketProvider.setDatabaseProvider(databaseProvider);
-        webSocketProvider.start();
+        //webSocketProvider.start();
 
     }, [databaseProvider]);
     useEffect(() => {
@@ -99,7 +99,7 @@ function App() {
 
     return (
         <>
-        {isLoading || databaseProvider == null ? (
+        {navigator.serviceWorker.controller == null ||isLoading || databaseProvider == null ? (
             <LoadingScreen />
         ):(
         <DataBaseContext.Provider value={databaseProvider}>

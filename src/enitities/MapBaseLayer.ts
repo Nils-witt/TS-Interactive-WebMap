@@ -12,12 +12,14 @@ import {type DBRecord, AbstractEntity, type IAbstractEntity} from './AbstractEnt
 export interface IMapStyle extends IAbstractEntity{
     name: string;
     url: string;
+    cacheUrl: string;
 }
 
 export class MapBaseLayer extends AbstractEntity {
     private id: string;
     private name: string;
     private url: string;
+    private cacheUrl: string;
 
 
     constructor(data: IMapStyle) {
@@ -25,13 +27,15 @@ export class MapBaseLayer extends AbstractEntity {
         this.id = data.id;
         this.name = data.name;
         this.url = data.url;
+        this.cacheUrl = data.cacheUrl;
     }
 
     public static of(data: DBRecord): MapBaseLayer {
         return new MapBaseLayer({
             id: data.id as string,
             name: data.name as string,
-            url: data.url as string
+            url: data.url as string,
+            cacheUrl: data.cacheUrl as string
         });
     }
 
@@ -39,7 +43,8 @@ export class MapBaseLayer extends AbstractEntity {
         return {
             id: this.id,
             name: this.name,
-            url: this.url
+            url: this.url,
+            cacheUrl: this.cacheUrl
         };
     }
 
@@ -65,5 +70,13 @@ export class MapBaseLayer extends AbstractEntity {
 
     public setId(id: string) {
         this.id = id;
+    }
+
+    public getCacheUrl(): string {
+        return this.cacheUrl;
+    }
+
+    public setCacheUrl(cacheUrl: string) {
+        this.cacheUrl = cacheUrl;
     }
 }

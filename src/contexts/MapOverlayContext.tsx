@@ -8,7 +8,7 @@ import { DataBaseContext } from './DataBaseContext.tsx';
 export const MapOverlayContext = createContext<MapOverlay[]>([]);
 
 export function MapOverlayProvider({ children }: { children: ReactNode }) {
-
+    const channel = new BroadcastChannel('addOverlayCacheUrl')
     const databaseProvider = useContext(DataBaseContext);
     const [mapOverlays, setMapOverlays] = useState<MapOverlay[]>(
         () => Array.from(DataProvider.getInstance().getAllMapOverlays().values())
@@ -29,12 +29,40 @@ export function MapOverlayProvider({ children }: { children: ReactNode }) {
             return;
         }
         void databaseProvider.loadAllMapOverlays().then((result) => {
-            Object.values(result).forEach((o) => dp.addMapOverlay(o));
+            Object.values(result).forEach((layer) => {
+                
+                channel.postMessage(
+                    {
+                        id: layer.getId() + '_' + layer.getLayerVersion(),
+                        url: layer.getUrl()
+                    });
+
+                channel.postMessage(
+                    {
+                        id: layer.getId(),
+                        version: layer.getLayerVersion()
+                    });
+                    dp.addMapOverlay(layer);
+            });
             refresh();
             return ApiProvider.getInstance()
                 .loadAllMapOverlays()
                 .then((remote) => {
-                    Object.values(remote).forEach((o) => dp.addMapOverlay(o));
+                    Object.values(remote).forEach((layer) => {
+                        channel.postMessage(
+                            {
+                                id: layer.getId() + '_' + layer.getLayerVersion(),
+                                url: layer.getUrl()
+                            });
+
+                        channel.postMessage(
+                            {
+                                id: layer.getId(),
+                                version: layer.getLayerVersion()
+                            });
+                        dp.addMapOverlay(layer);
+
+                    });
                     void databaseProvider.replaceAllMapOverlays(Object.values(remote));
                     refresh();
                 })

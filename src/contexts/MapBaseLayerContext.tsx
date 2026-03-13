@@ -8,7 +8,7 @@ import { DataBaseContext } from './DataBaseContext.tsx';
 export const MapBaseLayerContext = createContext<MapBaseLayer | undefined>(DataProvider.getInstance().getMapStyle());
 
 export function MapBaseLayerProvider({ children }: { children: ReactNode }) {
-
+    const channel = new BroadcastChannel('addVectorCacheUrl');
     const databaseProvider = useContext(DataBaseContext);
     const [mapBaseLayer, setMapBaseLayer] = useState<MapBaseLayer | undefined>(
         () => DataProvider.getInstance().getMapStyle()
@@ -26,12 +26,29 @@ export function MapBaseLayerProvider({ children }: { children: ReactNode }) {
             return;
         }
         void databaseProvider.loadAllMapStyles().then((result) => {
-            Object.values(result).forEach((o) => dp.setMapStyle(o));
+
+            Object.values(result).forEach((layer) => {
+                channel.postMessage(
+                    {
+                        id: layer.getId(),
+                        url: layer.getCacheUrl()
+                    }
+                );
+                dp.setMapStyle(layer);
+            });
             refresh();
             return ApiProvider.getInstance()
                 .loadAllMapStyles()
                 .then((remote) => {
-                    Object.values(remote).forEach((o) => dp.setMapStyle(o));
+                    Object.values(remote).forEach((layer) => {
+                        channel.postMessage(
+                            {
+                                id: layer.getId(),
+                                url: layer.getCacheUrl()
+                            }
+                        );
+                        dp.setMapStyle(layer);
+                    });
                     void databaseProvider.replaceAllMapStyles(Object.values(remote));
                     refresh();
                 })
