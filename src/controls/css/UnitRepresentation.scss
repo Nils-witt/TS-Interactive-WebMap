@@ -1,0 +1,9 @@
+.unit-respresentation-container {
+    >div {
+        display: flex;
+
+        >:first-child {
+            flex-grow: 1;
+        }
+    }
+}

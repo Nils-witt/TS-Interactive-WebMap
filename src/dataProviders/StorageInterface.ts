@@ -6,16 +6,16 @@
  * Purpose: standardize methods for local and remote storage providers.
  */
 
-import type {MapOverlay} from '../enitities/MapOverlay.ts';
-import type {MapBaseLayer} from '../enitities/MapBaseLayer.ts';
-import type {MapItem} from '../enitities/MapItem.ts';
-import type {MapGroup} from '../enitities/MapGroup.ts';
-import type {Unit} from '../enitities/Unit.ts';
+import type { MapOverlay } from '../enitities/MapOverlay.ts';
+import type { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
+import type { MapItem } from '../enitities/MapItem.ts';
+import type { MapGroup } from '../enitities/MapGroup.ts';
+import type { Unit } from '../enitities/Unit.ts';
 import type { Photo } from '../enitities/Photo.ts';
 import type { User } from '../enitities/User.ts';
 import type { MissionGroup } from '../enitities/MissionGroup.ts';
 import type { IPosition } from '../enitities/embeddables/EmbeddablePosition.ts';
-
+import type { Notification } from '../enitities/Notification.ts';
 
 export interface StorageInterface {
 
@@ -29,6 +29,7 @@ export interface StorageInterface {
     loadAllPhotos(): Promise<Record<string, Photo>>;
     loadAllUsers(): Promise<Record<string, User>>;
     loadAllMissionGroups(): Promise<Record<string, MissionGroup>>;
+    loadAllNotifications(): Promise<Record<string, Notification>>;
 
     loadUnit(id: string): Promise<Unit>;
     loadMapGroup(id: string): Promise<MapGroup>;
@@ -38,6 +39,7 @@ export interface StorageInterface {
     loadPhoto(id: string): Promise<Photo>;
     loadUser(id: string): Promise<User>;
     loadMissionGroup(id: string): Promise<MissionGroup>;
+    loadNotification(id: string): Promise<Notification>;
 
     replaceAllUnits(units: Unit[]): Promise<void>;
     replaceAllMapGroups(mapGroups: MapGroup[]): Promise<void>;
@@ -47,6 +49,7 @@ export interface StorageInterface {
     replaceAllPhotos(photos: Photo[]): Promise<void>;
     replaceAllUsers(users: User[]): Promise<void>;
     replaceAllMissionGroups(missionGroups: MissionGroup[]): Promise<void>;
+    replaceAllNotifications(notifications: Notification[]): Promise<void>;
 
     saveUnit(unit: Unit): Promise<Unit>;
     saveMapGroup(mapGroup: MapGroup): Promise<MapGroup>;
@@ -57,6 +60,7 @@ export interface StorageInterface {
     savePhotoImage(image: File, position: IPosition | null, name: string, missionGroupId: string): Promise<Photo>;
     saveUser(user: User): Promise<User>;
     saveMissionGroup(missionGroup: MissionGroup): Promise<MissionGroup>;
+    saveNotification(notification: Notification): Promise<Notification>;
 
     deleteUnit(id: string): Promise<void>;
     deleteMapGroup(id: string): Promise<void>;
@@ -66,4 +70,5 @@ export interface StorageInterface {
     deletePhoto(id: string): Promise<void>;
     deleteUser(id: string): Promise<void>;
     deleteMissionGroup(id: string): Promise<void>;
+    deleteNotification(id: string): Promise<void>;
 }

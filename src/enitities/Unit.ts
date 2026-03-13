@@ -1,12 +1,12 @@
-import type {TaktischesZeichen} from 'taktische-zeichen-core/dist/types/types';
-import {type DBRecord, AbstractEntity} from './AbstractEntity.ts';
-import {erzeugeTaktischesZeichen} from 'taktische-zeichen-core';
-import {ApplicationLogger} from '../ApplicationLogger.ts';
-import {LngLat} from './LngLat.ts';
-import {EmbeddablePosition, type IPosition} from './embeddables/EmbeddablePosition.ts';
+import type { TaktischesZeichen } from 'taktische-zeichen-core/dist/types/types';
+import { type DBRecord, AbstractEntity } from './AbstractEntity.ts';
+import { erzeugeTaktischesZeichen } from 'taktische-zeichen-core';
+import { ApplicationLogger } from '../ApplicationLogger.ts';
+import { LngLat } from './LngLat.ts';
+import { EmbeddablePosition, type IPosition } from './embeddables/EmbeddablePosition.ts';
 
 export interface IUnit {
-    id?: string;
+    id: string;
     position: IPosition;
     name: string;
     symbol?: TaktischesZeichen; // Optional symbol for rendering, if applicable
@@ -16,7 +16,7 @@ export interface IUnit {
 }
 
 export class Unit extends AbstractEntity {
-    private id: string | null;
+    private id: string;
     private position: EmbeddablePosition | null = null;
     private name: string;
     private symbol: TaktischesZeichen | null;
@@ -26,7 +26,7 @@ export class Unit extends AbstractEntity {
 
     constructor(data: IUnit) {
         super();
-        this.id = data.id || null;
+        this.id = data.id;
         this.position = EmbeddablePosition.of(data.position);
         this.name = data.name;
         this.groupId = data.groupId as string || null;
@@ -48,19 +48,19 @@ export class Unit extends AbstractEntity {
                     data_symbol = JSON.parse(data.symbol) as TaktischesZeichen;
                 }
             } catch (e) {
-                ApplicationLogger.error('Error parsing Unit symbol: ' + (e as Error).message, {service: 'Unit'});
+                ApplicationLogger.error('Error parsing Unit symbol: ' + (e as Error).message, { service: 'Unit' });
             }
         }
         let route: LngLat[] = [];
         if (data && data.route) {
             try {
                 if (typeof data.route == 'object') {
-                    route = (data.route as { latitude: number, longitude: number }[]).map(coord => new LngLat(coord.longitude,coord.latitude));
+                    route = (data.route as { latitude: number, longitude: number }[]).map(coord => new LngLat(coord.longitude, coord.latitude));
                 } else if (typeof data.route == 'string') {
-                    route = (JSON.parse(data.route) as { latitude: number, longitude: number }[]).map(coord => new LngLat(coord.longitude,coord.latitude));
+                    route = (JSON.parse(data.route) as { latitude: number, longitude: number }[]).map(coord => new LngLat(coord.longitude, coord.latitude));
                 }
             } catch (e) {
-                ApplicationLogger.error('Error parsing Unit route: ' + (e as Error).message, {service: 'Unit'});
+                ApplicationLogger.error('Error parsing Unit route: ' + (e as Error).message, { service: 'Unit' });
             }
         }
 
@@ -107,12 +107,12 @@ export class Unit extends AbstractEntity {
 
             return dataUrl;
         } catch (e) {
-            ApplicationLogger.error('Error generating icon element for Unit: ' + (e as Error).message, {service: 'Unit'});
+            ApplicationLogger.error('Error generating icon element for Unit: ' + (e as Error).message, { service: 'Unit' });
             return '';
         }
     }
 
-    public getId(): string | null {
+    public getId(): string {
         return this.id;
     }
 

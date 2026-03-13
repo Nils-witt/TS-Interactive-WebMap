@@ -19,6 +19,7 @@ import { Photo } from '../enitities/Photo.ts';
 import type { IPosition } from '../enitities/embeddables/EmbeddablePosition.ts';
 import { User } from '../enitities/User.ts';
 import { MissionGroup } from '../enitities/MissionGroup.ts';
+import type { Notification } from '../enitities/Notification.ts';
 
 
 export class ApiProviderEvent extends Event {
@@ -307,7 +308,7 @@ export class ApiProvider implements StorageInterface {
                                     id: layer.id,
                                     version: layer.layerVersion
                                 });
-                        
+
                         }
                         return resolve(overlays);
                     })
@@ -413,6 +414,10 @@ export class ApiProvider implements StorageInterface {
         });
     }
 
+    loadAllNotifications(): Promise<Record<string, Notification>> {
+        return Promise.reject(new Error('Method not implemented. (loadAllNotifications()))'));
+    }
+
 
     //--- load Single Currently not implemented, as the app always loads all items at once. Can be implemented later if needed.
     loadMissionGroup(id: string): Promise<MissionGroup> {
@@ -447,6 +452,10 @@ export class ApiProvider implements StorageInterface {
         return Promise.reject(new Error(`Method not implemented. (loadUser(${id}))`));
     }
 
+    loadNotification(id: string): Promise<Notification> {
+        return Promise.reject(new Error(`Method not implemented. (loadNotification(${id}))`));
+    }
+
     //-- Replace All Currently not implemented, as the app always loads all items at once and does not support bulk updates. Can be implemented later if needed.
     replaceAllUnits(units: Unit[]): Promise<void> {
         return Promise.reject(new Error(`Method not implemented. replaceAllUnits(${units.length})`));
@@ -478,6 +487,10 @@ export class ApiProvider implements StorageInterface {
 
     replaceAllMissionGroups(missionGroups: MissionGroup[]): Promise<void> {
         return Promise.reject(new Error(`Method not implemented. replaceAllMissionGroups(${missionGroups.length})`));
+    }
+
+    replaceAllNotifications(notifications: Notification[]): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. (replaceAllNotifications(${notifications.length}))`));
     }
 
     //-- Save Single
@@ -661,6 +674,10 @@ export class ApiProvider implements StorageInterface {
         });
     }
 
+    saveNotification(notification: Notification): Promise<Notification> {
+        return Promise.reject(new Error(`Method not implemented. saveNotification(${notification.getId()})`));
+    }
+
 
     //-- Delete Single
 
@@ -720,6 +737,10 @@ export class ApiProvider implements StorageInterface {
                     return reject(new Error('Failed to delete mission group', { cause: error }));
                 });
         });
+    }
+
+    deleteNotification(id: string): Promise<void> {
+        return Promise.reject(new Error(`Method not implemented. deleteNotification(${id})`));
     }
 
     //--

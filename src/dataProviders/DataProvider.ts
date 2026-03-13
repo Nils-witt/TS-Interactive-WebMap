@@ -17,7 +17,7 @@ import { MapConfig } from '../enitities/MapConfig.ts';
 import type { User } from '../enitities/User.ts';
 import type { MissionGroup } from '../enitities/MissionGroup.ts';
 import type { Photo } from '../enitities/Photo.ts';
-
+import type { Notification } from '../enitities/Notification.ts';
 /**
  * Interface representing an event dispatched by the DataProvider.
  * Used for the pub/sub pattern to notify subscribers of data changes.
@@ -80,6 +80,11 @@ export enum DataProviderEventType {
     PHOTO_UPDATED = 'photo-updated',
     PHOTO_DELETED = 'photo-deleted',
 
+    NOTIFICATION_CREATED = 'notification-created',
+    NOTIFICATION_UPDATED = 'notification-updated',
+    NOTIFICATION_DELETED = 'notification-deleted',
+
+
     ACTIVE_USER_UPDATED = 'active-user-updated',
 
     MAP_CENTER_UPDATED = 'map-center-updated',
@@ -118,6 +123,8 @@ export class DataProvider {
     private users: Map<string, User> = new Map<string, User>();
 
     private photos: Map<string, Photo> = new Map<string, Photo>();
+
+    private notifications: Map<string, Notification> = new Map<string, Notification>();
 
     private mapCenter: LngLat = new LngLat(0.0, 0.0); // Default center of the map
     private mapZoom: number;
@@ -284,12 +291,12 @@ export class DataProvider {
 
     public addUnit(unit: Unit): void {
         if (unit.getId()) {
-            if (this.units.has(unit.getId() as string)) {
-                const oldUnit = this.units.get(unit.getId() as string);
-                this.units.set(unit.getId() as string, unit);
+            if (this.units.has(unit.getId())) {
+                const oldUnit = this.units.get(unit.getId());
+                this.units.set(unit.getId(), unit);
                 this.triggerEvent(new DataProviderEvent(DataProviderEventType.UNIT_UPDATED, unit, oldUnit));
             } else {
-                this.units.set(unit.getId() as string, unit);
+                this.units.set(unit.getId(), unit);
                 this.triggerEvent(new DataProviderEvent(DataProviderEventType.UNIT_ADDED, unit));
             }
         }
@@ -451,6 +458,34 @@ export class DataProvider {
             if (!photo) return;
             this.photos.delete(id);
             this.triggerEvent(new DataProviderEvent(DataProviderEventType.PHOTO_DELETED, photo));
+        }
+    }
+
+    public addNotification(notification: Notification){
+        if (!notification.getId()) {
+            console.warn('Trying to add notification without ID');
+            return;
+        }
+        if (this.notifications.has(notification.getId())) {
+            const oldNotification = this.notifications.get(notification.getId());
+            this.notifications.set(notification.getId(), notification);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.NOTIFICATION_UPDATED, notification, oldNotification));
+        } else {
+            this.notifications.set(notification.getId(), notification);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.NOTIFICATION_CREATED, notification));
+        }
+    }
+
+    public getAllNotifications(): Map<string, Notification> {
+        return this.notifications;
+    }
+
+    public removeNotification(id: string) {
+        if (this.notifications.has(id)) {
+            const notification = this.notifications.get(id);
+            if (!notification) return;
+            this.notifications.delete(id);
+            this.triggerEvent(new DataProviderEvent(DataProviderEventType.NOTIFICATION_DELETED, notification));
         }
     }
 }

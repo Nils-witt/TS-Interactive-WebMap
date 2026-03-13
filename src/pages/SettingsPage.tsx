@@ -54,7 +54,8 @@ export function SettingsPage(): JSX.Element {
     // --------------------------------------------------
     useEffect(() => {
         if (!mapConfig) return;
-        mapConfig.setUnitIconSize(parseInt(unitIconSize ?? '0'));
+        if (!unitIconSize || isNaN(parseInt(unitIconSize))) return;
+        mapConfig.setUnitIconSize(parseInt(unitIconSize));
         DataProvider.getInstance().setMapConfig(mapConfig);
         GlobalEventHandler.getInstance().emit(
             MapConfigEvents.UnitIconSizeChanged,
@@ -150,7 +151,7 @@ export function SettingsPage(): JSX.Element {
                         <Button size="small" onClick={() => void navigate('/caches')}>
                             Open Cache Manager
                         </Button>
-                        <Button size="small" onClick={ () => void resetPWA()}>
+                        <Button size="small" onClick={() => void resetPWA()}>
                             Reset PWA
                         </Button>
                         <Button size="small" onClick={() => window.location.reload()}>

@@ -1,9 +1,9 @@
-import {useMap} from "@vis.gl/react-maplibre";
-import {useEffect, useState} from "react";
-import {DataEvent, GlobalEventHandler} from "../dataProviders/GlobalEventHandler.ts";
-import type {Unit} from "../enitities/Unit.ts";
-import {DataProvider, DataProviderEvent, DataProviderEventType} from "../dataProviders/DataProvider.ts";
-import {Marker} from "maplibre-gl";
+import { useMap } from "@vis.gl/react-maplibre";
+import { useEffect, useState } from "react";
+import { DataEvent, GlobalEventHandler } from "../dataProviders/GlobalEventHandler.ts";
+import type { Unit } from "../enitities/Unit.ts";
+import { DataProvider, DataProviderEvent, DataProviderEventType } from "../dataProviders/DataProvider.ts";
+import { Marker } from "maplibre-gl";
 
 export function RouteDisplay() {
     const mapRef = useMap();
@@ -19,7 +19,7 @@ export function RouteDisplay() {
             const unit = dataEvent.data as Unit;
             setUnitId(unit.getId());
             if (unit.getRoute()) {
-                setRouteCoordinates((DataProvider.getInstance().getAllUnits().get(unit.getId()!)?.getRoute() || []).map(coord => [coord.longitude, coord.latitude]))
+                setRouteCoordinates((DataProvider.getInstance().getAllUnits().get(unit.getId())?.getRoute() || []).map(coord => [coord.longitude, coord.latitude]))
             }
         };
         const onHideRoute = () => {
