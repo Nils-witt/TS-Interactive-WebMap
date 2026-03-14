@@ -29,11 +29,11 @@ new BroadcastChannel('addVectorCacheUrl').addEventListener('message', (e: { data
 });
 
 new BroadcastChannel('addOverlayCacheUrl').addEventListener('message', (e: { data: { url: string; id: string } }) => {
-    const url = e.data.url;
-    const id = e.data.id;
-    if(!url){
+    if(!e.data.url || !e.data.id) {
         return;
     }
+    const url = e.data.url.replaceAll(' ', '');
+    const id = e.data.id;
     overlayCacheUrls[id] = overlayRegex(url);
     log(`[SW] Added OverlayCacheUrl ${id} is ${overlayCacheUrls[id]}`);
 });
@@ -99,12 +99,12 @@ function getCacheName(url: URL): [string, boolean, boolean, boolean] {
     }
     for (const [id, regex] of Object.entries(vectorCacheUrls)) {
         if (regex.test(url.href)) {
-            return [`vector-cache-${id}`, true, true, true];
+            return [`vector-cache-${id}`, false, true, true];
         }
     }
     for (const [id, regex] of Object.entries(overlayCacheUrls)) {
         if (regex.test(url.href)) {
-            return [`overlay-${id}`, true, true, true];
+            return [`overlay-${id}`, false, true, true];
         }
     }
     return ['never', true, false, false];
