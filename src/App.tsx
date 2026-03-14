@@ -53,7 +53,7 @@ function App() {
         if(!databaseProvider) return;
         const webSocketProvider = WebSocketProvider.getInstance();
         webSocketProvider.setDatabaseProvider(databaseProvider);
-        //webSocketProvider.start();
+        webSocketProvider.start();
 
     }, [databaseProvider]);
     useEffect(() => {
@@ -99,8 +99,14 @@ function App() {
 
     return (
         <>
-        {navigator.serviceWorker.controller == null ||isLoading || databaseProvider == null ? (
-            <LoadingScreen />
+        {(navigator.serviceWorker.controller == null && !window.location.host.startsWith('localhost')) || isLoading || databaseProvider == null ? (
+            <>
+                {navigator.serviceWorker.controller == null ? (<p style={{ color: 'red', textAlign: 'center' }}>Service Worker not active. Please ensure the SW is registered and active for the app to function properly.</p>) : (<></>)}
+                {databaseProvider == null ? (<p style={{ color: 'red', textAlign: 'center' }}>DB not connected</p>) :(<></>)}
+
+
+                <LoadingScreen />
+            </>
         ):(
         <DataBaseContext.Provider value={databaseProvider}>
             <MapBaseLayerProvider>

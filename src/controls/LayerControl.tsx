@@ -16,7 +16,7 @@ import { type MapOverlay, OverlayEvent } from '../enitities/MapOverlay.ts';
 
 import './css/layer.scss';
 import { MapOverlayContext } from '../contexts/MapOverlayContext.tsx';
-import { useContext, useEffect } from 'react';
+import { type JSX, useContext, useEffect} from 'react';
 
 /**
  * LayersControl provides a UI to toggle overlays and open per-layer settings.
@@ -32,7 +32,7 @@ interface ReactLayerControlProps {
     position: ControlPosition;
 }
 
-function ReactLayerControl(props: ReactLayerControlProps): null {
+function ReactLayerControl(props: ReactLayerControlProps): JSX.Element {
     const overlays = useContext(MapOverlayContext);
     const control = useControl(() => new LayersControl(props as LayerControlOptions), {
         position: props.position
@@ -42,7 +42,7 @@ function ReactLayerControl(props: ReactLayerControlProps): null {
         control.setOverlays(overlays);
     }, [overlays]);
 
-    return null;
+    return <></>;
 }
 
 export default ReactLayerControl;
@@ -85,9 +85,6 @@ export class LayersControl extends Evented implements IControl {
      */
     private activeOverlays = new Map<string, boolean>();
 
-
-    private options: LayerControlOptions;
-
     /**
      * Creates a new LayersControl instance
      *
@@ -96,7 +93,6 @@ export class LayersControl extends Evented implements IControl {
     constructor(options: LayerControlOptions) {
         super();
         this.map = undefined;
-        this.options = options;
 
         this.container = DOM.create('div', 'maplibregl-ctrl');
         this.container.classList.add(

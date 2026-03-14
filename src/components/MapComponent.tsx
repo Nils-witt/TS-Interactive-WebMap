@@ -19,8 +19,6 @@ import { useSearchParams } from 'react-router-dom';
 import { GeolocateControl, Map as MapLibreMap, Marker, NavigationControl, Popup, type MapRef } from '@vis.gl/react-maplibre';
 import ReactLayerControl from "../controls/LayerControl";
 import ReactSearchControl from "../controls/SearchControl";
-import { DataProvider, DataProviderEvent, DataProviderEventType } from "../dataProviders/DataProvider";
-import type { MapBaseLayer } from "../enitities/MapBaseLayer.ts";
 import { RouteDisplay } from "../controls/RouteDisplay.tsx";
 import { UnitDisplay } from "../controls/UnitDisplay.tsx";
 import { GroupDisplay } from "../controls/GroupDisplay.tsx";
@@ -47,6 +45,7 @@ import { UnitsContext } from '../contexts/UnitsContext.tsx';
 import { LocalStorageProvider } from '../dataProviders/LocalStorageProvider.ts';
 import { MapItemContext } from '../contexts/MapItemContext.tsx';
 import { MapGroupContext } from '../contexts/MapGroupContext.tsx';
+import { useMapBaseLayer } from '../contexts/MapBaseLayerContext.tsx';
 
 export function MapComponent() {
     const keyValueStore = new LocalStorageProvider();
@@ -63,8 +62,9 @@ export function MapComponent() {
     const [mapCenter, setMapCenter] = useState<[number, number]>(localStorage.getItem('mapCenter')
         ? JSON.parse(localStorage.getItem('mapCenter') || '[7.1545,50.7438]') as [number, number]
         : [7.1545, 50.7438]);
-
+    const baseLayer = useMapBaseLayer();
     const mapRef = React.useRef<MapRef | null>(null);
+
 
     const units = useContext(UnitsContext);
     const items = useContext(MapItemContext);
@@ -124,8 +124,6 @@ export function MapComponent() {
         void keyValueStore.setItem('mapZoom', JSON.stringify(e.viewState.zoom));
     }
 
-    const [mapStyle, setMapStyle] = React.useState<MapBaseLayer | null>(null);
-
     const [showItemPopup, setShowItemPopup] = React.useState<boolean>(true);
 
     // ── Context menu ──────────────────────────────────────────────────────
@@ -174,24 +172,7 @@ export function MapComponent() {
     });
 
 
-    useEffect(() => {
-        const provider = DataProvider.getInstance();
-
-        const mapStyle = provider.getMapStyle()
-        if (mapStyle != undefined) {
-            setMapStyle(mapStyle);
-        }
-        const onMapStyleUpdated = (event: DataProviderEvent) => {
-            setMapStyle(event.data as MapBaseLayer);
-        };
-        provider.on(DataProviderEventType.MAP_STYLE_UPDATED, onMapStyleUpdated);
-
-        return () => {
-            provider.off(DataProviderEventType.MAP_STYLE_UPDATED, onMapStyleUpdated);
-        };
-    }, []);
-
-    if (!mapStyle) {
+    if (!baseLayer) {
         return <div>Loading...</div>;
     }
 
@@ -204,7 +185,7 @@ export function MapComponent() {
                     zoom: zoom
                 }}
                 style={{ width: '100%', height: '100%' }}
-                mapStyle={mapStyle.getUrl()}
+                mapStyle={baseLayer.getUrl()}
                 attributionControl={false}
                 onMoveEnd={mapMoved}
                 onContextMenu={(e) => {

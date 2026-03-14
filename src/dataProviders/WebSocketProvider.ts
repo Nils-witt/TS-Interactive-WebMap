@@ -13,6 +13,8 @@ import { Notification } from '../enitities/Notification.ts';
  */
 
 
+export type WebSocketEvent = 'open' | 'message' | 'error' | 'close';
+
 
 export class WebSocketProvider {
     private static instance: WebSocketProvider | null = null;
@@ -25,6 +27,20 @@ export class WebSocketProvider {
 
     private databaseProvider: DatabaseProvider | null = null;
     private dataProvider: DataProvider = DataProvider.getInstance();
+
+    private eventListeners: Record<WebSocketEvent, ((event: WebSocketEvent) => void)[]> = {} as Record<WebSocketEvent, ((event: WebSocketEvent) => void)[]>;
+
+    on(event: WebSocketEvent, listener: (event: WebSocketEvent) => void) {
+        if (!this.eventListeners[event]) {
+            this.eventListeners[event] = [];
+        }
+        this.eventListeners[event].push(listener);
+    }
+
+    off(event: WebSocketEvent, listener: (event: WebSocketEvent) => void) {
+        if (!this.eventListeners[event]) return;
+        this.eventListeners[event] = this.eventListeners[event].filter(l => l !== listener);
+    }
 
 
     public static getInstance(): WebSocketProvider {
@@ -64,9 +80,10 @@ export class WebSocketProvider {
     }
 
 
-    updateModel(topic: string, data: { entity: never, changeType: 'CREATED' | 'UPDATED' | 'DELETED' }) {
+    updateModel(topic: string, data: { entity: never, entityType:string,
+        changeType: 'CREATED' | 'UPDATED' | 'DELETED' }) {
         ApplicationLogger.info('received update for topic: ' + topic, { service: 'WebSocket' });
-        const modelType = topic.replace('/updates/entities/', '');
+        const modelType = data.entityType.toLowerCase();
         const parts = modelType.split('/');
         const entityType = parts[0].toLowerCase();
         const action = data.changeType;
@@ -135,6 +152,7 @@ export class WebSocketProvider {
                 id: layerData.id,
                 name: layerData.name,
                 url: layerData.url,
+                cacheUrl: layerData.cacheUrl
             });
             this.dataProvider.setMapStyle(item);
             if (this.databaseProvider) {
@@ -178,10 +196,12 @@ export class WebSocketProvider {
         this.socket = new WebSocket(this.getConnectionURL());
         const entityTypes = ['unit', 'mapoverlay', 'mapbaselayer', 'mapitem'];
         this.socket.onopen = (event) => {
+            this.eventListeners['open']?.forEach(listener => listener('open'));
             ApplicationLogger.info('WebSocket connection opened', { service: 'WebSocket', event: event });
             for (const entityType of entityTypes) {
                 this.socket!.send('SUBSCRIBE /updates/entities/' + entityType);
             }
+            this.socket!.send('GET /units');
             if (this.lastMessageRecived != null) {
                 ApplicationLogger.info('Requesting updates since last message received: ' + new Date(this.lastMessageRecived).toISOString(), { service: 'WebSocket' });
                 this.socket!.send('REQUEST_UPDATES_SINCE ' + this.lastMessageRecived);
@@ -200,26 +220,29 @@ export class WebSocketProvider {
                 return;
             }
             this.lastMessageRecived = Date.now();
-            //ApplicationLogger.debug('WebSocket message received: ' + event.data, { service: 'WebSocket', event: event });
             if ((event.data as string).startsWith('Subscribed') || (event.data as string).startsWith('REQUEST_UPDATES_SINCE')) {
                 ApplicationLogger.info('WebSocket subscription confirmed: ' + event.data, { service: 'WebSocket' });
                 return;
             }
             try {
                 const data = JSON.parse(event.data as string) as { topic: string, payload: never };
-                if (data.topic.startsWith('/updates/entities/')) {
+                if (data.topic.startsWith('/updates/entities/') || data.topic.startsWith('/units')) {
                     this.updateModel(data.topic, data.payload);
+                }else{
+                    ApplicationLogger.info('Received message: ' + data.topic + ' is unknown', { service: 'WebSocket' });
                 }
             } catch {
                 ApplicationLogger.info('Received message: ' + event.data, { service: 'WebSocket' });
             }
         };
         this.socket.onclose = (event) => {
+            this.eventListeners['close']?.forEach(listener => listener('close'));
             this.socket = null;
             ApplicationLogger.info('WebSocket connection closed', { service: 'WebSocket', event: event });
             this.start();
         };
         this.socket.onerror = (event) => {
+            this.eventListeners['error']?.forEach(listener => listener('error'));
             console.error('WebSocket error:', event);
         };
     }
@@ -234,5 +257,9 @@ export class WebSocketProvider {
             this.pingInterval = null;
         }
         ApplicationLogger.info('WebSocket Stopped', { service: 'WebSocket' });
+    }
+
+    public isConnected(): boolean {
+        return this.socket?.readyState === WebSocket.OPEN;
     }
 }
