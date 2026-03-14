@@ -19,8 +19,6 @@ import { useSearchParams } from 'react-router-dom';
 import { GeolocateControl, Map as MapLibreMap, Marker, NavigationControl, Popup, type MapRef } from '@vis.gl/react-maplibre';
 import ReactLayerControl from "../controls/LayerControl";
 import ReactSearchControl from "../controls/SearchControl";
-import { DataProvider, DataProviderEvent, DataProviderEventType } from "../dataProviders/DataProvider";
-import type { MapBaseLayer } from "../enitities/MapBaseLayer.ts";
 import { RouteDisplay } from "../controls/RouteDisplay.tsx";
 import { UnitDisplay } from "../controls/UnitDisplay.tsx";
 import { GroupDisplay } from "../controls/GroupDisplay.tsx";

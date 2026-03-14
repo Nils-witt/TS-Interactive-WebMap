@@ -13,6 +13,8 @@ import { Notification } from '../enitities/Notification.ts';
  */
 
 
+export type WebSocketEvent = 'open' | 'message' | 'error' | 'close';
+
 
 export class WebSocketProvider {
     private static instance: WebSocketProvider | null = null;
@@ -26,16 +28,16 @@ export class WebSocketProvider {
     private databaseProvider: DatabaseProvider | null = null;
     private dataProvider: DataProvider = DataProvider.getInstance();
 
-    private eventListeners: { [event: string]: ((event: any) => void)[] } = {};
+    private eventListeners: Record<WebSocketEvent, ((event: WebSocketEvent) => void)[]> = {} as Record<WebSocketEvent, ((event: WebSocketEvent) => void)[]>;
 
-    on(event: 'open' | 'message' | 'error' | 'close', listener: (event: any) => void) {
+    on(event: WebSocketEvent, listener: (event: WebSocketEvent) => void) {
         if (!this.eventListeners[event]) {
             this.eventListeners[event] = [];
         }
         this.eventListeners[event].push(listener);
     }
 
-    off(event: 'open' | 'message' | 'error' | 'close', listener: (event: any) => void) {
+    off(event: WebSocketEvent, listener: (event: WebSocketEvent) => void) {
         if (!this.eventListeners[event]) return;
         this.eventListeners[event] = this.eventListeners[event].filter(l => l !== listener);
     }
@@ -194,7 +196,7 @@ export class WebSocketProvider {
         this.socket = new WebSocket(this.getConnectionURL());
         const entityTypes = ['unit', 'mapoverlay', 'mapbaselayer', 'mapitem'];
         this.socket.onopen = (event) => {
-            this.eventListeners['open']?.forEach(listener => listener("opened"));
+            this.eventListeners['open']?.forEach(listener => listener('open'));
             ApplicationLogger.info('WebSocket connection opened', { service: 'WebSocket', event: event });
             for (const entityType of entityTypes) {
                 this.socket!.send('SUBSCRIBE /updates/entities/' + entityType);
@@ -234,13 +236,13 @@ export class WebSocketProvider {
             }
         };
         this.socket.onclose = (event) => {
-            this.eventListeners['close']?.forEach(listener => listener("closed"));
+            this.eventListeners['close']?.forEach(listener => listener('close'));
             this.socket = null;
             ApplicationLogger.info('WebSocket connection closed', { service: 'WebSocket', event: event });
             this.start();
         };
         this.socket.onerror = (event) => {
-            this.eventListeners['error']?.forEach(listener => listener("error"));
+            this.eventListeners['error']?.forEach(listener => listener('error'));
             console.error('WebSocket error:', event);
         };
     }
