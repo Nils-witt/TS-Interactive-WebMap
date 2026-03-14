@@ -1,12 +1,12 @@
 import { Map as MapLibreMap, type ViewStateChangeEvent } from '@vis.gl/react-maplibre';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { DataProvider, DataProviderEvent, DataProviderEventType } from '../dataProviders/DataProvider';
-import type { MapBaseLayer } from '../enitities/MapBaseLayer';
 import { UnitDisplay } from '../controls/UnitDisplay';
 import { MapOverlayContext } from '../contexts/MapOverlayContext.tsx';
 
 
 import './css/displayMapComponent.scss';
+import { useMapBaseLayer } from '../contexts/MapBaseLayerContext.tsx';
+import { WebsocketStatusDisplay } from './WebsocketStatusDisplay.tsx';
 
 export interface DisplayMapComponentProps {
     visibleOverlayIds: string[];
@@ -23,7 +23,8 @@ export function DisplayMapComponent({ visibleOverlayIds, visibleUnitIds, showUni
         : [7.1545, 50.7438]);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [zoom, setZoom] = useState<number>(localStorage.getItem('mapZoomDisplay') ? parseFloat(localStorage.getItem('mapZoomDisplay') || '10') : 10);
-    const [mapStyle, setMapStyle] = useState<MapBaseLayer | undefined>(undefined);
+
+    const baseLayer = useMapBaseLayer();
     const overlays = useContext(MapOverlayContext);
     const mapRef = useRef<maplibregl.Map | null>(null);
     const [mapLoaded, setMapLoaded] = useState(false);
@@ -31,23 +32,6 @@ export function DisplayMapComponent({ visibleOverlayIds, visibleUnitIds, showUni
     const visibleOverlays = useMemo(() => new Set(visibleOverlayIds), [visibleOverlayIds]);
     const visibleUnits = useMemo(() => new Set(visibleUnitIds), [visibleUnitIds]);
 
-
-    useEffect(() => {
-        const provider = DataProvider.getInstance();
-
-        const mapStyle = provider.getMapStyle()
-        if (mapStyle != undefined) {
-            setMapStyle(mapStyle);
-        }
-        const onMapStyleUpdated = (event: DataProviderEvent) => {
-            setMapStyle(event.data as MapBaseLayer);
-        };
-        provider.on(DataProviderEventType.MAP_STYLE_UPDATED, onMapStyleUpdated);
-
-        return () => {
-            provider.off(DataProviderEventType.MAP_STYLE_UPDATED, onMapStyleUpdated);
-        };
-    }, []);
 
     useEffect(() => {
         const map = mapRef.current;
@@ -123,7 +107,7 @@ export function DisplayMapComponent({ visibleOverlayIds, visibleUnitIds, showUni
         localStorage.setItem('mapCenterDisplay', JSON.stringify([e.viewState.longitude, e.viewState.latitude]));
         localStorage.setItem('mapZoomDisplay', e.viewState.zoom.toString());
     };
-    if (!mapStyle) {
+    if (!baseLayer) {
         return <div>Loading...</div>;
     }
 
@@ -137,7 +121,7 @@ export function DisplayMapComponent({ visibleOverlayIds, visibleUnitIds, showUni
                     zoom: zoom
                 }}
                 style={{ width: '100%', height: '100%' }}
-                mapStyle={mapStyle.getUrl()}
+                mapStyle={baseLayer.getUrl()}
                 attributionControl={false}
                 onMoveEnd={(e) => updateView(e)}
                 ref={(instance) => {
@@ -147,6 +131,7 @@ export function DisplayMapComponent({ visibleOverlayIds, visibleUnitIds, showUni
             >
                 <UnitDisplay showOnly={Array.from(visibleUnits)} showAlways={true} iconSize={75} showStatusBar={showUnitsStatusBar || false} />
             </MapLibreMap>
+            <WebsocketStatusDisplay />
         </div>
     );
 }
