@@ -29,7 +29,7 @@ new BroadcastChannel('addVectorCacheUrl').addEventListener('message', (e: { data
 });
 
 new BroadcastChannel('addOverlayCacheUrl').addEventListener('message', (e: { data: { url: string; id: string } }) => {
-    if(!e.data.url || !e.data.id) {
+    if(!e.data.url || !e.data.id) {
         return;
     }
     const url = e.data.url.replaceAll(' ', '');
