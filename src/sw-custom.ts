@@ -31,7 +31,9 @@ new BroadcastChannel('addVectorCacheUrl').addEventListener('message', (e: { data
 new BroadcastChannel('addOverlayCacheUrl').addEventListener('message', (e: { data: { url: string; id: string } }) => {
     const url = e.data.url;
     const id = e.data.id;
-
+    if(!url){
+        return;
+    }
     overlayCacheUrls[id] = overlayRegex(url);
     log(`[SW] Added OverlayCacheUrl ${id} is ${overlayCacheUrls[id]}`);
 });
@@ -173,6 +175,8 @@ sw.addEventListener('fetch', (event) => {
                 });
             }));
         }
+    }else {
+        log(`[SW] Not intercepting ${event.request.url}`);
     }
 });
 
