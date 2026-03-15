@@ -116,7 +116,7 @@ export class WebSocketProvider {
                 unit_status: unitData.status,
                 symbol: unitData.icon as never
             });
-            const oldUnit = this.dataProvider.getAllUnits().get(item.getId()) as Unit | undefined;
+            const oldUnit = this.dataProvider.getAllUnits().get(item.getId());
             if (oldUnit && (oldUnit.getUpdatedAt().getTime() == item.getUpdatedAt().getTime())) {
                 return;
             }

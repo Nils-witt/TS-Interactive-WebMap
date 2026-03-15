@@ -1,4 +1,4 @@
-import { createContext, use, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { DataProvider, DataProviderEventType } from '../dataProviders/DataProvider.ts';
 import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler.ts';
 import { ApiProvider } from '../dataProviders/ApiProvider.ts';
