@@ -6,7 +6,7 @@
  * Purpose: encapsulate overlay id, name, URL template, order, and related events
  */
 
-import {type DBRecord, AbstractEntity, type IAbstractEntity} from './AbstractEntity.ts';
+import { type DBRecord, AbstractEntity, type IAbstractEntity } from './AbstractEntity.ts';
 
 
 export interface IOverlay extends IAbstractEntity {
@@ -31,11 +31,6 @@ export class MapOverlay extends AbstractEntity {
     private layerVersion = 0;
 
     /**
-     * Unique identifier for the layer, used for source and layer creation
-     */
-    private id = '';
-
-    /**
      * Description of the layer's content and purpose
      */
     private description = '';
@@ -58,8 +53,7 @@ export class MapOverlay extends AbstractEntity {
 
 
     constructor(data: IOverlay) {
-        super();
-        this.id = data.id;
+        super(data.id, data.createdAt, data.updatedAt, data.permissions);
         this.name = data.name;
         this.url = data.url;
         this.order = data.order || 0;
@@ -72,6 +66,9 @@ export class MapOverlay extends AbstractEntity {
         return new MapOverlay(
             {
                 id: data.id as string,
+                createdAt: new Date(data.createdAt as string).getTime(),
+                updatedAt: new Date(data.updatedAt as string).getTime(),
+                permissions: data.permissions as string[],
                 name: data.name as string,
                 url: data.url as string,
                 order: data.order as number,
@@ -83,7 +80,7 @@ export class MapOverlay extends AbstractEntity {
 
     public record(): DBRecord {
         return {
-            id: this.id,
+            ...super.record(),
             name: this.name,
             url: this.url,
             order: this.order,
@@ -91,10 +88,6 @@ export class MapOverlay extends AbstractEntity {
             description: this.description,
             layerVersion: this.layerVersion
         };
-    }
-
-    public getId(): string {
-        return this.id;
     }
 
     public getName(): string {
@@ -136,7 +129,7 @@ export class MapOverlay extends AbstractEntity {
     public setOrder(order: number): void {
         this.order = order;
         this.notify(OverlayEvent.orderChanged, order);
-        this.notify(OverlayEvent.changed, {order: order});
+        this.notify(OverlayEvent.changed, { order: order });
     }
 
 

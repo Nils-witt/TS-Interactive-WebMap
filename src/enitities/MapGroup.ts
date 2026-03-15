@@ -1,39 +1,42 @@
 
 
 
-import {type DBRecord, AbstractEntity} from './AbstractEntity.ts';
+import { type DBRecord, type IAbstractEntity, AbstractEntity } from './AbstractEntity.ts';
 
+
+export interface IMapGroup extends IAbstractEntity {
+    name: string;
+    description: string;
+}
 
 export class MapGroup extends AbstractEntity {
     private name: string;
     private description: string;
-    private id: string;
 
-    constructor(data: {name: string; description: string; id: string} = {name: '', description: '', id: ''}) {
-        super();
+    constructor(data: IMapGroup) {
+        super(data.id, data.createdAt, data.updatedAt, data.permissions);
         this.name = data.name;
         this.description = data.description;
-        this.id = data.id;
     }
 
     public static of(data: DBRecord): MapGroup {
-        const group = new MapGroup();
-        group.id = data.id as string;
-        group.name = data.name as string;
-        group.description = data.description as string;
+        const group = new MapGroup({
+            id: data.id as string,
+            name: data.name as string,
+            description: data.description as string,
+            createdAt: new Date(data.createdAt as string).getTime(),
+            updatedAt: new Date(data.updatedAt as string).getTime(),
+            permissions: data.permissions as string[],
+        });
         return group;
     }
 
     public record(): DBRecord {
         return {
-            id: this.id,
+            ...super.record(),
             name: this.name,
             description: this.description
         };
-    }
-
-    public getId(): string {
-        return this.id;
     }
 
     public getName(): string {
@@ -50,10 +53,6 @@ export class MapGroup extends AbstractEntity {
 
     public setDescription(description: string) {
         this.description = description;
-    }
-
-    public setId(id: string) {
-        this.id = id;
     }
 
 }

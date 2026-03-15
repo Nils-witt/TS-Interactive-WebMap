@@ -1,7 +1,7 @@
-import { AbstractEntity, type DBRecord } from './AbstractEntity';
+import { AbstractEntity, type DBRecord, type IAbstractEntity } from './AbstractEntity';
 
 
-export interface INotification {
+export interface INotification extends IAbstractEntity {
     id: string;
     title: string;
     content: string;
@@ -10,15 +10,13 @@ export interface INotification {
 }
 
 export class Notification extends AbstractEntity {
-    private id: string;
     private title: string;
     private content: string;
     private timestamp: number;
     private read: boolean;
 
     constructor(data: INotification) {
-        super();
-        this.id = data.id;
+        super(data.id, data.timestamp, data.timestamp, data.permissions);
         this.title = data.title;
         this.content = data.content;
         this.timestamp = data.timestamp;
@@ -28,6 +26,9 @@ export class Notification extends AbstractEntity {
     public static of(data: DBRecord): Notification {
         return new Notification({
             id: data.id as string,
+            createdAt: new Date(data.createdAt as string).getTime(),
+            updatedAt: new Date(data.updatedAt as string).getTime(),
+            permissions: data.permissions as string[],
             title: data.title as string,
             content: data.content as string,
             timestamp: data.timestamp as number,
@@ -38,16 +39,12 @@ export class Notification extends AbstractEntity {
 
     record(): DBRecord {
         return {
-            id: this.id,
+            ...super.record(),
             title: this.title,
             content: this.content,
             timestamp: this.timestamp,
             read: this.read,
         };
-    }
-
-    getId(): string {
-        return this.id;
     }
 
     getTitle(): string {
@@ -73,8 +70,5 @@ export class Notification extends AbstractEntity {
     markAsUnread() {
         this.read = false;
     }
-
-
-
 }
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, use, useContext, useEffect, useState, type ReactNode } from 'react';
 import { DataProvider, DataProviderEventType } from '../dataProviders/DataProvider.ts';
 import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler.ts';
 import { ApiProvider } from '../dataProviders/ApiProvider.ts';
@@ -35,7 +35,9 @@ export function UnitsProvider({ children }: { children: ReactNode }) {
             return ApiProvider.getInstance()
                 .loadAllUnits()
                 .then((remote) => {
-                    Object.values(remote).forEach((unit) => dp.addUnit(unit));
+                    Object.values(remote).forEach((unit) => {
+                        dp.addUnit(unit)}
+                    );
                     void databaseProvider.replaceAllUnits(Object.values(remote));
                     refresh();
                 })

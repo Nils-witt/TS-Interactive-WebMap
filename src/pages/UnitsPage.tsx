@@ -80,6 +80,9 @@ export function UnitsPage(): JSX.Element {
         const status = editStatus !== '' ? parseInt(editStatus) : null;
         const updated = new Unit({
             id: editingUnit.getId() ?? undefined,
+            createdAt: editingUnit.getCreatedAt().getTime(),
+            updatedAt: Date.now(),
+            permissions: editingUnit.getPermissions(),
             name: editName.trim() || editingUnit.getName(),
             position: editingUnit.getPosition()?.record() as never ?? { latitude: 0, longitude: 0, accuracy: 0, timestamp: new Date().toISOString() },
             groupId: editingUnit.getGroupId(),
@@ -260,13 +263,11 @@ export function UnitsPage(): JSX.Element {
                                             {/* Symbol */}
                                             <TableCell>
                                                 {imgSrc ? (
-                                                    <Tooltip title={unit.getName()}>
                                                         <Avatar
                                                             src={imgSrc}
                                                             variant="square"
-                                                            sx={{ width: 32, height: 32 }}
+                                                            sx={{ width: 40, height: 28 }}
                                                         />
-                                                    </Tooltip>
                                                 ) : (
                                                     <Avatar variant="square" sx={{ width: 32, height: 32, fontSize: 12 }}>
                                                         {unit.getName().charAt(0).toUpperCase()}
@@ -335,11 +336,13 @@ export function UnitsPage(): JSX.Element {
                                                             </IconButton>
                                                         </span>
                                                     </Tooltip>
-                                                    <Tooltip title="Edit">
-                                                        <IconButton size="small" onClick={(e) => openEditDialog(unit, e)}>
-                                                            <EditIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
+                                                    {unit.getPermissions().includes('EDIT') && (
+                                                        <Tooltip title="Edit">
+                                                            <IconButton size="small" onClick={(e) => openEditDialog(unit, e)}>
+                                                                <EditIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    )}
                                                 </Box>
                                             </TableCell>
                                         </TableRow>

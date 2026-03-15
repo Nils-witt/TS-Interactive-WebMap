@@ -36,7 +36,8 @@ export class ApiProviderEvent extends Event {
 export enum ApiProviderEventTypes {
     LOGIN_SUCCESS = 'login-success',
     LOGIN_FAILURE = 'login-failure',
-    UNAUTHORIZED = 'unauthorized'
+    UNAUTHORIZED = 'unauthorized',
+    FORBIDDEN = 'forbidden'
 }
 
 
@@ -133,8 +134,10 @@ export class ApiProvider implements StorageInterface {
 
         const response = await fetch(url, requestOptions);
         if (!response.ok) {
-            if (response.status === 401 || response.status === 403) {
+            if (response.status === 401) {
                 this.notifyListeners(ApiProviderEventTypes.UNAUTHORIZED, { message: `Unauthorized access - check your token. ${response.status}` });
+            }else if (response.status === 403) {
+                this.notifyListeners(ApiProviderEventTypes.FORBIDDEN, { message: `Forbidden - you don't have permission to access this resource. ${response.status}` });
             }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -166,6 +169,8 @@ export class ApiProvider implements StorageInterface {
                     for (const rawUnit of data._embedded.unitDtoList) {
                         units[rawUnit.id] = Unit.of({
                             id: rawUnit.id,
+                            createdAt: new Date(rawUnit.createdAt).getTime(),
+                            updatedAt: new Date(rawUnit.updatedAt).getTime(),
                             name: rawUnit.name,
                             pos_latitude: rawUnit.position.latitude,
                             pos_longitude: rawUnit.position.longitude,
@@ -175,6 +180,7 @@ export class ApiProvider implements StorageInterface {
                             unit_status: rawUnit.status,
                             unit_status_timestamp: new Date().toISOString(),
                             route: null,
+                            permissions: rawUnit.permissions
                         });
                     }
                     return resolve(units);
@@ -199,7 +205,10 @@ export class ApiProvider implements StorageInterface {
                     for (const rawUnit of data._embedded.mapGroupDtoList) {
                         groups[rawUnit.id] = MapGroup.of({
                             id: rawUnit.id,
+                            createdAt: new Date(rawUnit.createdAt).getTime(),
+                            updatedAt: new Date(rawUnit.updatedAt).getTime(),
                             name: rawUnit.name,
+                            permissions: rawUnit.permissions
                         });
                     }
                     return resolve(groups);
@@ -225,13 +234,16 @@ export class ApiProvider implements StorageInterface {
 
                         items[item.id] = MapItem.of({
                             id: item.id,
+                            createdAt: new Date(item.createdAt).getTime(),
+                            updatedAt: new Date(item.updatedAt).getTime(),
                             name: item.name,
                             latitude: item.position.latitude,
                             longitude: item.position.longitude,
                             zoomLevel: item.zoomLevel,
                             symbol: null,
                             show_on_map: false,
-                            group_id: item.mapGroupId
+                            group_id: item.mapGroupId,
+                            permissions: item.permissions
                         });
                     }
                     return resolve(items);
@@ -256,9 +268,12 @@ export class ApiProvider implements StorageInterface {
                     for (const layer of data._embedded.mapBaseLayerDtoList) {
                         mapStyles[layer.id] = MapBaseLayer.of({
                             id: layer.id,
+                            createdAt: new Date(layer.createdAt).getTime(),
+                            updatedAt: new Date(layer.updatedAt).getTime(),
                             name: layer.id,
                             url: layer.url,
-                            cacheUrl: layer.cacheUrl
+                            cacheUrl: layer.cacheUrl,
+                            permissions: layer.permissions
                         });
                     }
                     return resolve(mapStyles);
@@ -284,12 +299,15 @@ export class ApiProvider implements StorageInterface {
                         for (const layer of data._embedded.mapOverlayDtoList) {
                             overlays[layer.id] = MapOverlay.of({
                                 id: layer.id,
+                                createdAt: new Date(layer.createdAt).getTime(),
+                                updatedAt: new Date(layer.updatedAt).getTime(),
                                 name: layer.name,
                                 url: layer.fullTileUrl,
                                 layerVersion: layer.layerVersion,
                                 description: '',
                                 order: 0,
-                                opacity: 1.0
+                                opacity: 1.0,
+                                permissions: layer.permissions 
                             });
                         }
                         return resolve(overlays);
@@ -318,6 +336,8 @@ export class ApiProvider implements StorageInterface {
                     for (const rawPhoto of data._embedded.photoDtoList) {
                         pictures[rawPhoto.id] = new Photo({
                             id: rawPhoto.id,
+                            createdAt: new Date(rawPhoto.createdAt).getTime(),
+                            updatedAt: new Date(rawPhoto.updatedAt).getTime(),
                             name: rawPhoto.name,
                             position: rawPhoto.position ? {
                                 latitude: rawPhoto.position.latitude,
@@ -326,7 +346,8 @@ export class ApiProvider implements StorageInterface {
                                 timestamp: rawPhoto.position.timestamp
                             } : undefined,
                             authorId: rawPhoto.authorId,
-                            missionGroupId: rawPhoto.missionGroupId
+                            missionGroupId: rawPhoto.missionGroupId,
+                            permissions: rawPhoto.permissions
                         });
                     }
                     return resolve(pictures);
@@ -351,12 +372,15 @@ export class ApiProvider implements StorageInterface {
                     for (const rawMissionGroup of data._embedded.missionGroupDtoList) {
                         missionGroups[rawMissionGroup.id] = MissionGroup.of({
                             id: rawMissionGroup.id,
+                            createdAt: new Date(rawMissionGroup.createdAt).getTime(),
+                            updatedAt: new Date(rawMissionGroup.updatedAt).getTime(),
                             name: rawMissionGroup.name,
                             startTime: rawMissionGroup.startTime,
                             endTime: rawMissionGroup.endTime,
                             mapGroupIds: rawMissionGroup.mapGroupIds,
                             unitIds: rawMissionGroup.unitIds,
                             position: rawMissionGroup.position,
+                            permissions: rawMissionGroup.permissions
                         });
                     }
                     return resolve(missionGroups);
@@ -381,11 +405,14 @@ export class ApiProvider implements StorageInterface {
                     for (const rawUser of data._embedded.userDtoList) {
                         users[rawUser.id] = new User({
                             id: rawUser.id,
+                            createdAt: new Date(rawUser.createdAt).getTime(),
+                            updatedAt: new Date(rawUser.updatedAt).getTime(),
                             email: rawUser.email,
                             firstName: rawUser.firstName,
                             lastName: rawUser.lastName,
                             unitId: rawUser.unitId,
-                            username: rawUser.username
+                            username: rawUser.username,
+                            permissions: rawUser.permissions
                         });
                     }
                     return resolve(users);
@@ -560,16 +587,19 @@ export class ApiProvider implements StorageInterface {
 
     savePhoto(photo: Photo): Promise<Photo> {
         return new Promise<Photo>((resolve) => {
-            const url = DataProvider.getInstance().getApiUrl() + '/photos/' + photo.id;
-            const body: Record<string, unknown> = { name: photo.name };
-            if (photo.position) {
-                body['position'] = photo.position.record();
+            const url = DataProvider.getInstance().getApiUrl() + '/photos/' + photo.getId();
+            const body: Record<string, unknown> = { name: photo.getName() };
+            if (photo.getPosition()) {
+                body['position'] = photo.getPosition()!.record();
             }
             void this.callApi(url, 'PATCH', new Headers(), body)
                 .then((data) => {
-                    const raw = data as { id: string; name: string; position?: IPosition };
+                    const raw = data as PhotoStruct;
                     return resolve(new Photo({
                         id: raw.id,
+                        createdAt: new Date(raw.createdAt).getTime(),
+                        updatedAt: new Date(raw.updatedAt).getTime(),
+                        permissions: raw.permissions,
                         name: raw.name,
                         position: raw.position ? {
                             latitude: raw.position.latitude,
@@ -577,8 +607,8 @@ export class ApiProvider implements StorageInterface {
                             accuracy: raw.position.accuracy,
                             timestamp: raw.position.timestamp,
                         } : undefined,
-                        authorId: photo.authorId,
-                        missionGroupId: photo.missionGroupId
+                        authorId: photo.getAuthorId(),
+                        missionGroupId: photo.getMissionGroupId()
                     }));
                 });
         });
@@ -610,6 +640,9 @@ export class ApiProvider implements StorageInterface {
                 .then((data: PhotoStruct) => {
                     const photo = new Photo({
                         id: data.id,
+                        createdAt: new Date(data.createdAt).getTime(),
+                        updatedAt: new Date(data.updatedAt).getTime(),
+                        permissions: data.permissions,
                         name: data.name,
                         position: data.position ? {
                             latitude: data.position.latitude,

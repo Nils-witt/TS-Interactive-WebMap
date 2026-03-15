@@ -6,10 +6,9 @@
  * Purpose: store id, name, coordinates, optional zoom and metadata
  */
 
-import {type DBRecord, AbstractEntity} from './AbstractEntity.ts';
+import { type DBRecord, type IAbstractEntity, AbstractEntity } from './AbstractEntity.ts';
 
-export interface IMapItem {
-    id?: string;
+export interface IMapItem extends IAbstractEntity {
     latitude: number;
     longitude: number;
     name: string;
@@ -19,7 +18,6 @@ export interface IMapItem {
 }
 
 export class MapItem extends AbstractEntity {
-    private id: string | null;
     private latitude: number;
     private longitude: number;
     private name: string;
@@ -28,8 +26,7 @@ export class MapItem extends AbstractEntity {
     private groupId: string | null;
 
     constructor(data: IMapItem) {
-        super();
-        this.id = data.id || null;
+        super(data.id, data.createdAt, data.updatedAt, data.permissions);
         this.latitude = data.latitude;
         this.longitude = data.longitude;
         this.name = data.name;
@@ -47,13 +44,16 @@ export class MapItem extends AbstractEntity {
             zoomLevel: data.zoomLevel !== undefined ? Number(data.zoomLevel) : undefined,
             showOnMap: Boolean(data.show_on_map),
             groupId: data.group_id as string | undefined,
+            createdAt: new Date(data.createdAt as string).getTime(),
+            updatedAt: new Date(data.updatedAt as string).getTime(),
+            permissions: data.permissions as string[],
         });
     }
 
 
     record(): DBRecord {
         return {
-            id: this.id,
+            ...super.record(),
             latitude: this.latitude,
             longitude: this.longitude,
             name: this.name,
@@ -61,10 +61,6 @@ export class MapItem extends AbstractEntity {
             group_id: this.groupId || null,
             show_on_map: this.showOnMap || false,
         };
-    }
-
-    public getId(): string | null {
-        return this.id;
     }
 
     public getLatitude(): number {

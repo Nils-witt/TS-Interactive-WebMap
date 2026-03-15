@@ -152,23 +152,23 @@ export function PhotoPage(): JSX.Element {
     const openEditDialog = (photo: Photo, e: React.MouseEvent) => {
         e.stopPropagation();
         setEditingPhoto(photo);
-        setEditName(photo.name);
-        setEditLatitude(photo.position ? String(photo.position.getLatitude()) : '');
-        setEditLongitude(photo.position ? String(photo.position.getLongitude()) : '');
+        setEditName(photo.getName());
+        setEditLatitude(photo.getPosition() ? String(photo.getPosition()!.getLatitude()) : '');
+        setEditLongitude(photo.getPosition() ? String(photo.getPosition()!.getLongitude()) : '');
     };
 
     const closeEditDialog = () => setEditingPhoto(null);
 
     const deleteEditDialog = () => {
-        if (!editingPhoto || !editingPhoto.id) return;
+        if (!editingPhoto || !editingPhoto.getId()) return;
         setConfirmDelete(true);
     };
 
     const confirmDeletePhoto = () => {
-        if (!editingPhoto || !editingPhoto.id) return;
-        ApiProvider.getInstance().deletePhoto(editingPhoto.id)
+        if (!editingPhoto || !editingPhoto.getId()) return;
+        ApiProvider.getInstance().deletePhoto(editingPhoto.getId())
             .then(() => {
-                dp.removePhoto(editingPhoto.id);
+                dp.removePhoto(editingPhoto.getId());
                 setConfirmDelete(false);
                 closeEditDialog();
             })
@@ -180,18 +180,21 @@ export function PhotoPage(): JSX.Element {
         const lat = parseFloat(editLatitude);
         const lng = parseFloat(editLongitude);
         const updated = new Photo({
-            id: editingPhoto.id ?? undefined,
+            id: editingPhoto.getId(),
+            createdAt: editingPhoto.getCreatedAt().getTime(),
+            updatedAt: Date.now(),
+            permissions: editingPhoto.getPermissions(),
             name: editName.trim(),
             position: (!isNaN(lat) && !isNaN(lng) && editLatitude !== '' && editLongitude !== '')
                 ? {
                     latitude: lat,
                     longitude: lng,
-                    accuracy: editingPhoto.position?.getAccuracy() ?? 0,
-                    timestamp: editingPhoto.position?.getTimestamp().toISOString() ?? new Date().toISOString(),
+                    accuracy: editingPhoto.getPosition()?.getAccuracy() ?? 0,
+                    timestamp: editingPhoto.getPosition()?.getTimestamp().toISOString() ?? new Date().toISOString(),
                 }
                 : undefined,
-            authorId: editingPhoto.authorId,
-            missionGroupId: editingPhoto.missionGroupId,
+            authorId: editingPhoto.getAuthorId(),
+            missionGroupId: editingPhoto.getMissionGroupId(),
         });
         setEditSaving(true);
         ApiProvider.getInstance()
@@ -255,28 +258,28 @@ export function PhotoPage(): JSX.Element {
                     </Box>
                 ) : (
                     <ImageList variant="masonry" cols={cols} gap={8}>
-                        {photos.filter((photo) => photo.missionGroupId === missionGroupFilter).map((photo) => (
+                        {photos.filter((photo) => photo.getMissionGroupId() === missionGroupFilter).map((photo) => (
                             <ImageListItem
-                                key={photo.id ?? photo.name}
+                                key={photo.getId() ?? photo.getName()}
                                 sx={{ cursor: 'pointer', borderRadius: 1, overflow: 'hidden' }}
                                 onClick={() => setSelected(photo)}
                             >
                                 <img
                                     src={photo.getImageSrc()}
-                                    alt={photo.name}
+                                    alt={photo.getName()}
                                     loading="lazy"
                                     style={{ display: 'block', width: '100%' }}
                                 />
                                 <ImageListItemBar
-                                    title={photo.name}
+                                    title={photo.getName()}
                                     subtitle={
-                                        photo.position
-                                            ? `${photo.position.getLatitude().toFixed(5)}, ${photo.position.getLongitude().toFixed(5)}`
+                                        photo.getPosition()
+                                            ? `${photo.getPosition()!.getLatitude().toFixed(5)}, ${photo.getPosition()!.getLongitude().toFixed(5)}`
                                             : undefined
                                     }
                                     actionIcon={
                                         <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
-                                            {photo.position && (
+                                            {photo.getPosition() && (
                                                 <Tooltip title="Has location">
                                                     <PlaceIcon sx={{ color: 'rgba(255,255,255,0.7)' }} fontSize="small" />
                                                 </Tooltip>
@@ -383,7 +386,7 @@ export function PhotoPage(): JSX.Element {
                 <DialogTitle>Delete Photo</DialogTitle>
                 <DialogContent>
                     <Typography>
-                        Are you sure you want to delete <strong>{editingPhoto?.name}</strong>? This cannot be undone.
+                        Are you sure you want to delete <strong>{editingPhoto ? editingPhoto.getName() : ''}</strong>? This cannot be undone.
                     </Typography>
                 </DialogContent>
                 <DialogActions>
@@ -468,13 +471,13 @@ export function PhotoPage(): JSX.Element {
                 {selected && (
                     <>
                         <DialogTitle sx={{ display: 'flex', alignItems: 'center', pr: 6 }}>
-                            {selected.name}
-                            {selected.position && (
+                            {selected.getName()}
+                            {selected.getPosition() && (
                                 <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-                                    {selected.position.getLatitude().toFixed(6)},{' '}
-                                    {selected.position.getLongitude().toFixed(6)}
-                                    {selected.position.getAccuracy()
-                                        ? ` ±${selected.position.getAccuracy()}m`
+                                    {selected.getPosition()!.getLatitude().toFixed(6)},{' '}
+                                    {selected.getPosition()!.getLongitude().toFixed(6)}
+                                    {selected.getPosition()!.getAccuracy()
+                                        ? ` ±${selected.getPosition()!.getAccuracy()}m`
                                         : ''}
                                 </Typography>
                             )}
@@ -488,7 +491,7 @@ export function PhotoPage(): JSX.Element {
                         <DialogContent sx={{ p: 0, textAlign: 'center', backgroundColor: '#000' }}>
                             <img
                                 src={selected.getImageSrc()}
-                                alt={selected.name}
+                                alt={selected.getName()}
                                 style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }}
                             />
                         </DialogContent>

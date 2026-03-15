@@ -16,15 +16,13 @@ export interface IMapStyle extends IAbstractEntity{
 }
 
 export class MapBaseLayer extends AbstractEntity {
-    private id: string;
     private name: string;
     private url: string;
     private cacheUrl: string;
 
 
     constructor(data: IMapStyle) {
-        super();
-        this.id = data.id;
+        super(data.id, data.createdAt, data.updatedAt, data.permissions);
         this.name = data.name;
         this.url = data.url;
         this.cacheUrl = data.cacheUrl;
@@ -35,21 +33,20 @@ export class MapBaseLayer extends AbstractEntity {
             id: data.id as string,
             name: data.name as string,
             url: data.url as string,
-            cacheUrl: data.cacheUrl as string
+            cacheUrl: data.cacheUrl as string,
+            createdAt: new Date(data.createdAt as string).getTime(),
+            updatedAt: new Date(data.updatedAt as string).getTime(),
+            permissions: data.permissions as string[],
         });
     }
 
     public record(): DBRecord {
         return {
-            id: this.id,
+            ...super.record(),
             name: this.name,
             url: this.url,
-            cacheUrl: this.cacheUrl
+            cacheUrl: this.cacheUrl,
         };
-    }
-
-    public getId(): string {
-        return this.id;
     }
 
     public getName(): string {
@@ -67,11 +64,7 @@ export class MapBaseLayer extends AbstractEntity {
     public setName(name: string) {
         this.name = name;
     }
-
-    public setId(id: string) {
-        this.id = id;
-    }
-
+    
     public getCacheUrl(): string {
         return this.cacheUrl;
     }

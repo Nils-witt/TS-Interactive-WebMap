@@ -62,11 +62,12 @@ export class WebSocketProvider {
 
 
     unitChangedSideEffects(oldUnit: Unit, newUnit: Unit) {
-        console.log('SideEffects', oldUnit, newUnit);
-
         if (newUnit.getStatus() != oldUnit.getStatus()) {
             const notification = new Notification({
                 id: window.crypto.randomUUID() as string,
+                createdAt: new Date().getTime(),
+                updatedAt: new Date().getTime(),
+                permissions: [],
                 title: newUnit.getName(),
                 timestamp: new Date().getTime(),
                 content: `Status: ${oldUnit.getStatus()} -> ${newUnit.getStatus()}`
@@ -76,12 +77,13 @@ export class WebSocketProvider {
             }
             this.dataProvider.addNotification(notification);
         }
-
     }
 
 
-    updateModel(topic: string, data: { entity: never, entityType:string,
-        changeType: 'CREATED' | 'UPDATED' | 'DELETED' }) {
+    updateModel(topic: string, data: {
+        entity: never, entityType: string,
+        changeType: 'CREATED' | 'UPDATED' | 'DELETED'
+    }) {
         ApplicationLogger.info('received update for topic: ' + topic, { service: 'WebSocket' });
         const modelType = data.entityType.toLowerCase();
         const parts = modelType.split('/');
@@ -101,6 +103,9 @@ export class WebSocketProvider {
             const unitData = data.entity as UnitStruct;
             const item = new Unit({
                 id: unitData.id,
+                createdAt: new Date(unitData.createdAt).getTime(),
+                updatedAt: new Date(unitData.updatedAt).getTime(),
+                permissions: unitData.permissions,
                 position: {
                     latitude: unitData.position.latitude,
                     longitude: unitData.position.longitude,
@@ -111,6 +116,10 @@ export class WebSocketProvider {
                 unit_status: unitData.status,
                 symbol: unitData.icon as never
             });
+            const oldUnit = this.dataProvider.getAllUnits().get(item.getId()) as Unit | undefined;
+            if (oldUnit && (oldUnit.getUpdatedAt().getTime() == item.getUpdatedAt().getTime())) {
+                return;
+            }
             this.unitChangedSideEffects(this.dataProvider.getAllUnits().get(item.getId()) as Unit, item);
             this.dataProvider.addUnit(item);
             if (this.databaseProvider) {
@@ -129,9 +138,12 @@ export class WebSocketProvider {
             const item = new MapOverlay(
                 {
                     id: overlayData.id,
+                    createdAt: new Date(overlayData.createdAt).getTime(),
+                    updatedAt: new Date(overlayData.updatedAt).getTime(),
                     name: overlayData.name,
                     url: overlayData.fullTileUrl,
                     layerVersion: overlayData.layerVersion,
+                    permissions: overlayData.permissions
                 }
             );
             this.dataProvider.addMapOverlay(item);
@@ -150,6 +162,9 @@ export class WebSocketProvider {
             const layerData = data.entity as MapBaseLayerStruct;
             const item = new MapBaseLayer({
                 id: layerData.id,
+                createdAt: new Date(layerData.createdAt).getTime(),
+                updatedAt: new Date(layerData.updatedAt).getTime(),
+                permissions: layerData.permissions,
                 name: layerData.name,
                 url: layerData.url,
                 cacheUrl: layerData.cacheUrl
@@ -170,6 +185,9 @@ export class WebSocketProvider {
             const itemData = data.entity as MapItemStruct;
             const item = new MapItem({
                 id: itemData.id,
+                createdAt: new Date(itemData.createdAt).getTime(),
+                updatedAt: new Date(itemData.updatedAt).getTime(),
+                permissions: itemData.permissions,
                 name: itemData.name,
                 latitude: itemData.position.latitude,
                 longitude: itemData.position.longitude,
@@ -199,7 +217,7 @@ export class WebSocketProvider {
             this.eventListeners['open']?.forEach(listener => listener('open'));
             ApplicationLogger.info('WebSocket connection opened', { service: 'WebSocket', event: event });
             for (const entityType of entityTypes) {
-                this.socket!.send('SUBSCRIBE /updates/entities/' + entityType);
+                this.socket!.send('SUBSCRIBE /entities/' + entityType);
             }
             this.socket!.send('GET /units');
             if (this.lastMessageRecived != null) {
@@ -226,9 +244,9 @@ export class WebSocketProvider {
             }
             try {
                 const data = JSON.parse(event.data as string) as { topic: string, payload: never };
-                if (data.topic.startsWith('/updates/entities/') || data.topic.startsWith('/units')) {
+                if (data.topic.trim().startsWith('/entities/')) {
                     this.updateModel(data.topic, data.payload);
-                }else{
+                } else {
                     ApplicationLogger.info('Received message: ' + data.topic + ' is unknown', { service: 'WebSocket' });
                 }
             } catch {
