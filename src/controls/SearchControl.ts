@@ -60,7 +60,7 @@ export function ReactSearchControl(props: ReactSearchControlProps): null {
             }));
 
             const mapItemResults: SearchResult[] = mapItems.filter((item) => item.getName().toLowerCase().includes(query.toLowerCase())).map((item) => ({
-                id: item.getId()!,
+                id: item.getId(),
                 name: item.getName(),
                 longitude: item.getLongitude(),
                 latitude: item.getLatitude(),

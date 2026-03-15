@@ -146,7 +146,7 @@ export class DatabaseProvider implements StorageInterface {
                     const namedGeoReferencedObjects: Record<string, MapItem> = {};
                     for (const record of result) {
                         const namedGeoReferencedObject = MapItem.of(record);
-                        namedGeoReferencedObjects[namedGeoReferencedObject.getId() as string] = namedGeoReferencedObject;
+                        namedGeoReferencedObjects[namedGeoReferencedObject.getId()] = namedGeoReferencedObject;
                     }
                     resolve(namedGeoReferencedObjects);
                 });
@@ -487,7 +487,7 @@ export class DatabaseProvider implements StorageInterface {
                 for (const namedGeoReferencedObject of namedGeoReferencedObjects) {
                     const namedGeoReferencedObjectRecord = namedGeoReferencedObject.record();
                     if (namedGeoReferencedObject.getId() == null) continue;
-                    if (existingKeys.includes((namedGeoReferencedObject.getId() as string))) {
+                    if (existingKeys.includes((namedGeoReferencedObject.getId()))) {
                         void tx.objectStore(DB_TABLES.mapItems).put(namedGeoReferencedObjectRecord);
                     } else {
                         void tx.objectStore(DB_TABLES.mapItems).add(namedGeoReferencedObjectRecord);
@@ -669,7 +669,9 @@ export class DatabaseProvider implements StorageInterface {
             if (unit.getId() == null) throw new Error('No ID set for unit');
             const unitRecord = unit.record();
             const tx = this.db.transaction(DB_TABLES.units, 'readwrite');
-
+            if (!unit.getPermissions()) {
+                throw new Error('Unit permissions cannot be null');
+            }
             void tx.objectStore(DB_TABLES.units).getKey(unit.getId()).then(result => {
                 if (result) {
                     void tx.objectStore(DB_TABLES.units).put(unitRecord);
@@ -709,7 +711,7 @@ export class DatabaseProvider implements StorageInterface {
             if (namedGeoReferencedObject.getId() == null) {
                 return reject(new Error('NamedGeoReferencedObject ID is null'));
             }
-            void tx.objectStore(DB_TABLES.mapItems).getKey(namedGeoReferencedObject.getId() as string).then(result => {
+            void tx.objectStore(DB_TABLES.mapItems).getKey(namedGeoReferencedObject.getId()).then(result => {
                 if (result) {
                     void tx.objectStore(DB_TABLES.mapItems).put(namedGeoReferencedObjectRecord);
                 } else {

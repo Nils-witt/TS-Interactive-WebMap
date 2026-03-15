@@ -147,7 +147,7 @@ export function MapLocationPage(): JSX.Element {
     };
 
     const saveBulkEdit = () => {
-        const selectedItems = items.filter((item) => item.getId() !== null && selectedIds.has(item.getId()!));
+        const selectedItems = items.filter((item) => item.getId() !== null && selectedIds.has(item.getId()));
         for (const item of selectedItems) {
             if (bulkEditGroupId !== '__keep__') {
                 item.setGroupId(bulkEditGroupId === '' ? null : bulkEditGroupId);
@@ -169,15 +169,15 @@ export function MapLocationPage(): JSX.Element {
     };
 
     const allFilteredSelected =
-        filtered.length > 0 && filtered.every((item) => item.getId() !== null && selectedIds.has(item.getId()!));
+        filtered.length > 0 && filtered.every((item) => item.getId() !== null && selectedIds.has(item.getId()));
     const someFilteredSelected =
-        !allFilteredSelected && filtered.some((item) => item.getId() !== null && selectedIds.has(item.getId()!));
+        !allFilteredSelected && filtered.some((item) => item.getId() !== null && selectedIds.has(item.getId()));
 
     const toggleAll = () => {
         if (allFilteredSelected) {
             setSelectedIds(new Set());
         } else {
-            setSelectedIds(new Set(filtered.filter((item) => item.getId() !== null).map((item) => item.getId()!)));
+            setSelectedIds(new Set(filtered.filter((item) => item.getId() !== null).map((item) => item.getId())));
         }
     };
 
@@ -185,7 +185,7 @@ export function MapLocationPage(): JSX.Element {
         setSelectedIds((prev) => {
             const next = new Set(prev);
             if (shiftKey && lastSelectedId.current !== null && lastSelectedId.current !== id) {
-                const ids = filtered.map((item) => item.getId()!).filter(Boolean);
+                const ids = filtered.map((item) => item.getId()).filter(Boolean);
                 const anchorIdx = ids.indexOf(lastSelectedId.current);
                 const targetIdx = ids.indexOf(id);
                 if (anchorIdx !== -1 && targetIdx !== -1) {
@@ -253,10 +253,10 @@ export function MapLocationPage(): JSX.Element {
         if (!editingItem || !editingItem.getId()) return;
         setConfirmDelete(false);
         closeEditDialog();
-        void ApiProvider.getInstance().deleteMapItem(editingItem.getId()!);
-        void DataProvider.getInstance().deleteMapItem(editingItem.getId()!);
+        void ApiProvider.getInstance().deleteMapItem(editingItem.getId());
+        void DataProvider.getInstance().deleteMapItem(editingItem.getId());
         if (databaseProvider) {
-            void databaseProvider.deleteMapItem(editingItem.getId()!);
+            void databaseProvider.deleteMapItem(editingItem.getId());
         }
     };
 
@@ -413,13 +413,13 @@ export function MapLocationPage(): JSX.Element {
                                     <TableRow
                                         key={item.getId()}
                                         hover
-                                        selected={item.getId() !== null && selectedIds.has(item.getId()!)}
+                                        selected={item.getId() !== null && selectedIds.has(item.getId())}
                                     >
                                         <TableCell padding="checkbox">
                                             <Checkbox
                                                 size="small"
-                                                checked={item.getId() !== null && selectedIds.has(item.getId()!)}
-                                                onChange={(e) => item.getId() !== null && handleRowCheck(item.getId()!, (e.nativeEvent as MouseEvent).shiftKey)}
+                                                checked={item.getId() !== null && selectedIds.has(item.getId())}
+                                                onChange={(e) => item.getId() !== null && handleRowCheck(item.getId(), (e.nativeEvent as MouseEvent).shiftKey)}
                                             />
                                         </TableCell>
                                         <TableCell>{item.getName()}</TableCell>
@@ -439,11 +439,13 @@ export function MapLocationPage(): JSX.Element {
                                             />
                                         </TableCell>
                                         <TableCell align="center">
-                                            <Tooltip title="Edit">
-                                                <IconButton size="small" onClick={() => openEditDialog(item)}>
-                                                    <EditIcon fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
+                                            {item.getPermissions().includes('EDIT') && (
+                                                <Tooltip title="Edit">
+                                                    <IconButton size="small" onClick={() => openEditDialog(item)}>
+                                                        <EditIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
                                             <Tooltip title="Open on Map">
                                                 <IconButton size="small" onClick={() => openOnMap(item)}>
                                                     <MapIcon fontSize="small" />

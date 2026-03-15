@@ -1,12 +1,11 @@
 import type { TaktischesZeichen } from 'taktische-zeichen-core/dist/types/types';
-import { type DBRecord, AbstractEntity } from './AbstractEntity.ts';
+import { type DBRecord, type IAbstractEntity, AbstractEntity } from './AbstractEntity.ts';
 import { erzeugeTaktischesZeichen } from 'taktische-zeichen-core';
 import { ApplicationLogger } from '../ApplicationLogger.ts';
 import { LngLat } from './LngLat.ts';
 import { EmbeddablePosition, type IPosition } from './embeddables/EmbeddablePosition.ts';
 
-export interface IUnit {
-    id: string;
+export interface IUnit extends IAbstractEntity {
     position: IPosition;
     name: string;
     symbol?: TaktischesZeichen; // Optional symbol for rendering, if applicable
@@ -16,7 +15,6 @@ export interface IUnit {
 }
 
 export class Unit extends AbstractEntity {
-    private id: string;
     private position: EmbeddablePosition | null = null;
     private name: string;
     private symbol: TaktischesZeichen | null;
@@ -25,8 +23,7 @@ export class Unit extends AbstractEntity {
     private route: { latitude: number, longitude: number }[] | undefined = [];
 
     constructor(data: IUnit) {
-        super();
-        this.id = data.id;
+        super(data.id, data.createdAt, data.updatedAt, data.permissions);
         this.position = EmbeddablePosition.of(data.position);
         this.name = data.name;
         this.groupId = data.groupId as string || null;
@@ -66,6 +63,8 @@ export class Unit extends AbstractEntity {
 
         return new Unit({
             id: data.id as string,
+            createdAt: new Date(data.createdAt as string).getTime(),
+            updatedAt: new Date(data.updatedAt as string).getTime(),
             position: {
                 latitude: data.pos_latitude as number,
                 longitude: data.pos_longitude as number,
@@ -77,13 +76,14 @@ export class Unit extends AbstractEntity {
             symbol: data_symbol,
             unit_status: data.unit_status as number || null,
             route: route,
+            permissions: data.permissions as string[]
         });
     }
 
 
     record(): DBRecord {
         return {
-            id: this.id,
+            ...super.record(),
             pos_latitude: this.position ? this.position.latitude : 0,
             pos_longitude: this.position ? this.position.longitude : 0,
             pos_accuracy: this.position ? this.position.accuracy : -1,
@@ -110,10 +110,6 @@ export class Unit extends AbstractEntity {
             ApplicationLogger.error('Error generating icon element for Unit: ' + (e as Error).message, { service: 'Unit' });
             return '';
         }
-    }
-
-    public getId(): string {
-        return this.id;
     }
 
     public getPosition(): EmbeddablePosition | null {
@@ -155,7 +151,6 @@ export class Unit extends AbstractEntity {
     public setStatus(status: number | null): void {
         this.unit_status = status;
     }
-
 
     public getRoute(): { latitude: number, longitude: number }[] | undefined {
         return this.route;

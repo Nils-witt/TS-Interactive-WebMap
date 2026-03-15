@@ -21,6 +21,7 @@ export interface AbstractEntityStruct {
     id: UUID
     createdAt: string
     updatedAt: string
+    permissions: string[]
 }
 
 export interface MapBaseLayerStruct extends AbstractEntityStruct{

@@ -1,9 +1,8 @@
-import { AbstractEntity, type DBRecord } from './AbstractEntity';
+import { AbstractEntity, type DBRecord, type IAbstractEntity } from './AbstractEntity';
 import type { EmbeddablePosition } from './embeddables/EmbeddablePosition';
 
 
-export interface IMissionGroup {
-    id: string;
+export interface IMissionGroup extends IAbstractEntity {
     name: string;
     endTime: string | null,
     mapGroupIds: string[],
@@ -13,7 +12,6 @@ export interface IMissionGroup {
 }
 
 export class MissionGroup extends AbstractEntity {
-    private id: string;
     private name: string;
     private endTime: string | null;
     private mapGroupIds: string[];
@@ -22,8 +20,7 @@ export class MissionGroup extends AbstractEntity {
     private unitIds: string[];
 
     constructor(data: IMissionGroup) {
-        super();
-        this.id = data.id;
+        super(data.id, data.createdAt, data.updatedAt, data.permissions);
         this.name = data.name;
         this.endTime = data.endTime;
         this.mapGroupIds = data.mapGroupIds;
@@ -35,6 +32,9 @@ export class MissionGroup extends AbstractEntity {
     public static of(data: DBRecord): MissionGroup {
         return new MissionGroup({
             id: data.id as string,
+            createdAt: new Date(data.createdAt as string).getTime(),
+            updatedAt: new Date(data.updatedAt as string).getTime(),
+            permissions: data.permissions as string[],
             name: data.name as string,
             endTime: data.endTime as string | null,
             mapGroupIds: data.mapGroupIds as string[],
@@ -47,7 +47,7 @@ export class MissionGroup extends AbstractEntity {
 
     record(): DBRecord {
         return {
-            id: this.id,
+            ...super.record(),
             name: this.name,
             endTime: this.endTime,
             mapGroupIds: this.mapGroupIds,
@@ -55,10 +55,6 @@ export class MissionGroup extends AbstractEntity {
             startTime: this.startTime,
             unitIds: this.unitIds,
         };
-    }
-
-    getId(): string {
-        return this.id;
     }
 
     getName(): string {

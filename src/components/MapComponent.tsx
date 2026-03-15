@@ -152,6 +152,10 @@ export function MapComponent() {
 
     const saveCreateDialog = () => {
         const item = new MapItem({
+            id: crypto.randomUUID(),
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            permissions: [], // New items are editable by default
             latitude: parseFloat(createLat),
             longitude: parseFloat(createLng),
             name: createName.trim(),

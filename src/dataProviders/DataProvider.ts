@@ -176,12 +176,12 @@ export class DataProvider {
      * @param item - The location object to store
      */
     public addMapItem(item: MapItem): void {
-        if (this.mapLocations.has(item.getId() as string)) {
-            const oldItem = this.mapLocations.get(item.getId() as string);
-            this.mapLocations.set(item.getId() as string, item);
+        if (this.mapLocations.has(item.getId())) {
+            const oldItem = this.mapLocations.get(item.getId());
+            this.mapLocations.set(item.getId(), item);
             this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_ITEM_UPDATED, item, oldItem));
         } else {
-            this.mapLocations.set(item.getId() as string, item);
+            this.mapLocations.set(item.getId(), item);
             this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_ITEM_CREATED, item));
         }
     }

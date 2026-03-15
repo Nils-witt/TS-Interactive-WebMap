@@ -1,8 +1,7 @@
-import { AbstractEntity, type DBRecord } from './AbstractEntity';
+import { AbstractEntity, type DBRecord, type IAbstractEntity } from './AbstractEntity';
 
 
-export interface IUser {
-    id: string;
+export interface IUser extends IAbstractEntity {
     email: string;
     firstName: string;
     lastName: string;
@@ -11,7 +10,6 @@ export interface IUser {
 }
 
 export class User extends AbstractEntity {
-    private id: string;
     private email: string;
     private firstName: string;
     private lastName: string;
@@ -19,8 +17,7 @@ export class User extends AbstractEntity {
     private username: string;
 
     constructor(data: IUser) {
-        super();
-        this.id = data.id;
+        super(data.id, data.createdAt, data.updatedAt, data.permissions);
         this.email = data.email;
         this.firstName = data.firstName;
         this.lastName = data.lastName;
@@ -31,6 +28,9 @@ export class User extends AbstractEntity {
     public static of(data: DBRecord): User {
         return new User({
             id: data.id as string,
+            createdAt: new Date(data.createdAt as string).getTime(),
+            updatedAt: new Date(data.updatedAt as string).getTime(),
+            permissions: data.permissions as string[],
             email: data.email as string,
             firstName: data.first_name as string,
             lastName: data.last_name as string,
@@ -38,21 +38,17 @@ export class User extends AbstractEntity {
             username: data.username as string,
         });
     }
-    
-    
+
+
     record(): DBRecord {
         return {
-            id: this.id,
+            ...super.record(),
             email: this.email,
             first_name: this.firstName,
             last_name: this.lastName,
             unit_id: this.unitId,
             username: this.username,
         };
-    }
-
-    getId(): string {
-        return this.id;
     }
 
     getEmail(): string {

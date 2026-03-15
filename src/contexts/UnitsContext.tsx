@@ -35,7 +35,9 @@ export function UnitsProvider({ children }: { children: ReactNode }) {
             return ApiProvider.getInstance()
                 .loadAllUnits()
                 .then((remote) => {
-                    Object.values(remote).forEach((unit) => dp.addUnit(unit));
+                    Object.values(remote).forEach((unit) => {
+                        dp.addUnit(unit)}
+                    );
                     void databaseProvider.replaceAllUnits(Object.values(remote));
                     refresh();
                 })
