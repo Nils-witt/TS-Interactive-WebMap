@@ -25,7 +25,7 @@
     "@vis.gl/react-maplibre": "^8.1.0",
     "maplibre-gl": "^5.19.0",
     "mgrs": "^2.1.0",
-    "pwa-asset-generator": "^8.1.2",
+    "pwa-asset-generator": "^8.1.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.1",
