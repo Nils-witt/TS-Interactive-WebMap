@@ -20,6 +20,7 @@
     "@mui/icons-material": "^7.3.9",
     "@mui/material": "^7.3.9",
     "@rollup/plugin-typescript": "^12.3.0",
+    "@sentry/react": "^10.43.0",
     "@types/utm": "^1.1.4",
     "@types/web": "^0.0.341",
     "@vis.gl/react-maplibre": "^8.1.0",

@@ -14,6 +14,14 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
+import * as Sentry from "@sentry/react";
+
+Sentry.init({
+  dsn: "https://5773f7764e44fa1e4a63b8367ff4c8e9@o256272.ingest.us.sentry.io/4511059980713984",
+  // Setting this option to true will send default PII data to Sentry.
+  // For example, automatic IP address collection on events
+  sendDefaultPii: true
+});
 
 // apply theme as early as possible to avoid flash
 (() => {
