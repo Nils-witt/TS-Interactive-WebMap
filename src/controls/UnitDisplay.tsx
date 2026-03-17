@@ -29,7 +29,6 @@ export function UnitDisplay(props: UnitDisplayProps): React.JSX.Element {
 
 
     const saveUnit = (updated: Unit) => {
-        console.log('Saving unit', updated);
         ApiProvider.getInstance()
             .saveUnit(updated)
             .then((response) => {
@@ -43,6 +42,9 @@ export function UnitDisplay(props: UnitDisplayProps): React.JSX.Element {
     return <>
         {units.map((unit) => {
             if (props.showOnly && !props.showOnly.includes(unit.getId())) {
+                return null;
+            }
+            if (mapConfig.getExcludeStatuses().includes(unit.getStatus() || -1)) {
                 return null;
             }
             return <UnitRepresentation
