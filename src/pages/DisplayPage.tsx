@@ -55,7 +55,7 @@ export function DisplayPage() {
                 </Button>
             </Box>
             <NotificationsProvider>
-                <NotificationList />
+                <NotificationList shownUnits={selectedUnitIds}/>
             </NotificationsProvider>
             <SettingsDialog
                 open={settingsDialogOpen}

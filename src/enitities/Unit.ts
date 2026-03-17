@@ -63,8 +63,8 @@ export class Unit extends AbstractEntity {
 
         return new Unit({
             id: data.id as string,
-            createdAt: new Date(data.createdAt as string).getTime(),
-            updatedAt: new Date(data.updatedAt as string).getTime(),
+            createdAt: new Date(data.createdAt as string).toISOString(),
+            updatedAt: new Date(data.updatedAt as string).toISOString(),
             position: {
                 latitude: data.pos_latitude as number,
                 longitude: data.pos_longitude as number,
@@ -94,6 +94,32 @@ export class Unit extends AbstractEntity {
             unit_status: this.unit_status,
             route: this.route ? JSON.stringify(this.route) : null,
         };
+    }
+
+
+    public clone(): Unit {
+        return new Unit({
+            id: this.getId(),
+            createdAt: this.getCreatedAt().toISOString(),
+            updatedAt: this.getUpdatedAt().toISOString(),
+            position: this.position ? {
+                latitude: this.position.latitude,
+                longitude: this.position.longitude,
+                accuracy: this.position.accuracy,
+                timestamp: this.position.timestamp.toISOString(),
+            } : {
+                latitude: 0,
+                longitude: 0,
+                accuracy: -1,
+                timestamp: new Date().toISOString(),
+            },
+            name: this.name,
+            groupId: this.groupId || null,
+            symbol: this.symbol || undefined,
+            unit_status: this.unit_status || null,
+            route: this.route ? [...this.route] : undefined,
+            permissions: [...this.getPermissions()],
+        });
     }
 
 
@@ -136,7 +162,7 @@ export class Unit extends AbstractEntity {
         this.name = name;
     }
 
-    public setSymbol(symbol: TaktischesZeichen): void {
+    public setSymbol(symbol: TaktischesZeichen | null): void {
         this.symbol = symbol;
     }
 

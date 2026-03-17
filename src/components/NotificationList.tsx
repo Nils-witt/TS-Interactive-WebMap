@@ -1,11 +1,21 @@
 import { useNotifications } from "../contexts/NotificationContext";
 import { Notification } from "../enitities/Notification";
 
-export function NotificationList() {
+
+export interface NotificationListProps {
+    shownUnits?: string[]; // Optional filter for shown notifications based on unit IDs
+}
+
+export function NotificationList({ shownUnits }: NotificationListProps) {
     const notifications: Notification[] = useNotifications();
 
+    // Filter notifications based on shownUnits if provided
+    const filteredNotifications = shownUnits
+        ? notifications.filter((notification) => shownUnits.includes(notification.getUnitId() || ''))
+        : notifications;
+
     return <div className="event-list">
-        {notifications.sort((a, b) => b.getTimestamp() - a.getTimestamp()).map((notification, index) => (
+        {filteredNotifications.sort((a, b) => b.getTimestamp().getTime() - a.getTimestamp().getTime()).map((notification, index) => (
             <NotificationItem key={index} notification={notification} />
         ))}
     </div>;

@@ -13,33 +13,33 @@ export interface IMissionGroup extends IAbstractEntity {
 
 export class MissionGroup extends AbstractEntity {
     private name: string;
-    private endTime: string | null;
+    private endTime: Date | null;
     private mapGroupIds: string[];
     private position: EmbeddablePosition | null;
-    private startTime: string;
+    private startTime: Date;
     private unitIds: string[];
 
     constructor(data: IMissionGroup) {
         super(data.id, data.createdAt, data.updatedAt, data.permissions);
         this.name = data.name;
-        this.endTime = data.endTime;
+        this.endTime = data.endTime ? new Date(data.endTime) : null;
         this.mapGroupIds = data.mapGroupIds;
         this.position = data.position;
-        this.startTime = data.startTime;
+        this.startTime = new Date(data.startTime);
         this.unitIds = data.unitIds;
     }
 
     public static of(data: DBRecord): MissionGroup {
         return new MissionGroup({
             id: data.id as string,
-            createdAt: new Date(data.createdAt as string).getTime(),
-            updatedAt: new Date(data.updatedAt as string).getTime(),
+            createdAt: new Date(data.createdAt as string).toISOString(),
+            updatedAt: new Date(data.updatedAt as string).toISOString(),
             permissions: data.permissions as string[],
             name: data.name as string,
-            endTime: data.endTime as string | null,
+            endTime: data.endTime ? new Date(data.endTime as number).toISOString() : null,
             mapGroupIds: data.mapGroupIds as string[],
             position: data.position as EmbeddablePosition | null,
-            startTime: data.startTime as string,
+            startTime: new Date(data.startTime as string).toISOString(),
             unitIds: data.unitIds as string[],
         });
     }
@@ -49,10 +49,10 @@ export class MissionGroup extends AbstractEntity {
         return {
             ...super.record(),
             name: this.name,
-            endTime: this.endTime,
+            endTime: this.endTime ? this.endTime.toISOString() : null,
             mapGroupIds: this.mapGroupIds,
             position: this.position,
-            startTime: this.startTime,
+            startTime: this.startTime.toISOString(),
             unitIds: this.unitIds,
         };
     }
@@ -61,7 +61,7 @@ export class MissionGroup extends AbstractEntity {
         return this.name;
     }
 
-    getEndTime(): string | null {
+    getEndTime(): Date | null {
         return this.endTime;
     }
 
@@ -73,11 +73,35 @@ export class MissionGroup extends AbstractEntity {
         return this.position;
     }
 
-    getStartTime(): string {
+    getStartTime(): Date {
         return this.startTime;
     }
 
     getUnitIds(): string[] {
         return this.unitIds;
+    }
+
+    setName(name: string): void {
+        this.name = name;
+    }
+
+    setEndTime(endTime: Date | null): void {
+        this.endTime = endTime;
+    }
+
+    setMapGroupIds(mapGroupIds: string[]): void {
+        this.mapGroupIds = mapGroupIds;
+    }
+
+    setPosition(position: EmbeddablePosition | null): void {
+        this.position = position;
+    }
+
+    setStartTime(startTime: Date): void {
+        this.startTime = startTime;
+    }
+
+    setUnitIds(unitIds: string[]): void {
+        this.unitIds = unitIds;
     }
 }

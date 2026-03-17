@@ -65,12 +65,13 @@ export class WebSocketProvider {
         if (newUnit.getStatus() != oldUnit.getStatus()) {
             const notification = new Notification({
                 id: window.crypto.randomUUID() as string,
-                createdAt: new Date().getTime(),
-                updatedAt: new Date().getTime(),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
                 permissions: [],
                 title: newUnit.getName(),
-                timestamp: new Date().getTime(),
-                content: `Status: ${oldUnit.getStatus()} -> ${newUnit.getStatus()}`
+                timestamp: new Date().toISOString(),
+                content: `Status: ${oldUnit.getStatus()} -> ${newUnit.getStatus()}`,
+                unitId: newUnit.getId()
             });
             if (this.databaseProvider) {
                 void this.databaseProvider.saveNotification(notification);
@@ -103,8 +104,8 @@ export class WebSocketProvider {
             const unitData = data.entity as UnitStruct;
             const item = new Unit({
                 id: unitData.id,
-                createdAt: new Date(unitData.createdAt).getTime(),
-                updatedAt: new Date(unitData.updatedAt).getTime(),
+                createdAt: new Date(unitData.createdAt).toISOString(),
+                updatedAt: new Date(unitData.updatedAt).toISOString(),
                 permissions: unitData.permissions,
                 position: {
                     latitude: unitData.position.latitude,
@@ -138,8 +139,8 @@ export class WebSocketProvider {
             const item = new MapOverlay(
                 {
                     id: overlayData.id,
-                    createdAt: new Date(overlayData.createdAt).getTime(),
-                    updatedAt: new Date(overlayData.updatedAt).getTime(),
+                    createdAt: new Date(overlayData.createdAt).toISOString(),
+                    updatedAt: new Date(overlayData.updatedAt).toISOString(),
                     name: overlayData.name,
                     url: overlayData.fullTileUrl,
                     layerVersion: overlayData.layerVersion,
@@ -162,8 +163,8 @@ export class WebSocketProvider {
             const layerData = data.entity as MapBaseLayerStruct;
             const item = new MapBaseLayer({
                 id: layerData.id,
-                createdAt: new Date(layerData.createdAt).getTime(),
-                updatedAt: new Date(layerData.updatedAt).getTime(),
+                createdAt: new Date(layerData.createdAt).toISOString(),
+                updatedAt: new Date(layerData.updatedAt).toISOString(),
                 permissions: layerData.permissions,
                 name: layerData.name,
                 url: layerData.url,
@@ -185,8 +186,8 @@ export class WebSocketProvider {
             const itemData = data.entity as MapItemStruct;
             const item = new MapItem({
                 id: itemData.id,
-                createdAt: new Date(itemData.createdAt).getTime(),
-                updatedAt: new Date(itemData.updatedAt).getTime(),
+                createdAt: new Date(itemData.createdAt).toISOString(),
+                updatedAt: new Date(itemData.updatedAt).toISOString(),
                 permissions: itemData.permissions,
                 name: itemData.name,
                 latitude: itemData.position.latitude,

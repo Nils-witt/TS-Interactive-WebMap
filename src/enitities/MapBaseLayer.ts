@@ -6,10 +6,10 @@
  * Purpose: provide id, name, and URL and integrate with DataProvider updates.
  */
 
-import {type DBRecord, AbstractEntity, type IAbstractEntity} from './AbstractEntity.ts';
+import { type DBRecord, AbstractEntity, type IAbstractEntity } from './AbstractEntity.ts';
 
 
-export interface IMapStyle extends IAbstractEntity{
+export interface IMapStyle extends IAbstractEntity {
     name: string;
     url: string;
     cacheUrl: string;
@@ -34,8 +34,8 @@ export class MapBaseLayer extends AbstractEntity {
             name: data.name as string,
             url: data.url as string,
             cacheUrl: data.cacheUrl as string,
-            createdAt: new Date(data.createdAt as string).getTime(),
-            updatedAt: new Date(data.updatedAt as string).getTime(),
+            createdAt: new Date(data.createdAt as string).toISOString(),
+            updatedAt: new Date(data.updatedAt as string).toISOString(),
             permissions: data.permissions as string[],
         });
     }
@@ -48,6 +48,19 @@ export class MapBaseLayer extends AbstractEntity {
             cacheUrl: this.cacheUrl,
         };
     }
+
+    public clone(): MapBaseLayer {
+        return new MapBaseLayer({
+            id: this.getId(),
+            createdAt: this.getCreatedAt().toISOString(),
+            updatedAt: this.getUpdatedAt().toISOString(),
+            permissions: this.getPermissions(),
+            name: this.name,
+            url: this.url,
+            cacheUrl: this.cacheUrl
+        });
+    }
+
 
     public getName(): string {
         return this.name;
@@ -64,7 +77,7 @@ export class MapBaseLayer extends AbstractEntity {
     public setName(name: string) {
         this.name = name;
     }
-    
+
     public getCacheUrl(): string {
         return this.cacheUrl;
     }

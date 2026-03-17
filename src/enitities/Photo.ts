@@ -29,8 +29,8 @@ export class Photo extends AbstractEntity {
     public static of(data: DBRecord): Photo {
         return new Photo({
             id: data.id as string,
-            createdAt: new Date(data.createdAt as string).getTime(),
-            updatedAt: new Date(data.updatedAt as string).getTime(),
+            createdAt: new Date(data.createdAt as string).toISOString(),
+            updatedAt: new Date(data.updatedAt as string).toISOString(),
             permissions: data.permissions as string[],
             name: data.name as string,
             position: data.position as IPosition,
@@ -47,6 +47,19 @@ export class Photo extends AbstractEntity {
             authorId: this.authorId,
             missionGroupId: this.missionGroupId,
         };
+    }
+
+    public clone(): Photo {
+        return new Photo({
+            id: this.getId(),
+            createdAt: this.getCreatedAt().toISOString(),
+            updatedAt: this.getUpdatedAt().toISOString(),
+            permissions: this.getPermissions(),
+            name: this.name,
+            position: this.position ? this.position.record() : undefined,
+            authorId: this.authorId,
+            missionGroupId: this.missionGroupId,
+        });
     }
 
 

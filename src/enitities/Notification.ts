@@ -5,34 +5,38 @@ export interface INotification extends IAbstractEntity {
     id: string;
     title: string;
     content: string;
-    timestamp: number;
+    timestamp: string;
     read?: boolean;
+    unitId?: string;
 }
 
 export class Notification extends AbstractEntity {
     private title: string;
     private content: string;
-    private timestamp: number;
+    private timestamp: Date;
     private read: boolean;
+    private unitId: string | undefined = undefined;
 
     constructor(data: INotification) {
         super(data.id, data.timestamp, data.timestamp, data.permissions);
         this.title = data.title;
         this.content = data.content;
-        this.timestamp = data.timestamp;
+        this.timestamp = new Date(data.timestamp);
         this.read = data.read || false;
+        this.unitId = data.unitId || undefined;
     }
 
     public static of(data: DBRecord): Notification {
         return new Notification({
             id: data.id as string,
-            createdAt: new Date(data.createdAt as string).getTime(),
-            updatedAt: new Date(data.updatedAt as string).getTime(),
+            createdAt: new Date(data.createdAt as string).toISOString(),
+            updatedAt: new Date(data.updatedAt as string).toISOString(),
             permissions: data.permissions as string[],
             title: data.title as string,
             content: data.content as string,
-            timestamp: data.timestamp as number,
+            timestamp: data.timestamp as string,
             read: data.read as boolean || false,
+            unitId: data.unitId as string || undefined,
         });
     }
 
@@ -42,9 +46,24 @@ export class Notification extends AbstractEntity {
             ...super.record(),
             title: this.title,
             content: this.content,
-            timestamp: this.timestamp,
+            timestamp: this.timestamp.toISOString(),
             read: this.read,
+            unitId: this.unitId || null,
         };
+    }
+
+    public clone(): Notification {
+        return new Notification({
+            id: this.getId(),
+            createdAt: this.getCreatedAt().toISOString(),
+            updatedAt: this.getUpdatedAt().toISOString(),
+            permissions: this.getPermissions(),
+            title: this.title,
+            content: this.content,
+            timestamp: this.timestamp.toISOString(),
+            read: this.read,
+            unitId: this.unitId || undefined,
+        });
     }
 
     getTitle(): string {
@@ -55,7 +74,7 @@ export class Notification extends AbstractEntity {
         return this.content;
     }
 
-    getTimestamp(): number {
+    getTimestamp(): Date {
         return this.timestamp;
     }
 
@@ -69,6 +88,10 @@ export class Notification extends AbstractEntity {
 
     markAsUnread() {
         this.read = false;
+    }
+
+    getUnitId(): string | undefined {
+        return this.unitId;
     }
 }
 

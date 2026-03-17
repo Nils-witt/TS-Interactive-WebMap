@@ -31,11 +31,6 @@ export class MapOverlay extends AbstractEntity {
     private layerVersion = 0;
 
     /**
-     * Description of the layer's content and purpose
-     */
-    private description = '';
-
-    /**
      * URL to the tile source for this layer
      */
     private url = '';
@@ -66,8 +61,8 @@ export class MapOverlay extends AbstractEntity {
         return new MapOverlay(
             {
                 id: data.id as string,
-                createdAt: new Date(data.createdAt as string).getTime(),
-                updatedAt: new Date(data.updatedAt as string).getTime(),
+                createdAt: new Date(data.createdAt as string).toISOString(),
+                updatedAt: new Date(data.updatedAt as string).toISOString(),
                 permissions: data.permissions as string[],
                 name: data.name as string,
                 url: data.url as string,
@@ -85,17 +80,27 @@ export class MapOverlay extends AbstractEntity {
             url: this.url,
             order: this.order,
             opacity: this.opacity,
-            description: this.description,
             layerVersion: this.layerVersion
         };
     }
 
-    public getName(): string {
-        return this.name;
+
+    public clone(): MapOverlay {
+        return new MapOverlay({
+            id: this.getId(),
+            createdAt: this.getCreatedAt().toISOString(),
+            updatedAt: this.getUpdatedAt().toISOString(),
+            permissions: this.getPermissions(),
+            name: this.name,
+            url: this.url,
+            order: this.order,
+            opacity: this.opacity,
+            layerVersion: this.layerVersion
+        });
     }
 
-    public getDescription(): string {
-        return this.description;
+    public getName(): string {
+        return this.name;
     }
 
     public getUrl(): string {
@@ -112,10 +117,6 @@ export class MapOverlay extends AbstractEntity {
 
     public setName(name: string): void {
         this.name = name;
-    }
-
-    public setDescription(description: string): void {
-        this.description = description;
     }
 
     public setOpacity(opacity: number): void {

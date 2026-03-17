@@ -10,20 +10,20 @@ export type DBRecord = Record<string, string | number | boolean | null | object>
 
 export interface IAbstractEntity {
     id: string;
-    createdAt: number;
-    updatedAt: number;
+    createdAt: string;
+    updatedAt: string;
     permissions: string[];
 }
 
 
 export class AbstractEntity {
-    private id: string ;
+    private id: string;
     private createdAt: Date;
     private updatedAt: Date;
     private permissions: string[];
 
 
-    constructor(id: string, createdAt: number, updatedAt: number, permissions: string[]) {
+    constructor(id: string, createdAt: string, updatedAt: string, permissions: string[]) {
         this.id = id;
         this.createdAt = new Date(createdAt);
         this.updatedAt = new Date(updatedAt);

@@ -14,7 +14,13 @@ import { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
 import type { StorageInterface } from './StorageInterface.ts';
 import { MapGroup } from '../enitities/MapGroup.ts';
 import { Unit } from '../enitities/Unit.ts';
-import type { ApiResponseStruct, MapItemStruct, MissionGroupStruct, PhotoStruct } from './structs/ApiResponseStruct.ts';
+import type {
+    ApiResponseStruct,
+    MapItemStruct,
+    MissionGroupStruct,
+    PhotoStruct,
+    UnitStruct
+} from './structs/ApiResponseStruct.ts';
 import { Photo } from '../enitities/Photo.ts';
 import type { IPosition } from '../enitities/embeddables/EmbeddablePosition.ts';
 import { User } from '../enitities/User.ts';
@@ -509,6 +515,7 @@ export class ApiProvider implements StorageInterface {
             const body: Record<string, unknown> = {
                 name: unit.getName(),
                 status: unit.getStatus(),
+                icon: unit.getSymbol(),
             };
             if (unit.getPosition()) {
                 body['position'] = {
@@ -523,17 +530,21 @@ export class ApiProvider implements StorageInterface {
             }
             this.callApi(url, 'PATCH', new Headers(), body)
                 .then((raw) => {
-                    const data = raw as { id: string; name: string; status?: number; position?: { latitude: number; longitude: number; accuracy: number; timestamp: string }; groupId?: string };
+                    const rawUnit = raw as UnitStruct;
                     return resolve(Unit.of({
-                        id: data.id,
-                        name: data.name,
-                        pos_latitude: data.position?.latitude ?? unit.getPosition()?.getLatitude() ?? 0,
-                        pos_longitude: data.position?.longitude ?? unit.getPosition()?.getLongitude() ?? 0,
-                        pos_accuracy: data.position?.accuracy ?? unit.getPosition()?.getAccuracy() ?? 0,
-                        pos_timestamp: data.position?.timestamp ?? unit.getPosition()?.getTimestamp().toISOString() ?? new Date().toISOString(),
-                        unit_status: data.status ?? unit.getStatus(),
-                        group_id: data.groupId ?? unit.getGroupId(),
-                        symbol: unit.getSymbol() ? JSON.stringify(unit.getSymbol()) : null,
+                        id: rawUnit.id,
+                        createdAt: new Date(rawUnit.createdAt).getTime(),
+                        updatedAt: new Date(rawUnit.updatedAt).getTime(),
+                        name: rawUnit.name,
+                        pos_latitude: rawUnit.position.latitude,
+                        pos_longitude: rawUnit.position.longitude,
+                        pos_accuracy: rawUnit.position.accuracy,
+                        pos_timestamp: rawUnit.position.timestamp,
+                        symbol: rawUnit.icon as never,
+                        unit_status: rawUnit.status,
+                        unit_status_timestamp: new Date().toISOString(),
+                        route: null,
+                        permissions: rawUnit.permissions
                     }));
                 })
                 .catch((e) => reject(new Error('Failed to save unit', { cause: e })));
@@ -668,7 +679,7 @@ export class ApiProvider implements StorageInterface {
     saveMissionGroup(missionGroup: MissionGroup): Promise<MissionGroup> {
         return new Promise<MissionGroup>((resolve, reject) => {
             const data = missionGroup.record();
-            const url = DataProvider.getInstance().getApiUrl() + '/mission-groups' + (missionGroup.getId() ? '/' + missionGroup.getId() : '');
+            const url = DataProvider.getInstance().getApiUrl() + '/missiongroups' + (missionGroup.getId() ? '/' + missionGroup.getId() : '');
 
             this.callApi(url, missionGroup.getId() ? 'PUT' : 'POST', new Headers(), data)
                 .then((res) => {
@@ -681,6 +692,7 @@ export class ApiProvider implements StorageInterface {
                         mapGroupIds: response.mapGroupIds,
                         unitIds: response.unitIds,
                         position: response.position,
+                        permissions: response.permissions
                     }));
                 })
                 .catch(error => {
@@ -743,7 +755,7 @@ export class ApiProvider implements StorageInterface {
 
     deleteMissionGroup(id: string): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            const url = DataProvider.getInstance().getApiUrl() + '/mission-groups/' + id;
+            const url = DataProvider.getInstance().getApiUrl() + '/missiongroups/' + id;
             void this.callApi(url, 'DELETE', new Headers())
                 .then(() => {
                     return resolve();

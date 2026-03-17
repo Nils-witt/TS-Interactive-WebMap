@@ -28,8 +28,8 @@ export class User extends AbstractEntity {
     public static of(data: DBRecord): User {
         return new User({
             id: data.id as string,
-            createdAt: new Date(data.createdAt as string).getTime(),
-            updatedAt: new Date(data.updatedAt as string).getTime(),
+            createdAt: new Date(data.createdAt as string).toISOString(),
+            updatedAt: new Date(data.updatedAt as string).toISOString(),
             permissions: data.permissions as string[],
             email: data.email as string,
             firstName: data.first_name as string,
@@ -49,6 +49,20 @@ export class User extends AbstractEntity {
             unit_id: this.unitId,
             username: this.username,
         };
+    }
+
+    public clone(): User {
+        return new User({
+            id: this.getId(),
+            createdAt: this.getCreatedAt().toISOString(),
+            updatedAt: this.getUpdatedAt().toISOString(),
+            permissions: this.getPermissions(),
+            email: this.email,
+            firstName: this.firstName,
+            lastName: this.lastName,
+            unitId: this.unitId,
+            username: this.username,
+        });
     }
 
     getEmail(): string {

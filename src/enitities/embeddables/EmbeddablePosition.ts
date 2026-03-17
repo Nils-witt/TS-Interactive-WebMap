@@ -36,7 +36,16 @@ export class EmbeddablePosition {
             longitude: this.longitude,
             accuracy: this.accuracy,
             timestamp: this.timestamp.toISOString(),
-        }; 
+        };
+    }
+
+    clone(): EmbeddablePosition {
+        return new EmbeddablePosition(
+            this.latitude,
+            this.longitude,
+            this.accuracy,
+            new Date(this.timestamp.getTime())
+        );
     }
 
     public getLatitude(): number {

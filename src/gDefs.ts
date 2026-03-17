@@ -10,7 +10,7 @@ export const STATUS_LABELS: Record<number, string> = {
     9: 'Priorisierter Sprechwunsch',
 };
 
-export const STATUS_COLORS: Record<number, 'success' | 'primary' | 'warning' | 'error' | 'default'> = {
+export const STATUS_COLORS: Record<number, 'success' | 'primary' | 'warning' | 'error'> = {
     1: 'success',
     2: 'success',
     3: 'primary',

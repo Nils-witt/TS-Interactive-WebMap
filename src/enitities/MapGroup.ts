@@ -24,8 +24,8 @@ export class MapGroup extends AbstractEntity {
             id: data.id as string,
             name: data.name as string,
             description: data.description as string,
-            createdAt: new Date(data.createdAt as string).getTime(),
-            updatedAt: new Date(data.updatedAt as string).getTime(),
+            createdAt: new Date(data.createdAt as string).toISOString(),
+            updatedAt: new Date(data.updatedAt as string).toISOString(),
             permissions: data.permissions as string[],
         });
         return group;
@@ -37,6 +37,17 @@ export class MapGroup extends AbstractEntity {
             name: this.name,
             description: this.description
         };
+    }
+
+    public clone(): MapGroup {
+        return new MapGroup({
+            id: this.getId(),
+            createdAt: this.getCreatedAt().toISOString(),
+            updatedAt: this.getUpdatedAt().toISOString(),
+            permissions: this.getPermissions(),
+            name: this.name,
+            description: this.description
+        });
     }
 
     public getName(): string {

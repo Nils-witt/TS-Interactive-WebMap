@@ -44,8 +44,8 @@ export class MapItem extends AbstractEntity {
             zoomLevel: data.zoomLevel !== undefined ? Number(data.zoomLevel) : undefined,
             showOnMap: Boolean(data.show_on_map),
             groupId: data.group_id as string | undefined,
-            createdAt: new Date(data.createdAt as string).getTime(),
-            updatedAt: new Date(data.updatedAt as string).getTime(),
+            createdAt: new Date(data.createdAt as string).toISOString(),
+            updatedAt: new Date(data.updatedAt as string).toISOString(),
             permissions: data.permissions as string[],
         });
     }
@@ -61,6 +61,21 @@ export class MapItem extends AbstractEntity {
             group_id: this.groupId || null,
             show_on_map: this.showOnMap || false,
         };
+    }
+
+    public clone(): MapItem {
+        return new MapItem({
+            id: this.getId(),
+            createdAt: this.getCreatedAt().toISOString(),
+            updatedAt: this.getUpdatedAt().toISOString(),
+            permissions: this.getPermissions(),
+            latitude: this.latitude,
+            longitude: this.longitude,
+            name: this.name,
+            zoomLevel: this.zoomLevel,
+            showOnMap: this.showOnMap,
+            groupId: this.groupId,
+        });
     }
 
     public getLatitude(): number {
