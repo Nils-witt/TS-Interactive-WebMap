@@ -219,7 +219,7 @@ export class WebSocketProvider {
             for (const entityType of entityTypes) {
                 this.socket!.send('SUBSCRIBE /entities/' + entityType);
             }
-            this.socket!.send('GET /units');
+            this.socket!.send('GET /entities/units');
             if (this.lastMessageRecived != null) {
                 ApplicationLogger.info('Requesting updates since last message received: ' + new Date(this.lastMessageRecived).toISOString(), { service: 'WebSocket' });
                 this.socket!.send('REQUEST_UPDATES_SINCE ' + this.lastMessageRecived);
