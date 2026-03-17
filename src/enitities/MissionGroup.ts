@@ -57,6 +57,21 @@ export class MissionGroup extends AbstractEntity {
         };
     }
 
+    clone(): MissionGroup {
+        return new MissionGroup({
+            id: this.getId(),
+            createdAt: this.getCreatedAt().toISOString(),
+            updatedAt: this.getUpdatedAt().toISOString(),
+            permissions: this.getPermissions(),
+            name: this.name,
+            endTime: this.endTime ? this.endTime.toISOString() : null,
+            mapGroupIds: [...this.mapGroupIds],
+            position: this.position ? this.position.clone() : null,
+            startTime: this.startTime.toISOString(),
+            unitIds: [...this.unitIds],
+        });
+    }
+
     getName(): string {
         return this.name;
     }

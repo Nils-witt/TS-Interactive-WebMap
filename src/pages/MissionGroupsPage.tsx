@@ -1,7 +1,8 @@
-import { type JSX, use, useContext, useMemo, useState } from 'react';
+import { type JSX, useContext, useMemo, useState } from 'react';
 import {
     Box,
     Button,
+    Checkbox,
     Chip,
     Container,
     Dialog,
@@ -11,9 +12,9 @@ import {
     Divider,
     IconButton,
     InputAdornment,
-    List,
     ListItem,
     ListItemText,
+    ListItemButton,
     Paper,
     Table,
     TableBody,
@@ -36,6 +37,8 @@ import { MissionGroupEditDialog } from '../components/dialogs/MissionGroupEditDi
 import { ApiProvider } from '../dataProviders/ApiProvider';
 import { DataProvider } from '../dataProviders/DataProvider';
 import { DataBaseContext } from '../contexts/DataBaseContext';
+import { AssignUnitsDialog } from '../components/dialogs/AssignUnitsDialog';
+import { AssignMapGroupsDialog } from '../components/dialogs/AssignMapGroups';
 
 type SortField = 'name' | 'startTime' | 'endTime' | 'units' | 'mapGroups';
 type SortOrder = 'asc' | 'desc';
@@ -45,12 +48,12 @@ export function MissionGroupsPage(): JSX.Element {
     const databaseProvider = useContext(DataBaseContext)
 
     const missionGroups = useContext(MissionGroupContext);
-    const units = useContext(UnitsContext);
 
     const [nameFilter, setNameFilter] = useState('');
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-    const [unitsDialogIds, setUnitsDialogIds] = useState<string[] | null>(null);
+    const [assignedUnitsMissionGroup, setAssignedUnitsMissionGroup] = useState<MissionGroup | null>(null);
+    const [assignedMapGroupsMissionGroup, setAssignedMapGroupsMissionGroup] = useState<MissionGroup | null>(null);
 
     const [editingMissionGroup, setEditingMissionGroup] = useState<MissionGroup | null>(null);
     const [deletingMissionGroup, setDeletingMissionGroup] = useState<MissionGroup | null>(null);
@@ -67,11 +70,11 @@ export function MissionGroupsPage(): JSX.Element {
     const saveEditedMissionGroup = (updated: MissionGroup) => {
 
         ApiProvider.getInstance()
-        .saveMissionGroup(updated)
-        .then((response) => {
-            dp.addMissionGroup(response);
-            setEditingMissionGroup(null);
-        });
+            .saveMissionGroup(updated)
+            .then((response) => {
+                dp.addMissionGroup(response);
+                setEditingMissionGroup(null);
+            });
     };
 
     const confirmDeleteMissionGroup = () => {
@@ -86,6 +89,20 @@ export function MissionGroupsPage(): JSX.Element {
             })
             .catch((error) => {
                 console.error('Failed to delete mission group', error);
+            });
+    };
+
+
+    const saveAssignedUnits = (mapGroup: MissionGroup) => {
+        if (!mapGroup) return;
+
+        ApiProvider.getInstance()
+            .saveMissionGroup(mapGroup)
+            .then((response) => {
+                dp.addMissionGroup(response);
+            })
+            .catch((error) => {
+                console.error('Failed to save assigned units', error);
             });
     };
 
@@ -200,12 +217,16 @@ export function MissionGroupsPage(): JSX.Element {
                                             <Chip
                                                 label={mg.getUnitIds().length}
                                                 size="small"
-                                                clickable={mg.getUnitIds().length > 0}
-                                                onClick={mg.getUnitIds().length > 0 ? () => setUnitsDialogIds(mg.getUnitIds()) : undefined}
+                                                clickable={mg.getPermissions().includes('EDIT')}
+                                                onClick={mg.getPermissions().includes('EDIT') ? () => setAssignedUnitsMissionGroup(mg) : undefined}
                                             />
                                         </TableCell>
                                         <TableCell align="center">
-                                            <Chip label={mg.getMapGroupIds().length} size="small" />
+                                            <Chip
+                                                label={mg.getMapGroupIds().length}
+                                                size="small"
+                                                clickable={mg.getPermissions().includes('EDIT')}
+                                                onClick={mg.getPermissions().includes('EDIT') ? () => setAssignedMapGroupsMissionGroup(mg) : undefined} />
                                         </TableCell>
                                         <TableCell>
                                             {mg.getPermissions().includes('EDIT') && (
@@ -236,26 +257,19 @@ export function MissionGroupsPage(): JSX.Element {
                 </TableContainer>
             </Container>
 
-            {/* Units dialog */}
-            <Dialog open={unitsDialogIds !== null} onClose={() => setUnitsDialogIds(null)} maxWidth="xs" fullWidth>
-                <DialogTitle>Units in Mission Group</DialogTitle>
-                <Divider />
-                <DialogContent sx={{ p: 0 }}>
-                    <List dense disablePadding>
-                        {(unitsDialogIds ?? []).map((id) => {
-                            const unit = units.find((u) => u.getId() === id);
-                            return (
-                                <ListItem key={id}>
-                                    <ListItemText
-                                        primary={unit ? unit.getName() : id}
-                                        secondary={unit ? null : 'Unknown unit'}
-                                    />
-                                </ListItem>
-                            );
-                        })}
-                    </List>
-                </DialogContent>
-            </Dialog>
+            <AssignUnitsDialog
+                open={assignedUnitsMissionGroup != null}
+                missionGroup={assignedUnitsMissionGroup}
+                onClose={() => setAssignedUnitsMissionGroup(null)}
+                onEdit={saveAssignedUnits}
+            />
+
+            <AssignMapGroupsDialog
+                open={assignedMapGroupsMissionGroup != null}
+                missionGroup={assignedMapGroupsMissionGroup}
+                onClose={() => setAssignedMapGroupsMissionGroup(null)}
+                onEdit={saveAssignedUnits}
+            />
 
             <MissionGroupEditDialog
                 open={editingMissionGroup != null}
@@ -290,3 +304,4 @@ export function MissionGroupsPage(): JSX.Element {
         </Box>
     );
 }
+

@@ -342,8 +342,8 @@ export class ApiProvider implements StorageInterface {
                     for (const rawPhoto of data._embedded.photoDtoList) {
                         pictures[rawPhoto.id] = new Photo({
                             id: rawPhoto.id,
-                            createdAt: new Date(rawPhoto.createdAt).getTime(),
-                            updatedAt: new Date(rawPhoto.updatedAt).getTime(),
+                            createdAt: new Date(rawPhoto.createdAt).toISOString(),
+                            updatedAt: new Date(rawPhoto.updatedAt).toISOString(),
                             name: rawPhoto.name,
                             position: rawPhoto.position ? {
                                 latitude: rawPhoto.position.latitude,
@@ -411,8 +411,8 @@ export class ApiProvider implements StorageInterface {
                     for (const rawUser of data._embedded.userDtoList) {
                         users[rawUser.id] = new User({
                             id: rawUser.id,
-                            createdAt: new Date(rawUser.createdAt).getTime(),
-                            updatedAt: new Date(rawUser.updatedAt).getTime(),
+                            createdAt: new Date(rawUser.createdAt).toISOString(),
+                            updatedAt: new Date(rawUser.updatedAt).toISOString(),
                             email: rawUser.email,
                             firstName: rawUser.firstName,
                             lastName: rawUser.lastName,
@@ -608,8 +608,8 @@ export class ApiProvider implements StorageInterface {
                     const raw = data as PhotoStruct;
                     return resolve(new Photo({
                         id: raw.id,
-                        createdAt: new Date(raw.createdAt).getTime(),
-                        updatedAt: new Date(raw.updatedAt).getTime(),
+                        createdAt: new Date(raw.createdAt).toISOString(),
+                        updatedAt: new Date(raw.updatedAt).toISOString(),
                         permissions: raw.permissions,
                         name: raw.name,
                         position: raw.position ? {
@@ -651,8 +651,8 @@ export class ApiProvider implements StorageInterface {
                 .then((data: PhotoStruct) => {
                     const photo = new Photo({
                         id: data.id,
-                        createdAt: new Date(data.createdAt).getTime(),
-                        updatedAt: new Date(data.updatedAt).getTime(),
+                        createdAt: new Date(data.createdAt).toISOString(),
+                        updatedAt: new Date(data.updatedAt).toISOString(),
                         permissions: data.permissions,
                         name: data.name,
                         position: data.position ? {
@@ -686,6 +686,8 @@ export class ApiProvider implements StorageInterface {
                     const response = res as MissionGroupStruct;
                     return resolve(MissionGroup.of({
                         id: response.id,
+                        createdAt: new Date(response.createdAt).toISOString(),
+                        updatedAt: new Date(response.updatedAt).toISOString(),
                         name: response.name,
                         startTime: response.startTime,
                         endTime: response.endTime,

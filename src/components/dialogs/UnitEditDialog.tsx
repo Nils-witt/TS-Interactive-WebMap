@@ -1,7 +1,7 @@
 import DialogContent from "@mui/material/DialogContent";
 import type { Unit } from "../../enitities/Unit";
 import TextField from "@mui/material/TextField";
-import { Dialog, DialogTitle, FormControl, InputLabel, Select, MenuItem, DialogActions, Button, CircularProgress } from "@mui/material";
+import { Dialog, DialogTitle, FormControl, InputLabel, Select, MenuItem, DialogActions, Button } from "@mui/material";
 import { STATUS_LABELS } from "../../gDefs";
 import { useEffect, useState } from "react";
 import { EditIconDialog } from "../EditIconDialog";
