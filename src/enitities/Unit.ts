@@ -1,184 +1,205 @@
 import type { TaktischesZeichen } from 'taktische-zeichen-core/dist/types/types';
-import { type DBRecord, type IAbstractEntity, AbstractEntity } from './AbstractEntity.ts';
+import {
+  type DBRecord,
+  type IAbstractEntity,
+  AbstractEntity,
+} from './AbstractEntity.ts';
 import { erzeugeTaktischesZeichen } from 'taktische-zeichen-core';
 import { ApplicationLogger } from '../ApplicationLogger.ts';
 import { LngLat } from './LngLat.ts';
-import { EmbeddablePosition, type IPosition } from './embeddables/EmbeddablePosition.ts';
+import {
+  EmbeddablePosition,
+  type IPosition,
+} from './embeddables/EmbeddablePosition.ts';
 
 export interface IUnit extends IAbstractEntity {
-    position: IPosition;
-    name: string;
-    symbol?: TaktischesZeichen; // Optional symbol for rendering, if applicable
-    groupId?: string | null; // Optional group ID for categorization
-    unit_status?: number | null;
-    route?: { latitude: number, longitude: number }[];
+  position: IPosition;
+  name: string;
+  symbol?: TaktischesZeichen; // Optional symbol for rendering, if applicable
+  groupId?: string | null; // Optional group ID for categorization
+  unit_status?: number | null;
+  route?: { latitude: number; longitude: number }[];
 }
 
 export class Unit extends AbstractEntity {
-    private position: EmbeddablePosition | null = null;
-    private name: string;
-    private symbol: TaktischesZeichen | null;
-    private groupId: string | null;
-    private unit_status: number | null;
-    private route: { latitude: number, longitude: number }[] | undefined = [];
+  private position: EmbeddablePosition | null = null;
+  private name: string;
+  private symbol: TaktischesZeichen | null;
+  private groupId: string | null;
+  private unit_status: number | null;
+  private route: { latitude: number; longitude: number }[] | undefined = [];
 
-    constructor(data: IUnit) {
-        super(data.id, data.createdAt, data.updatedAt, data.permissions);
-        this.position = EmbeddablePosition.of(data.position);
-        this.name = data.name;
-        this.groupId = data.groupId as string || null;
-        this.symbol = data.symbol || null;
-        this.unit_status = data.unit_status || null;
-        this.route = [];
-        if (data.route) {
-            this.route = data.route;
+  constructor(data: IUnit) {
+    super(data.id, data.createdAt, data.updatedAt, data.permissions);
+    this.position = EmbeddablePosition.of(data.position);
+    this.name = data.name;
+    this.groupId = (data.groupId as string) || null;
+    this.symbol = data.symbol || null;
+    this.unit_status = data.unit_status || null;
+    this.route = [];
+    if (data.route) {
+      this.route = data.route;
+    }
+  }
+
+  public static of(data: DBRecord): Unit {
+    let data_symbol: TaktischesZeichen | undefined = undefined;
+    if (data && data.symbol) {
+      try {
+        if (typeof data.symbol == 'object') {
+          data_symbol = data.symbol as TaktischesZeichen;
+        } else if (typeof data.symbol == 'string') {
+          data_symbol = JSON.parse(data.symbol) as TaktischesZeichen;
         }
+      } catch (e) {
+        ApplicationLogger.error(
+          'Error parsing Unit symbol: ' + (e as Error).message,
+          { service: 'Unit' },
+        );
+      }
     }
-
-    public static of(data: DBRecord): Unit {
-        let data_symbol: TaktischesZeichen | undefined = undefined;
-        if (data && data.symbol) {
-            try {
-                if (typeof data.symbol == 'object') {
-                    data_symbol = data.symbol as TaktischesZeichen;
-                } else if (typeof data.symbol == 'string') {
-                    data_symbol = JSON.parse(data.symbol) as TaktischesZeichen;
-                }
-            } catch (e) {
-                ApplicationLogger.error('Error parsing Unit symbol: ' + (e as Error).message, { service: 'Unit' });
-            }
+    let route: LngLat[] = [];
+    if (data && data.route) {
+      try {
+        if (typeof data.route == 'object') {
+          route = (data.route as { latitude: number; longitude: number }[]).map(
+            (coord) => new LngLat(coord.longitude, coord.latitude),
+          );
+        } else if (typeof data.route == 'string') {
+          route = (
+            JSON.parse(data.route) as { latitude: number; longitude: number }[]
+          ).map((coord) => new LngLat(coord.longitude, coord.latitude));
         }
-        let route: LngLat[] = [];
-        if (data && data.route) {
-            try {
-                if (typeof data.route == 'object') {
-                    route = (data.route as { latitude: number, longitude: number }[]).map(coord => new LngLat(coord.longitude, coord.latitude));
-                } else if (typeof data.route == 'string') {
-                    route = (JSON.parse(data.route) as { latitude: number, longitude: number }[]).map(coord => new LngLat(coord.longitude, coord.latitude));
-                }
-            } catch (e) {
-                ApplicationLogger.error('Error parsing Unit route: ' + (e as Error).message, { service: 'Unit' });
-            }
-        }
-
-        return new Unit({
-            id: data.id as string,
-            createdAt: new Date(data.createdAt as string).toISOString(),
-            updatedAt: new Date(data.updatedAt as string).toISOString(),
-            position: {
-                latitude: data.pos_latitude as number,
-                longitude: data.pos_longitude as number,
-                accuracy: data.pos_accuracy as number,
-                timestamp: data.pos_timestamp as string,
-            },
-            name: data.name as string,
-            groupId: data.group_id as string | undefined,
-            symbol: data_symbol,
-            unit_status: data.unit_status as number || null,
-            route: route,
-            permissions: data.permissions as string[]
-        });
+      } catch (e) {
+        ApplicationLogger.error(
+          'Error parsing Unit route: ' + (e as Error).message,
+          { service: 'Unit' },
+        );
+      }
     }
 
+    return new Unit({
+      id: data.id as string,
+      createdAt: new Date(data.createdAt as string).toISOString(),
+      updatedAt: new Date(data.updatedAt as string).toISOString(),
+      position: {
+        latitude: data.pos_latitude as number,
+        longitude: data.pos_longitude as number,
+        accuracy: data.pos_accuracy as number,
+        timestamp: data.pos_timestamp as string,
+      },
+      name: data.name as string,
+      groupId: data.group_id as string | undefined,
+      symbol: data_symbol,
+      unit_status: (data.unit_status as number) || null,
+      route: route,
+      permissions: data.permissions as string[],
+    });
+  }
 
-    record(): DBRecord {
-        return {
-            ...super.record(),
-            pos_latitude: this.position ? this.position.latitude : 0,
-            pos_longitude: this.position ? this.position.longitude : 0,
-            pos_accuracy: this.position ? this.position.accuracy : -1,
-            pos_timestamp: this.position ? this.position.timestamp.toISOString() : new Date().toISOString(),
-            name: this.name,
-            group_id: this.groupId || null,
-            symbol: this.symbol ? JSON.stringify(this.symbol) : null,
-            unit_status: this.unit_status,
-            route: this.route ? JSON.stringify(this.route) : null,
-        };
+  record(): DBRecord {
+    return {
+      ...super.record(),
+      pos_latitude: this.position ? this.position.latitude : 0,
+      pos_longitude: this.position ? this.position.longitude : 0,
+      pos_accuracy: this.position ? this.position.accuracy : -1,
+      pos_timestamp: this.position
+        ? this.position.timestamp.toISOString()
+        : new Date().toISOString(),
+      name: this.name,
+      group_id: this.groupId || null,
+      symbol: this.symbol ? JSON.stringify(this.symbol) : null,
+      unit_status: this.unit_status,
+      route: this.route ? JSON.stringify(this.route) : null,
+    };
+  }
+
+  public clone(): Unit {
+    return new Unit({
+      id: this.getId(),
+      createdAt: this.getCreatedAt().toISOString(),
+      updatedAt: this.getUpdatedAt().toISOString(),
+      position: this.position
+        ? {
+            latitude: this.position.latitude,
+            longitude: this.position.longitude,
+            accuracy: this.position.accuracy,
+            timestamp: this.position.timestamp.toISOString(),
+          }
+        : {
+            latitude: 0,
+            longitude: 0,
+            accuracy: -1,
+            timestamp: new Date().toISOString(),
+          },
+      name: this.name,
+      groupId: this.groupId || null,
+      symbol: this.symbol || undefined,
+      unit_status: this.unit_status || null,
+      route: this.route ? [...this.route] : undefined,
+      permissions: [...this.getPermissions()],
+    });
+  }
+
+  public getImgSrc(): string {
+    if (!this.symbol) {
+      return '';
     }
+    try {
+      const tz = erzeugeTaktischesZeichen(this.symbol);
+      const dataUrl = `data:image/svg+xml;base64,${btoa(tz.toString())}`;
 
-
-    public clone(): Unit {
-        return new Unit({
-            id: this.getId(),
-            createdAt: this.getCreatedAt().toISOString(),
-            updatedAt: this.getUpdatedAt().toISOString(),
-            position: this.position ? {
-                latitude: this.position.latitude,
-                longitude: this.position.longitude,
-                accuracy: this.position.accuracy,
-                timestamp: this.position.timestamp.toISOString(),
-            } : {
-                latitude: 0,
-                longitude: 0,
-                accuracy: -1,
-                timestamp: new Date().toISOString(),
-            },
-            name: this.name,
-            groupId: this.groupId || null,
-            symbol: this.symbol || undefined,
-            unit_status: this.unit_status || null,
-            route: this.route ? [...this.route] : undefined,
-            permissions: [...this.getPermissions()],
-        });
+      return dataUrl;
+    } catch (e) {
+      ApplicationLogger.error(
+        'Error generating icon element for Unit: ' + (e as Error).message,
+        { service: 'Unit' },
+      );
+      return '';
     }
+  }
 
+  public getPosition(): EmbeddablePosition | null {
+    return this.position;
+  }
 
-    public getImgSrc(): string {
-        if (!this.symbol) {
-            return '';
-        }
-        try {
-            const tz = erzeugeTaktischesZeichen(this.symbol);
-            const dataUrl = `data:image/svg+xml;base64,${btoa(tz.toString())}`;
+  public getName(): string {
+    return this.name;
+  }
 
-            return dataUrl;
-        } catch (e) {
-            ApplicationLogger.error('Error generating icon element for Unit: ' + (e as Error).message, { service: 'Unit' });
-            return '';
-        }
-    }
+  public getSymbol(): TaktischesZeichen | null {
+    return this.symbol || null;
+  }
 
-    public getPosition(): EmbeddablePosition | null {
-        return this.position;
-    }
+  public getGroupId(): string | null {
+    return this.groupId;
+  }
 
-    public getName(): string {
-        return this.name;
-    }
+  public setGroupId(groupId: string | null): void {
+    this.groupId = groupId;
+  }
 
-    public getSymbol(): TaktischesZeichen | null {
-        return this.symbol || null;
-    }
+  public setName(name: string): void {
+    this.name = name;
+  }
 
-    public getGroupId(): string | null {
-        return this.groupId;
-    }
+  public setSymbol(symbol: TaktischesZeichen | null): void {
+    this.symbol = symbol;
+  }
 
-    public setGroupId(groupId: string | null): void {
-        this.groupId = groupId;
-    }
+  public setPosition(position: EmbeddablePosition): void {
+    this.position = position;
+  }
 
-    public setName(name: string): void {
-        this.name = name;
-    }
+  public getStatus(): number | null {
+    return this.unit_status || null;
+  }
 
-    public setSymbol(symbol: TaktischesZeichen | null): void {
-        this.symbol = symbol;
-    }
+  public setStatus(status: number | null): void {
+    this.unit_status = status;
+  }
 
-    public setPosition(position: EmbeddablePosition): void {
-        this.position = position;
-    }
-
-    public getStatus(): number | null {
-        return this.unit_status || null;
-    }
-
-    public setStatus(status: number | null): void {
-        this.unit_status = status;
-    }
-
-    public getRoute(): { latitude: number, longitude: number }[] | undefined {
-        return this.route;
-    }
+  public getRoute(): { latitude: number; longitude: number }[] | undefined {
+    return this.route;
+  }
 }

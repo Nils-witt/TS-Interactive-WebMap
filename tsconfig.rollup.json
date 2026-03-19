@@ -9,7 +9,7 @@
     "skipLibCheck": true,
 
     /* Linting */
-    "strict": true,
+    "strict": true
   },
   "include": ["./src/sw-custom.ts"],
   "exclude": ["node_modules"]

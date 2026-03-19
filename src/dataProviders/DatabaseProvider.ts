@@ -20,976 +20,1126 @@ import { MissionGroup } from '../enitities/MissionGroup.ts';
 import { Notification } from '../enitities/Notification.ts';
 
 enum DB_TABLES {
-    overlays = 'overlays',
-    mapStyles = 'mapStyles',
-    mapItems = 'namedgeoreferencedobjects',
-    mapGroups = 'mapGroups',
-    units = 'units',
-    users = 'users',
-    missionGroups = 'missionGroups',
-    photos = 'photos',
-    notifications = 'notifications',
+  overlays = 'overlays',
+  mapStyles = 'mapStyles',
+  mapItems = 'namedgeoreferencedobjects',
+  mapGroups = 'mapGroups',
+  units = 'units',
+  users = 'users',
+  missionGroups = 'missionGroups',
+  photos = 'photos',
+  notifications = 'notifications',
 }
 
 export class DatabaseProvider implements StorageInterface {
-    private static instance: DatabaseProvider | null = null;
-    private db: IDBPDatabase | undefined;
-    private isSetUp = false;
-    setUpDoneCallbacks: ((db: DatabaseProvider) => void)[] = [];
+  private static instance: DatabaseProvider | null = null;
+  private db: IDBPDatabase | undefined;
+  private isSetUp = false;
+  setUpDoneCallbacks: ((db: DatabaseProvider) => void)[] = [];
 
-    private readonly DB_NAME = 'mapDB';
+  private readonly DB_NAME = 'mapDB';
 
-    public constructor() { /* empty */ }
+  public constructor() {
+    /* empty */
+  }
 
-    public static getInstance(): DatabaseProvider {
-        if (!DatabaseProvider.instance) {
-            DatabaseProvider.instance = new DatabaseProvider();
-        }
-        return DatabaseProvider.instance;
+  public static getInstance(): DatabaseProvider {
+    if (!DatabaseProvider.instance) {
+      DatabaseProvider.instance = new DatabaseProvider();
+    }
+    return DatabaseProvider.instance;
+  }
+
+  public setUpDone(callback: (db: DatabaseProvider) => void): void {
+    this.setUpDoneCallbacks.push(callback);
+    if (this.isSetUp) {
+      callback(this);
+    }
+  }
+
+  public clearAll(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      void deleteDB(this.DB_NAME).then(() => {
+        resolve();
+      });
+    });
+  }
+
+  public async setUp(): Promise<void> {
+    if (this.isSetUp) {
+      return;
     }
 
-    public setUpDone(callback: (db: DatabaseProvider) => void): void {
-        this.setUpDoneCallbacks.push(callback);
-        if (this.isSetUp) {
-            callback(this);
+    const dbVersion = 15;
+    this.db = await openDB(this.DB_NAME, dbVersion, {
+      upgrade(db) {
+        console.log(`Upgrading database to version ${dbVersion}`);
+        if (!db.objectStoreNames.contains(DB_TABLES.overlays)) {
+          db.createObjectStore(DB_TABLES.overlays, { keyPath: 'id' });
         }
-    }
+        if (!db.objectStoreNames.contains(DB_TABLES.mapStyles)) {
+          db.createObjectStore(DB_TABLES.mapStyles, { keyPath: 'id' });
+        }
 
-    public clearAll(): Promise<void> {
-        return new Promise<void>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            void deleteDB(this.DB_NAME).then(() => {
-                resolve();
-            });
+        if (!db.objectStoreNames.contains(DB_TABLES.mapItems)) {
+          db.createObjectStore(DB_TABLES.mapItems, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(DB_TABLES.mapGroups)) {
+          db.createObjectStore(DB_TABLES.mapGroups, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(DB_TABLES.units)) {
+          db.createObjectStore(DB_TABLES.units, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(DB_TABLES.users)) {
+          db.createObjectStore(DB_TABLES.users, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(DB_TABLES.missionGroups)) {
+          db.createObjectStore(DB_TABLES.missionGroups, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(DB_TABLES.photos)) {
+          db.createObjectStore(DB_TABLES.photos, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(DB_TABLES.notifications)) {
+          db.createObjectStore(DB_TABLES.notifications, { keyPath: 'id' });
+        }
+      },
+    });
+    this.isSetUp = true;
+    this.setUpDoneCallbacks.forEach((callback) => callback(this));
+    ApplicationLogger.info('IndexedDB setup complete.', {
+      service: 'DatabaseProvider',
+    });
+  }
+
+  // -- loadAll
+
+  loadAllUnits(): Promise<Record<string, Unit>> {
+    return new Promise<Record<string, Unit>>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.units, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.units)
+        .getAll()
+        .then((result: Record<string, string | number>[]) => {
+          const units: Record<string, Unit> = {};
+          for (const record of result) {
+            const unit = Unit.of(record);
+            units[unit.getId()] = unit;
+          }
+          resolve(units);
         });
-    }
+    });
+  }
 
-    public async setUp(): Promise<void> {
-        if (this.isSetUp) {
-            return;
-        }
+  loadAllMapGroups(): Promise<Record<string, MapGroup>> {
+    return new Promise<Record<string, MapGroup>>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.mapGroups, 'readonly');
 
-        const dbVersion = 15;
-        this.db = await openDB(this.DB_NAME, dbVersion, {
-            upgrade(db) {
-                console.log(`Upgrading database to version ${dbVersion}`);
-                if (!db.objectStoreNames.contains(DB_TABLES.overlays)) {
-                    db.createObjectStore(DB_TABLES.overlays, { keyPath: 'id' });
-                }
-                if (!db.objectStoreNames.contains(DB_TABLES.mapStyles)) {
-                    db.createObjectStore(DB_TABLES.mapStyles, { keyPath: 'id' });
-                }
+      void tx
+        .objectStore(DB_TABLES.mapGroups)
+        .getAll()
+        .then((result: Record<string, string | number>[]) => {
+          const mapGroups: Record<string, MapGroup> = {};
+          for (const record of result) {
+            const mapGroup = MapGroup.of(record);
+            mapGroups[mapGroup.getId()] = mapGroup;
+          }
+          resolve(mapGroups);
+        });
+    });
+  }
 
-                if (!db.objectStoreNames.contains(DB_TABLES.mapItems)) {
-                    db.createObjectStore(DB_TABLES.mapItems, { keyPath: 'id' });
-                }
-                if (!db.objectStoreNames.contains(DB_TABLES.mapGroups)) {
-                    db.createObjectStore(DB_TABLES.mapGroups, { keyPath: 'id' });
-                }
-                if (!db.objectStoreNames.contains(DB_TABLES.units)) {
-                    db.createObjectStore(DB_TABLES.units, { keyPath: 'id' });
-                }
-                if (!db.objectStoreNames.contains(DB_TABLES.users)) {
-                    db.createObjectStore(DB_TABLES.users, { keyPath: 'id' });
-                }
-                if (!db.objectStoreNames.contains(DB_TABLES.missionGroups)) {
-                    db.createObjectStore(DB_TABLES.missionGroups, { keyPath: 'id' });
-                }
-                if (!db.objectStoreNames.contains(DB_TABLES.photos)) {
-                    db.createObjectStore(DB_TABLES.photos, { keyPath: 'id' });
-                }
-                if (!db.objectStoreNames.contains(DB_TABLES.notifications)) {
-                    db.createObjectStore(DB_TABLES.notifications, { keyPath: 'id' });
-                }
+  loadAllMapItems(): Promise<Record<string, MapItem>> {
+    return new Promise<Record<string, MapItem>>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.mapItems, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.mapItems)
+        .getAll()
+        .then((result: Record<string, string | number>[]) => {
+          const namedGeoReferencedObjects: Record<string, MapItem> = {};
+          for (const record of result) {
+            const namedGeoReferencedObject = MapItem.of(record);
+            namedGeoReferencedObjects[namedGeoReferencedObject.getId()] =
+              namedGeoReferencedObject;
+          }
+          resolve(namedGeoReferencedObjects);
+        });
+    });
+  }
+
+  loadAllMapStyles(): Promise<Record<string, MapBaseLayer>> {
+    return new Promise<Record<string, MapBaseLayer>>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.mapStyles, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.mapStyles)
+        .getAll()
+        .then((result: Record<string, string | number>[]) => {
+          const mapStyles: Record<string, MapBaseLayer> = {};
+          for (const record of result) {
+            const mapStyle = MapBaseLayer.of(record);
+            mapStyles[mapStyle.getId()] = mapStyle;
+            const layerUrl = new URL(mapStyle.getUrl());
+            new BroadcastChannel('setMapServicesBase').postMessage({
+              url: layerUrl.protocol + '//' + layerUrl.hostname,
+            });
+          }
+          resolve(mapStyles);
+        });
+    });
+  }
+
+  loadAllMapOverlays(): Promise<Record<string, MapOverlay>> {
+    return new Promise<Record<string, MapOverlay>>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.overlays, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.overlays)
+        .getAll()
+        .then((result: Record<string, string | number>[]) => {
+          const overlays: Record<string, MapOverlay> = {};
+          for (const record of result) {
+            const overlay = MapOverlay.of(record);
+            overlays[overlay.getId()] = overlay;
+          }
+          resolve(overlays);
+        });
+    });
+  }
+
+  loadAllPhotos(): Promise<Record<string, Photo>> {
+    return new Promise<Record<string, Photo>>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.photos, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.photos)
+        .getAll()
+        .then((result: Record<string, string | number>[]) => {
+          const photos: Record<string, Photo> = {};
+          for (const record of result) {
+            const photo = Photo.of(record);
+            photos[photo.getId()] = photo;
+          }
+          resolve(photos);
+        });
+    });
+  }
+
+  loadAllMissionGroups(): Promise<Record<string, MissionGroup>> {
+    return new Promise<Record<string, MissionGroup>>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.missionGroups, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.missionGroups)
+        .getAll()
+        .then((result: Record<string, string | number>[]) => {
+          const missionGroups: Record<string, MissionGroup> = {};
+          for (const record of result) {
+            const missionGroup = MissionGroup.of(record);
+            missionGroups[missionGroup.getId()] = missionGroup;
+          }
+          resolve(missionGroups);
+        });
+    });
+  }
+
+  loadAllUsers(): Promise<Record<string, User>> {
+    return new Promise<Record<string, User>>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.users, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.users)
+        .getAll()
+        .then((result: Record<string, string | number>[]) => {
+          const overlays: Record<string, User> = {};
+          for (const record of result) {
+            const overlay = User.of(record);
+            overlays[overlay.getId()] = overlay;
+          }
+          resolve(overlays);
+        });
+    });
+  }
+
+  loadAllNotifications(): Promise<Record<string, Notification>> {
+    return new Promise<Record<string, Notification>>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.notifications, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.notifications)
+        .getAll()
+        .then((result: Record<string, string | number>[]) => {
+          const notifications: Record<string, Notification> = {};
+          for (const record of result) {
+            const notification = Notification.of(record);
+            notifications[notification.getId()] = notification;
+          }
+          resolve(notifications);
+        });
+    });
+  }
+
+  // -- load single
+
+  loadUnit(id: string): Promise<Unit> {
+    return new Promise<Unit>((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+
+      const tx = this.db.transaction(DB_TABLES.units, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.units)
+        .get(id)
+        .then((result: Record<string, string | number> | undefined) => {
+          if (result) {
+            const unit = Unit.of(result);
+            resolve(unit);
+          } else {
+            reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
+
+  loadMapGroup(id: string): Promise<MapGroup> {
+    return new Promise<MapGroup>((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+
+      const tx = this.db.transaction(DB_TABLES.mapGroups, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.mapGroups)
+        .get(id)
+        .then((result: Record<string, string | number> | undefined) => {
+          if (result) {
+            const mapGroup = MapGroup.of(result);
+            resolve(mapGroup);
+          } else {
+            reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
+
+  loadMapItem(id: string): Promise<MapItem> {
+    return new Promise<MapItem>((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+
+      const tx = this.db.transaction(DB_TABLES.mapItems, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.mapItems)
+        .get(id)
+        .then((result: Record<string, string | number> | undefined) => {
+          if (result) {
+            const namedGeoReferencedObject = MapItem.of(result);
+            resolve(namedGeoReferencedObject);
+          } else {
+            reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
+
+  loadMapStyle(id: string): Promise<MapBaseLayer> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+
+      const tx = this.db.transaction(DB_TABLES.mapStyles, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.mapStyles)
+        .get(id)
+        .then((result: Record<string, string | number> | undefined) => {
+          if (result) {
+            const mapStyle = MapBaseLayer.of(result);
+            resolve(mapStyle);
+          } else {
+            reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
+
+  loadMapOverlay(id: string): Promise<MapOverlay> {
+    return new Promise<MapOverlay>((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+
+      const tx = this.db.transaction(DB_TABLES.overlays, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.overlays)
+        .get(id)
+        .then((result: Record<string, string | number> | undefined) => {
+          if (result) {
+            const overlay = MapOverlay.of(result);
+            return resolve(overlay);
+          } else {
+            reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
+
+  loadPhoto(id: string): Promise<Photo> {
+    return new Promise<Photo>((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.photos, 'readonly');
+      void tx
+        .objectStore(DB_TABLES.photos)
+        .get(id)
+        .then((result: Record<string, string | number> | undefined) => {
+          if (result) {
+            const photo = Photo.of(result);
+            return resolve(photo);
+          } else {
+            reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
+
+  loadMissionGroup(id: string): Promise<MissionGroup> {
+    return new Promise<MissionGroup>((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+
+      const tx = this.db.transaction(DB_TABLES.missionGroups, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.missionGroups)
+        .get(id)
+        .then((result: Record<string, string | number> | undefined) => {
+          if (result) {
+            return resolve(MissionGroup.of(result));
+          } else {
+            reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
+
+  loadUser(id: string): Promise<User> {
+    return new Promise<User>((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+
+      const tx = this.db.transaction(DB_TABLES.users, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.users)
+        .get(id)
+        .then((result: Record<string, string | number> | undefined) => {
+          if (result) {
+            return resolve(User.of(result));
+          } else {
+            reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
+
+  loadNotification(id: string): Promise<Notification> {
+    return new Promise<Notification>((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+
+      const tx = this.db.transaction(DB_TABLES.notifications, 'readonly');
+
+      void tx
+        .objectStore(DB_TABLES.notifications)
+        .get(id)
+        .then((result: Record<string, string | number> | undefined) => {
+          if (result) {
+            return resolve(Notification.of(result));
+          } else {
+            reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
+
+  // -- replace all
+
+  replaceAllUnits(units: Unit[]): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.units, 'readwrite');
+      void tx
+        .objectStore(DB_TABLES.units)
+        .getAllKeys()
+        .then((result) => {
+          const existingKeys = result as string[];
+          const newKeys = units.map((entry) => entry.getId());
+
+          for (const existingKey of existingKeys) {
+            if (!newKeys.includes(existingKey)) {
+              void tx.objectStore(DB_TABLES.units).delete(existingKey);
             }
-        });
-        this.isSetUp = true;
-        this.setUpDoneCallbacks.forEach(callback => callback(this));
-        ApplicationLogger.info('IndexedDB setup complete.', { service: 'DatabaseProvider' });
-    }
+          }
 
-    // -- loadAll
-
-
-    loadAllUnits(): Promise<Record<string, Unit>> {
-        return new Promise<Record<string, Unit>>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.units, 'readonly');
-
-            void tx.objectStore(DB_TABLES.units).getAll()
-                .then((result: Record<string, string | number>[]) => {
-                    const units: Record<string, Unit> = {};
-                    for (const record of result) {
-                        const unit = Unit.of(record);
-                        units[unit.getId()] = unit;
-                    }
-                    resolve(units);
-                });
-        });
-    }
-
-    loadAllMapGroups(): Promise<Record<string, MapGroup>> {
-        return new Promise<Record<string, MapGroup>>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.mapGroups, 'readonly');
-
-            void tx.objectStore(DB_TABLES.mapGroups).getAll()
-                .then((result: Record<string, string | number>[]) => {
-                    const mapGroups: Record<string, MapGroup> = {};
-                    for (const record of result) {
-                        const mapGroup = MapGroup.of(record);
-                        mapGroups[mapGroup.getId()] = mapGroup;
-                    }
-                    resolve(mapGroups);
-                });
-        });
-    }
-
-    loadAllMapItems(): Promise<Record<string, MapItem>> {
-        return new Promise<Record<string, MapItem>>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.mapItems, 'readonly');
-
-            void tx.objectStore(DB_TABLES.mapItems).getAll()
-                .then((result: Record<string, string | number>[]) => {
-                    const namedGeoReferencedObjects: Record<string, MapItem> = {};
-                    for (const record of result) {
-                        const namedGeoReferencedObject = MapItem.of(record);
-                        namedGeoReferencedObjects[namedGeoReferencedObject.getId()] = namedGeoReferencedObject;
-                    }
-                    resolve(namedGeoReferencedObjects);
-                });
-        });
-    }
-
-    loadAllMapStyles(): Promise<Record<string, MapBaseLayer>> {
-        return new Promise<Record<string, MapBaseLayer>>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.mapStyles, 'readonly');
-
-            void tx.objectStore(DB_TABLES.mapStyles).getAll()
-                .then((result: Record<string, string | number>[]) => {
-                    const mapStyles: Record<string, MapBaseLayer> = {};
-                    for (const record of result) {
-                        const mapStyle = MapBaseLayer.of(record);
-                        mapStyles[mapStyle.getId()] = mapStyle;
-                        const layerUrl = new URL(mapStyle.getUrl());
-                        new BroadcastChannel('setMapServicesBase').postMessage(
-                            {
-                                url: layerUrl.protocol + '//' + layerUrl.hostname
-                            }
-                        );
-                    }
-                    resolve(mapStyles);
-                });
-        });
-    }
-
-    loadAllMapOverlays(): Promise<Record<string, MapOverlay>> {
-        return new Promise<Record<string, MapOverlay>>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.overlays, 'readonly');
-
-            void tx.objectStore(DB_TABLES.overlays).getAll()
-                .then((result: Record<string, string | number>[]) => {
-                    const overlays: Record<string, MapOverlay> = {};
-                    for (const record of result) {
-                        const overlay = MapOverlay.of(record);
-                        overlays[overlay.getId()] = overlay;
-                    }
-                    resolve(overlays);
-                });
-        });
-    }
-
-    loadAllPhotos(): Promise<Record<string, Photo>> {
-        return new Promise<Record<string, Photo>>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.photos, 'readonly');
-
-            void tx.objectStore(DB_TABLES.photos).getAll()
-                .then((result: Record<string, string | number>[]) => {
-                    const photos: Record<string, Photo> = {};
-                    for (const record of result) {
-                        const photo = Photo.of(record);
-                        photos[photo.getId()] = photo;
-                    }
-                    resolve(photos);
-                });
-        });
-    }
-
-    loadAllMissionGroups(): Promise<Record<string, MissionGroup>> {
-        return new Promise<Record<string, MissionGroup>>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.missionGroups, 'readonly');
-
-            void tx.objectStore(DB_TABLES.missionGroups).getAll()
-                .then((result: Record<string, string | number>[]) => {
-                    const missionGroups: Record<string, MissionGroup> = {};
-                    for (const record of result) {
-                        const missionGroup = MissionGroup.of(record);
-                        missionGroups[missionGroup.getId()] = missionGroup;
-                    }
-                    resolve(missionGroups);
-                });
-        });
-    }
-
-    loadAllUsers(): Promise<Record<string, User>> {
-        return new Promise<Record<string, User>>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.users, 'readonly');
-
-            void tx.objectStore(DB_TABLES.users).getAll()
-                .then((result: Record<string, string | number>[]) => {
-                    const overlays: Record<string, User> = {};
-                    for (const record of result) {
-                        const overlay = User.of(record);
-                        overlays[overlay.getId()] = overlay;
-                    }
-                    resolve(overlays);
-                });
-        });
-    }
-
-    loadAllNotifications(): Promise<Record<string, Notification>> {
-        return new Promise<Record<string, Notification>>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.notifications, 'readonly');
-
-            void tx.objectStore(DB_TABLES.notifications).getAll()
-                .then((result: Record<string, string | number>[]) => {
-                    const notifications: Record<string, Notification> = {};
-                    for (const record of result) {
-                        const notification = Notification.of(record);
-                        notifications[notification.getId()] = notification;
-                    }
-                    resolve(notifications);
-                });
-        });
-
-    }
-
-    // -- load single
-
-    loadUnit(id: string): Promise<Unit> {
-        return new Promise<Unit>((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-
-            const tx = this.db.transaction(DB_TABLES.units, 'readonly');
-
-            void tx.objectStore(DB_TABLES.units).get(id).then((result: Record<string, string | number> | undefined) => {
-                if (result) {
-                    const unit = Unit.of(result);
-                    resolve(unit);
-                } else {
-                    reject(new Error('Not Exist'));
-                }
-            });
-        });
-    }
-
-    loadMapGroup(id: string): Promise<MapGroup> {
-        return new Promise<MapGroup>((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-
-            const tx = this.db.transaction(DB_TABLES.mapGroups, 'readonly');
-
-            void tx.objectStore(DB_TABLES.mapGroups).get(id).then((result: Record<string, string | number> | undefined) => {
-                if (result) {
-                    const mapGroup = MapGroup.of(result);
-                    resolve(mapGroup);
-                } else {
-                    reject(new Error('Not Exist'));
-                }
-            });
-        });
-    }
-
-    loadMapItem(id: string): Promise<MapItem> {
-        return new Promise<MapItem>((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-
-            const tx = this.db.transaction(DB_TABLES.mapItems, 'readonly');
-
-            void tx.objectStore(DB_TABLES.mapItems).get(id).then((result: Record<string, string | number> | undefined) => {
-                if (result) {
-                    const namedGeoReferencedObject = MapItem.of(result);
-                    resolve(namedGeoReferencedObject);
-                } else {
-                    reject(new Error('Not Exist'));
-                }
-            });
-        });
-    }
-
-    loadMapStyle(id: string): Promise<MapBaseLayer> {
-        return new Promise((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-
-            const tx = this.db.transaction(DB_TABLES.mapStyles, 'readonly');
-
-            void tx.objectStore(DB_TABLES.mapStyles).get(id).then((result: Record<string, string | number> | undefined) => {
-                if (result) {
-                    const mapStyle = MapBaseLayer.of(result);
-                    resolve(mapStyle);
-                } else {
-                    reject(new Error('Not Exist'));
-                }
-            });
-        });
-    }
-
-    loadMapOverlay(id: string): Promise<MapOverlay> {
-        return new Promise<MapOverlay>((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-
-            const tx = this.db.transaction(DB_TABLES.overlays, 'readonly');
-
-            void tx.objectStore(DB_TABLES.overlays).get(id).then((result: Record<string, string | number> | undefined) => {
-                if (result) {
-                    const overlay = MapOverlay.of(result);
-                    return resolve(overlay);
-                } else {
-                    reject(new Error('Not Exist'));
-                }
-            });
-        });
-    }
-
-    loadPhoto(id: string): Promise<Photo> {
-        return new Promise<Photo>((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.photos, 'readonly');
-            void tx.objectStore(DB_TABLES.photos).get(id).then((result: Record<string, string | number> | undefined) => {
-                if (result) {
-                    const photo = Photo.of(result);
-                    return resolve(photo);
-                } else {
-                    reject(new Error('Not Exist'));
-                }
-            });
-        });
-    }
-
-    loadMissionGroup(id: string): Promise<MissionGroup> {
-        return new Promise<MissionGroup>((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-
-            const tx = this.db.transaction(DB_TABLES.missionGroups, 'readonly');
-
-            void tx.objectStore(DB_TABLES.missionGroups).get(id).then((result: Record<string, string | number> | undefined) => {
-                if (result) {
-                    return resolve(MissionGroup.of(result));
-                } else {
-                    reject(new Error('Not Exist'));
-                }
-            });
-        });
-    }
-
-    loadUser(id: string): Promise<User> {
-        return new Promise<User>((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-
-            const tx = this.db.transaction(DB_TABLES.users, 'readonly');
-
-            void tx.objectStore(DB_TABLES.users).get(id).then((result: Record<string, string | number> | undefined) => {
-                if (result) {
-                    return resolve(User.of(result));
-                } else {
-                    reject(new Error('Not Exist'));
-                }
-            });
-        });
-    }
-
-    loadNotification(id: string): Promise<Notification> {
-        return new Promise<Notification>((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-
-            const tx = this.db.transaction(DB_TABLES.notifications, 'readonly');
-
-            void tx.objectStore(DB_TABLES.notifications).get(id).then((result: Record<string, string | number> | undefined) => {
-                if (result) {
-                    return resolve(Notification.of(result));
-                } else {
-                    reject(new Error('Not Exist'));
-                }
-            });
-        });
-    }
-
-    // -- replace all
-
-
-
-    replaceAllUnits(units: Unit[]): Promise<void> {
-        return new Promise<void>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.units, 'readwrite');
-            void tx.objectStore(DB_TABLES.units).getAllKeys().then(result => {
-                const existingKeys = result as string[];
-                const newKeys = units.map(entry => entry.getId());
-
-                for (const existingKey of existingKeys) {
-                    if (!newKeys.includes(existingKey)) {
-                        void tx.objectStore(DB_TABLES.units).delete(existingKey);
-                    }
-                }
-
-                for (const unit of units) {
-                    const unitRecord = unit.record();
-                    if (existingKeys.includes(unit.getId())) {
-                        void tx.objectStore(DB_TABLES.units).put(unitRecord);
-                    } else {
-                        void tx.objectStore(DB_TABLES.units).add(unitRecord);
-                    }
-                }
-                resolve();
-            });
-        });
-    }
-
-    replaceAllMapGroups(mapGroups: MapGroup[]): Promise<void> {
-        return new Promise<void>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.mapGroups, 'readwrite');
-            void tx.objectStore(DB_TABLES.mapGroups).getAllKeys().then(result => {
-                const existingKeys = result as string[];
-                const newKeys = mapGroups.map(entry => entry.getId());
-
-                for (const existingKey of existingKeys) {
-                    if (!newKeys.includes(existingKey)) {
-                        void tx.objectStore(DB_TABLES.mapGroups).delete(existingKey);
-                    }
-                }
-
-                for (const mapGroup of mapGroups) {
-                    const mapGroupRecord = mapGroup.record();
-                    if (existingKeys.includes(mapGroup.getId())) {
-                        void tx.objectStore(DB_TABLES.mapGroups).put(mapGroupRecord);
-                    } else {
-                        void tx.objectStore(DB_TABLES.mapGroups).add(mapGroupRecord);
-                    }
-                }
-                resolve();
-            });
-        });
-    }
-
-    replaceAllMapItems(namedGeoReferencedObjects: MapItem[]): Promise<void> {
-        return new Promise<void>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.mapItems, 'readwrite');
-            void tx.objectStore(DB_TABLES.mapItems).getAllKeys().then(result => {
-                const existingKeys = result as string[];
-                const newKeys = namedGeoReferencedObjects.map(entry => entry.getId());
-
-                for (const existingKey of existingKeys) {
-                    if (!newKeys.includes(existingKey)) {
-                        void tx.objectStore(DB_TABLES.mapItems).delete(existingKey);
-                    }
-                }
-
-                for (const namedGeoReferencedObject of namedGeoReferencedObjects) {
-                    const namedGeoReferencedObjectRecord = namedGeoReferencedObject.record();
-                    if (namedGeoReferencedObject.getId() == null) continue;
-                    if (existingKeys.includes((namedGeoReferencedObject.getId()))) {
-                        void tx.objectStore(DB_TABLES.mapItems).put(namedGeoReferencedObjectRecord);
-                    } else {
-                        void tx.objectStore(DB_TABLES.mapItems).add(namedGeoReferencedObjectRecord);
-                    }
-                }
-                resolve();
-            });
-        });
-    }
-
-
-    replaceAllMapStyles(mapStyles: MapBaseLayer[]): Promise<void> {
-        return new Promise<void>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.mapStyles, 'readwrite');
-            void tx.objectStore(DB_TABLES.mapStyles).getAllKeys().then(result => {
-                const existingKeys = result as string[];
-                const newKeys = mapStyles.map(ms => ms.getId());
-
-                for (const existingKey of existingKeys) {
-                    if (!newKeys.includes(existingKey)) {
-                        void tx.objectStore(DB_TABLES.mapStyles).delete(existingKey);
-                    }
-                }
-
-                for (const mapStyle of mapStyles) {
-                    const mapStyleRecord = mapStyle.record();
-                    if (existingKeys.includes(mapStyle.getId())) {
-                        void tx.objectStore(DB_TABLES.mapStyles).put(mapStyleRecord);
-                    } else {
-                        void tx.objectStore(DB_TABLES.mapStyles).add(mapStyleRecord);
-                    }
-                }
-                resolve();
-            });
-        });
-    }
-
-    replaceAllMapOverlays(overlays: MapOverlay[]): Promise<void> {
-        return new Promise<void>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.overlays, 'readwrite');
-            void tx.objectStore(DB_TABLES.overlays).getAllKeys().then(result => {
-                const existingKeys = result as string[];
-                const newKeys = overlays.map(entry => entry.getId());
-
-                for (const existingKey of existingKeys) {
-                    if (!newKeys.includes(existingKey)) {
-                        void tx.objectStore(DB_TABLES.overlays).delete(existingKey);
-                    }
-                }
-
-                for (const overlay of overlays) {
-                    const overlayRecord = overlay.record();
-                    if (existingKeys.includes(overlay.getId())) {
-                        void tx.objectStore(DB_TABLES.overlays).put(overlayRecord);
-                    } else {
-                        void tx.objectStore(DB_TABLES.overlays).add(overlayRecord);
-                    }
-                }
-                resolve();
-            });
-        });
-    }
-
-    replaceAllPhotos(photos: Photo[]): Promise<void> {
-        return new Promise<void>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.photos, 'readwrite');
-            void tx.objectStore(DB_TABLES.photos).getAllKeys().then(result => {
-                const existingKeys = result as string[];
-                const newKeys = photos.map(entry => entry.getId());
-
-                for (const existingKey of existingKeys) {
-                    if (!newKeys.includes(existingKey)) {
-                        void tx.objectStore(DB_TABLES.photos).delete(existingKey);
-                    }
-                }
-
-                for (const photo of photos) {
-                    const photoRecord = photo.record();
-                    if (existingKeys.includes(photo.getId())) {
-                        void tx.objectStore(DB_TABLES.photos).put(photoRecord);
-                    } else {
-                        void tx.objectStore(DB_TABLES.photos).add(photoRecord);
-                    }
-                }
-                resolve();
-            });
-        });
-    }
-
-    replaceAllMissionGroups(missionGroups: MissionGroup[]): Promise<void> {
-        return new Promise<void>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.missionGroups, 'readwrite');
-            void tx.objectStore(DB_TABLES.missionGroups).getAllKeys().then(result => {
-                const existingKeys = result as string[];
-                const newKeys = missionGroups.map(entry => entry.getId());
-
-                for (const existingKey of existingKeys) {
-                    if (!newKeys.includes(existingKey)) {
-                        void tx.objectStore(DB_TABLES.missionGroups).delete(existingKey);
-                    }
-                }
-
-                for (const missionGroup of missionGroups) {
-                    const missionGroupRecord = missionGroup.record();
-                    if (existingKeys.includes(missionGroup.getId())) {
-                        void tx.objectStore(DB_TABLES.missionGroups).put(missionGroupRecord);
-                    } else {
-                        void tx.objectStore(DB_TABLES.missionGroups).add(missionGroupRecord);
-                    }
-                }
-                resolve();
-            });
-        });
-    }
-
-    replaceAllUsers(users: User[]): Promise<void> {
-        return new Promise<void>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.users, 'readwrite');
-            void tx.objectStore(DB_TABLES.users).getAllKeys().then(result => {
-                const existingKeys = result as string[];
-                const newKeys = users.map(entry => entry.getId());
-
-                for (const existingKey of existingKeys) {
-                    if (!newKeys.includes(existingKey)) {
-                        void tx.objectStore(DB_TABLES.users).delete(existingKey);
-                    }
-                }
-
-                for (const user of users) {
-                    const userRecord = user.record();
-                    if (existingKeys.includes(user.getId())) {
-                        void tx.objectStore(DB_TABLES.users).put(userRecord);
-                    } else {
-                        void tx.objectStore(DB_TABLES.users).add(userRecord);
-                    }
-                }
-                resolve();
-            });
-        });
-    }
-
-    replaceAllNotifications(notifications: Notification[]): Promise<void> {
-        return new Promise<void>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.notifications, 'readwrite');
-            void tx.objectStore(DB_TABLES.notifications).getAllKeys().then(result => {
-                const existingKeys = result as string[];
-                const newKeys = notifications.map(entry => entry.getId());
-
-                for (const existingKey of existingKeys) {
-                    if (!newKeys.includes(existingKey)) {
-                        void tx.objectStore(DB_TABLES.notifications).delete(existingKey);
-                    }
-                }
-
-                for (const notification of notifications) {
-                    const notificationRecord = notification.record();
-                    if (existingKeys.includes(notification.getId())) {
-                        void tx.objectStore(DB_TABLES.notifications).put(notificationRecord);
-                    } else {
-                        void tx.objectStore(DB_TABLES.notifications).add(notificationRecord);
-                    }
-                }
-                resolve();
-            });
-        });
-    }
-
-    // -- save single
-
-    saveUnit(unit: Unit): Promise<Unit> {
-        return new Promise<Unit>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            if (unit.getId() == null) throw new Error('No ID set for unit');
+          for (const unit of units) {
             const unitRecord = unit.record();
-            const tx = this.db.transaction(DB_TABLES.units, 'readwrite');
-            if (!unit.getPermissions()) {
-                throw new Error('Unit permissions cannot be null');
+            if (existingKeys.includes(unit.getId())) {
+              void tx.objectStore(DB_TABLES.units).put(unitRecord);
+            } else {
+              void tx.objectStore(DB_TABLES.units).add(unitRecord);
             }
-            void tx.objectStore(DB_TABLES.units).getKey(unit.getId()).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.units).put(unitRecord);
-                } else {
-                    void tx.objectStore(DB_TABLES.units).add(unitRecord);
-                }
-                resolve(unit);
-            });
+          }
+          resolve();
         });
-    }
+    });
+  }
 
-    saveMapGroup(mapGroup: MapGroup): Promise<MapGroup> {
-        return new Promise<MapGroup>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
+  replaceAllMapGroups(mapGroups: MapGroup[]): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.mapGroups, 'readwrite');
+      void tx
+        .objectStore(DB_TABLES.mapGroups)
+        .getAllKeys()
+        .then((result) => {
+          const existingKeys = result as string[];
+          const newKeys = mapGroups.map((entry) => entry.getId());
 
+          for (const existingKey of existingKeys) {
+            if (!newKeys.includes(existingKey)) {
+              void tx.objectStore(DB_TABLES.mapGroups).delete(existingKey);
+            }
+          }
+
+          for (const mapGroup of mapGroups) {
             const mapGroupRecord = mapGroup.record();
-            const tx = this.db.transaction(DB_TABLES.mapGroups, 'readwrite');
-
-            void tx.objectStore(DB_TABLES.mapGroups).getKey(mapGroup.getId()).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.mapGroups).put(mapGroupRecord);
-                } else {
-                    void tx.objectStore(DB_TABLES.mapGroups).add(mapGroupRecord);
-                }
-                resolve(mapGroup);
-            });
-        });
-    }
-
-    saveMapItem(namedGeoReferencedObject: MapItem): Promise<MapItem> {
-        return new Promise<MapItem>((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-
-            const namedGeoReferencedObjectRecord = namedGeoReferencedObject.record();
-            const tx = this.db.transaction(DB_TABLES.mapItems, 'readwrite');
-
-            if (namedGeoReferencedObject.getId() == null) {
-                return reject(new Error('NamedGeoReferencedObject ID is null'));
+            if (existingKeys.includes(mapGroup.getId())) {
+              void tx.objectStore(DB_TABLES.mapGroups).put(mapGroupRecord);
+            } else {
+              void tx.objectStore(DB_TABLES.mapGroups).add(mapGroupRecord);
             }
-            void tx.objectStore(DB_TABLES.mapItems).getKey(namedGeoReferencedObject.getId()).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.mapItems).put(namedGeoReferencedObjectRecord);
-                } else {
-                    void tx.objectStore(DB_TABLES.mapItems).add(namedGeoReferencedObjectRecord);
-                }
-                resolve(namedGeoReferencedObject);
-            });
+          }
+          resolve();
         });
-    }
+    });
+  }
 
+  replaceAllMapItems(namedGeoReferencedObjects: MapItem[]): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.mapItems, 'readwrite');
+      void tx
+        .objectStore(DB_TABLES.mapItems)
+        .getAllKeys()
+        .then((result) => {
+          const existingKeys = result as string[];
+          const newKeys = namedGeoReferencedObjects.map((entry) =>
+            entry.getId(),
+          );
 
-    saveMapStyle(mapStyle: MapBaseLayer): Promise<MapBaseLayer> {
-        return new Promise<MapBaseLayer>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
+          for (const existingKey of existingKeys) {
+            if (!newKeys.includes(existingKey)) {
+              void tx.objectStore(DB_TABLES.mapItems).delete(existingKey);
+            }
+          }
 
+          for (const namedGeoReferencedObject of namedGeoReferencedObjects) {
+            const namedGeoReferencedObjectRecord =
+              namedGeoReferencedObject.record();
+            if (namedGeoReferencedObject.getId() == null) continue;
+            if (existingKeys.includes(namedGeoReferencedObject.getId())) {
+              void tx
+                .objectStore(DB_TABLES.mapItems)
+                .put(namedGeoReferencedObjectRecord);
+            } else {
+              void tx
+                .objectStore(DB_TABLES.mapItems)
+                .add(namedGeoReferencedObjectRecord);
+            }
+          }
+          resolve();
+        });
+    });
+  }
+
+  replaceAllMapStyles(mapStyles: MapBaseLayer[]): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.mapStyles, 'readwrite');
+      void tx
+        .objectStore(DB_TABLES.mapStyles)
+        .getAllKeys()
+        .then((result) => {
+          const existingKeys = result as string[];
+          const newKeys = mapStyles.map((ms) => ms.getId());
+
+          for (const existingKey of existingKeys) {
+            if (!newKeys.includes(existingKey)) {
+              void tx.objectStore(DB_TABLES.mapStyles).delete(existingKey);
+            }
+          }
+
+          for (const mapStyle of mapStyles) {
             const mapStyleRecord = mapStyle.record();
-            const tx = this.db.transaction(DB_TABLES.mapStyles, 'readwrite');
-
-            void tx.objectStore(DB_TABLES.mapStyles).getKey(mapStyle.getId()).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.mapStyles).put(mapStyleRecord);
-                } else {
-                    void tx.objectStore(DB_TABLES.mapStyles).add(mapStyleRecord);
-                }
-                resolve(mapStyle);
-            });
+            if (existingKeys.includes(mapStyle.getId())) {
+              void tx.objectStore(DB_TABLES.mapStyles).put(mapStyleRecord);
+            } else {
+              void tx.objectStore(DB_TABLES.mapStyles).add(mapStyleRecord);
+            }
+          }
+          resolve();
         });
-    }
+    });
+  }
 
-    saveMapOverlay(overlay: MapOverlay): Promise<MapOverlay> {
-        return new Promise((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
+  replaceAllMapOverlays(overlays: MapOverlay[]): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.overlays, 'readwrite');
+      void tx
+        .objectStore(DB_TABLES.overlays)
+        .getAllKeys()
+        .then((result) => {
+          const existingKeys = result as string[];
+          const newKeys = overlays.map((entry) => entry.getId());
 
+          for (const existingKey of existingKeys) {
+            if (!newKeys.includes(existingKey)) {
+              void tx.objectStore(DB_TABLES.overlays).delete(existingKey);
+            }
+          }
+
+          for (const overlay of overlays) {
             const overlayRecord = overlay.record();
-            const tx = this.db.transaction(DB_TABLES.overlays, 'readwrite');
-
-            void tx.objectStore(DB_TABLES.overlays).getKey(overlay.getId()).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.overlays).put(overlayRecord);
-                } else {
-                    void tx.objectStore(DB_TABLES.overlays).add(overlayRecord);
-                }
-                resolve(overlay);
-            });
+            if (existingKeys.includes(overlay.getId())) {
+              void tx.objectStore(DB_TABLES.overlays).put(overlayRecord);
+            } else {
+              void tx.objectStore(DB_TABLES.overlays).add(overlayRecord);
+            }
+          }
+          resolve();
         });
-    }
+    });
+  }
 
-    savePhoto(photo: Photo): Promise<Photo> {
-        return new Promise<Photo>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
+  replaceAllPhotos(photos: Photo[]): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.photos, 'readwrite');
+      void tx
+        .objectStore(DB_TABLES.photos)
+        .getAllKeys()
+        .then((result) => {
+          const existingKeys = result as string[];
+          const newKeys = photos.map((entry) => entry.getId());
 
+          for (const existingKey of existingKeys) {
+            if (!newKeys.includes(existingKey)) {
+              void tx.objectStore(DB_TABLES.photos).delete(existingKey);
+            }
+          }
+
+          for (const photo of photos) {
             const photoRecord = photo.record();
-            const tx = this.db.transaction(DB_TABLES.photos, 'readwrite');
-
-            void tx.objectStore(DB_TABLES.photos).getKey(photo.getId()).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.photos).put(photoRecord);
-                } else {
-                    void tx.objectStore(DB_TABLES.photos).add(photoRecord);
-                }
-                resolve(photo);
-            });
+            if (existingKeys.includes(photo.getId())) {
+              void tx.objectStore(DB_TABLES.photos).put(photoRecord);
+            } else {
+              void tx.objectStore(DB_TABLES.photos).add(photoRecord);
+            }
+          }
+          resolve();
         });
-    }
+    });
+  }
 
-    savePhotoImage(image: File): Promise<Photo> {
-        return Promise.reject(new Error(`Method not implemented. savePhotoImage(${image.name})`));
-    }
+  replaceAllMissionGroups(missionGroups: MissionGroup[]): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.missionGroups, 'readwrite');
+      void tx
+        .objectStore(DB_TABLES.missionGroups)
+        .getAllKeys()
+        .then((result) => {
+          const existingKeys = result as string[];
+          const newKeys = missionGroups.map((entry) => entry.getId());
 
-    saveMissionGroup(missionGroup: MissionGroup): Promise<MissionGroup> {
-        return new Promise<MissionGroup>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
+          for (const existingKey of existingKeys) {
+            if (!newKeys.includes(existingKey)) {
+              void tx.objectStore(DB_TABLES.missionGroups).delete(existingKey);
+            }
+          }
 
+          for (const missionGroup of missionGroups) {
             const missionGroupRecord = missionGroup.record();
-            const tx = this.db.transaction(DB_TABLES.missionGroups, 'readwrite');
-
-            void tx.objectStore(DB_TABLES.missionGroups).getKey(missionGroup.getId()).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.missionGroups).put(missionGroupRecord);
-                } else {
-                    void tx.objectStore(DB_TABLES.missionGroups).add(missionGroupRecord);
-                }
-                resolve(missionGroup);
-            });
+            if (existingKeys.includes(missionGroup.getId())) {
+              void tx
+                .objectStore(DB_TABLES.missionGroups)
+                .put(missionGroupRecord);
+            } else {
+              void tx
+                .objectStore(DB_TABLES.missionGroups)
+                .add(missionGroupRecord);
+            }
+          }
+          resolve();
         });
-    }
+    });
+  }
 
-    saveUser(user: User): Promise<User> {
-        return new Promise((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
+  replaceAllUsers(users: User[]): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.users, 'readwrite');
+      void tx
+        .objectStore(DB_TABLES.users)
+        .getAllKeys()
+        .then((result) => {
+          const existingKeys = result as string[];
+          const newKeys = users.map((entry) => entry.getId());
 
+          for (const existingKey of existingKeys) {
+            if (!newKeys.includes(existingKey)) {
+              void tx.objectStore(DB_TABLES.users).delete(existingKey);
+            }
+          }
+
+          for (const user of users) {
             const userRecord = user.record();
-            const tx = this.db.transaction(DB_TABLES.users, 'readwrite');
-
-            void tx.objectStore(DB_TABLES.users).getKey(user.getId()).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.users).put(userRecord);
-                } else {
-                    void tx.objectStore(DB_TABLES.users).add(userRecord);
-                }
-                resolve(user);
-            });
+            if (existingKeys.includes(user.getId())) {
+              void tx.objectStore(DB_TABLES.users).put(userRecord);
+            } else {
+              void tx.objectStore(DB_TABLES.users).add(userRecord);
+            }
+          }
+          resolve();
         });
-    }
+    });
+  }
 
-    saveNotification(notification: Notification): Promise<Notification> {
-        return new Promise((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
+  replaceAllNotifications(notifications: Notification[]): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.notifications, 'readwrite');
+      void tx
+        .objectStore(DB_TABLES.notifications)
+        .getAllKeys()
+        .then((result) => {
+          const existingKeys = result as string[];
+          const newKeys = notifications.map((entry) => entry.getId());
 
+          for (const existingKey of existingKeys) {
+            if (!newKeys.includes(existingKey)) {
+              void tx.objectStore(DB_TABLES.notifications).delete(existingKey);
+            }
+          }
+
+          for (const notification of notifications) {
             const notificationRecord = notification.record();
-            const tx = this.db.transaction(DB_TABLES.notifications, 'readwrite');
-
-            void tx.objectStore(DB_TABLES.notifications).getKey(notification.getId()).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.notifications).put(notificationRecord);
-                } else {
-                    void tx.objectStore(DB_TABLES.notifications).add(notificationRecord);
-                }
-                resolve(notification);
-            });
+            if (existingKeys.includes(notification.getId())) {
+              void tx
+                .objectStore(DB_TABLES.notifications)
+                .put(notificationRecord);
+            } else {
+              void tx
+                .objectStore(DB_TABLES.notifications)
+                .add(notificationRecord);
+            }
+          }
+          resolve();
         });
-    }
+    });
+  }
 
-    // -- delete single
+  // -- save single
 
-    deleteUnit(id: string): Promise<void> {
-        return new Promise<void>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-
-            const tx = this.db.transaction(DB_TABLES.units, 'readwrite');
-
-            void tx.objectStore(DB_TABLES.units).getKey(id).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.units).delete(id);
-                    resolve();
-                } else {
-                    throw new Error('Not Exist');
-                }
-            });
+  saveUnit(unit: Unit): Promise<Unit> {
+    return new Promise<Unit>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      if (unit.getId() == null) throw new Error('No ID set for unit');
+      const unitRecord = unit.record();
+      const tx = this.db.transaction(DB_TABLES.units, 'readwrite');
+      if (!unit.getPermissions()) {
+        throw new Error('Unit permissions cannot be null');
+      }
+      void tx
+        .objectStore(DB_TABLES.units)
+        .getKey(unit.getId())
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.units).put(unitRecord);
+          } else {
+            void tx.objectStore(DB_TABLES.units).add(unitRecord);
+          }
+          resolve(unit);
         });
-    }
+    });
+  }
 
-    deleteMapGroup(id: string): Promise<void> {
-        return new Promise<void>((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
+  saveMapGroup(mapGroup: MapGroup): Promise<MapGroup> {
+    return new Promise<MapGroup>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
 
-            const tx = this.db.transaction(DB_TABLES.mapGroups, 'readwrite');
+      const mapGroupRecord = mapGroup.record();
+      const tx = this.db.transaction(DB_TABLES.mapGroups, 'readwrite');
 
-            void tx.objectStore(DB_TABLES.mapGroups).getKey(id).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.mapGroups).delete(id);
-                    resolve();
-                } else {
-                    throw new Error('Not Exist');
-                }
-            });
+      void tx
+        .objectStore(DB_TABLES.mapGroups)
+        .getKey(mapGroup.getId())
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.mapGroups).put(mapGroupRecord);
+          } else {
+            void tx.objectStore(DB_TABLES.mapGroups).add(mapGroupRecord);
+          }
+          resolve(mapGroup);
         });
-    }
+    });
+  }
 
-    deleteMapItem(id: string): Promise<void> {
+  saveMapItem(namedGeoReferencedObject: MapItem): Promise<MapItem> {
+    return new Promise<MapItem>((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
 
-        return new Promise((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.mapItems, 'readwrite');
+      const namedGeoReferencedObjectRecord = namedGeoReferencedObject.record();
+      const tx = this.db.transaction(DB_TABLES.mapItems, 'readwrite');
 
-            void tx.objectStore(DB_TABLES.mapItems).getKey(id).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.mapItems).delete(id);
-                    return resolve();
-                } else {
-                    return reject(new Error('Not Exist'));
-                }
-            });
+      if (namedGeoReferencedObject.getId() == null) {
+        return reject(new Error('NamedGeoReferencedObject ID is null'));
+      }
+      void tx
+        .objectStore(DB_TABLES.mapItems)
+        .getKey(namedGeoReferencedObject.getId())
+        .then((result) => {
+          if (result) {
+            void tx
+              .objectStore(DB_TABLES.mapItems)
+              .put(namedGeoReferencedObjectRecord);
+          } else {
+            void tx
+              .objectStore(DB_TABLES.mapItems)
+              .add(namedGeoReferencedObjectRecord);
+          }
+          resolve(namedGeoReferencedObject);
         });
-    }
+    });
+  }
 
-    deleteMapStyle(id: string): Promise<void> {
-        return new Promise((resolve) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.mapStyles, 'readwrite');
-            void tx.objectStore(DB_TABLES.mapStyles).getKey(id).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.mapStyles).delete(id);
-                    resolve();
-                } else {
-                    throw new Error('Not Exist');
-                }
-            });
+  saveMapStyle(mapStyle: MapBaseLayer): Promise<MapBaseLayer> {
+    return new Promise<MapBaseLayer>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+
+      const mapStyleRecord = mapStyle.record();
+      const tx = this.db.transaction(DB_TABLES.mapStyles, 'readwrite');
+
+      void tx
+        .objectStore(DB_TABLES.mapStyles)
+        .getKey(mapStyle.getId())
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.mapStyles).put(mapStyleRecord);
+          } else {
+            void tx.objectStore(DB_TABLES.mapStyles).add(mapStyleRecord);
+          }
+          resolve(mapStyle);
         });
-    }
+    });
+  }
 
-    deleteMapOverlay(id: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.overlays, 'readwrite');
+  saveMapOverlay(overlay: MapOverlay): Promise<MapOverlay> {
+    return new Promise((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
 
-            void tx.objectStore(DB_TABLES.overlays).getKey(id).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.overlays).delete(id);
-                    resolve();
-                } else {
-                    reject(new Error('Not Exist'));
-                }
-            });
+      const overlayRecord = overlay.record();
+      const tx = this.db.transaction(DB_TABLES.overlays, 'readwrite');
+
+      void tx
+        .objectStore(DB_TABLES.overlays)
+        .getKey(overlay.getId())
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.overlays).put(overlayRecord);
+          } else {
+            void tx.objectStore(DB_TABLES.overlays).add(overlayRecord);
+          }
+          resolve(overlay);
         });
-    }
+    });
+  }
 
-    deletePhoto(id: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.photos, 'readwrite');
+  savePhoto(photo: Photo): Promise<Photo> {
+    return new Promise<Photo>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
 
-            void tx.objectStore(DB_TABLES.photos).getKey(id).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.photos).delete(id);
-                    resolve();
-                } else {
-                    reject(new Error('Not Exist'));
-                }
-            });
+      const photoRecord = photo.record();
+      const tx = this.db.transaction(DB_TABLES.photos, 'readwrite');
+
+      void tx
+        .objectStore(DB_TABLES.photos)
+        .getKey(photo.getId())
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.photos).put(photoRecord);
+          } else {
+            void tx.objectStore(DB_TABLES.photos).add(photoRecord);
+          }
+          resolve(photo);
         });
-    }
+    });
+  }
 
-    deleteMissionGroup(id: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.missionGroups, 'readwrite');
+  savePhotoImage(image: File): Promise<Photo> {
+    return Promise.reject(
+      new Error(`Method not implemented. savePhotoImage(${image.name})`),
+    );
+  }
 
-            void tx.objectStore(DB_TABLES.missionGroups).getKey(id).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.missionGroups).delete(id);
-                    resolve();
-                } else {
-                    reject(new Error('Not Exist'));
-                }
-            });
+  saveMissionGroup(missionGroup: MissionGroup): Promise<MissionGroup> {
+    return new Promise<MissionGroup>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+
+      const missionGroupRecord = missionGroup.record();
+      const tx = this.db.transaction(DB_TABLES.missionGroups, 'readwrite');
+
+      void tx
+        .objectStore(DB_TABLES.missionGroups)
+        .getKey(missionGroup.getId())
+        .then((result) => {
+          if (result) {
+            void tx
+              .objectStore(DB_TABLES.missionGroups)
+              .put(missionGroupRecord);
+          } else {
+            void tx
+              .objectStore(DB_TABLES.missionGroups)
+              .add(missionGroupRecord);
+          }
+          resolve(missionGroup);
         });
-    }
+    });
+  }
 
-    deleteUser(id: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.users, 'readwrite');
+  saveUser(user: User): Promise<User> {
+    return new Promise((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
 
-            void tx.objectStore(DB_TABLES.users).getKey(id).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.users).delete(id);
-                    resolve();
-                } else {
-                    reject(new Error('Not Exist'));
-                }
-            });
+      const userRecord = user.record();
+      const tx = this.db.transaction(DB_TABLES.users, 'readwrite');
+
+      void tx
+        .objectStore(DB_TABLES.users)
+        .getKey(user.getId())
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.users).put(userRecord);
+          } else {
+            void tx.objectStore(DB_TABLES.users).add(userRecord);
+          }
+          resolve(user);
         });
-    }
+    });
+  }
 
-    deleteNotification(id: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (!this.db) throw new Error('Database not initialized');
-            const tx = this.db.transaction(DB_TABLES.notifications, 'readwrite');
+  saveNotification(notification: Notification): Promise<Notification> {
+    return new Promise((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
 
-            void tx.objectStore(DB_TABLES.notifications).getKey(id).then(result => {
-                if (result) {
-                    void tx.objectStore(DB_TABLES.notifications).delete(id);
-                    resolve();
-                } else {
-                    reject(new Error('Not Exist'));
-                }
-            });
+      const notificationRecord = notification.record();
+      const tx = this.db.transaction(DB_TABLES.notifications, 'readwrite');
+
+      void tx
+        .objectStore(DB_TABLES.notifications)
+        .getKey(notification.getId())
+        .then((result) => {
+          if (result) {
+            void tx
+              .objectStore(DB_TABLES.notifications)
+              .put(notificationRecord);
+          } else {
+            void tx
+              .objectStore(DB_TABLES.notifications)
+              .add(notificationRecord);
+          }
+          resolve(notification);
         });
-    }
+    });
+  }
 
+  // -- delete single
+
+  deleteUnit(id: string): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+
+      const tx = this.db.transaction(DB_TABLES.units, 'readwrite');
+
+      void tx
+        .objectStore(DB_TABLES.units)
+        .getKey(id)
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.units).delete(id);
+            resolve();
+          } else {
+            throw new Error('Not Exist');
+          }
+        });
+    });
+  }
+
+  deleteMapGroup(id: string): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+
+      const tx = this.db.transaction(DB_TABLES.mapGroups, 'readwrite');
+
+      void tx
+        .objectStore(DB_TABLES.mapGroups)
+        .getKey(id)
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.mapGroups).delete(id);
+            resolve();
+          } else {
+            throw new Error('Not Exist');
+          }
+        });
+    });
+  }
+
+  deleteMapItem(id: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.mapItems, 'readwrite');
+
+      void tx
+        .objectStore(DB_TABLES.mapItems)
+        .getKey(id)
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.mapItems).delete(id);
+            return resolve();
+          } else {
+            return reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
+
+  deleteMapStyle(id: string): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.mapStyles, 'readwrite');
+      void tx
+        .objectStore(DB_TABLES.mapStyles)
+        .getKey(id)
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.mapStyles).delete(id);
+            resolve();
+          } else {
+            throw new Error('Not Exist');
+          }
+        });
+    });
+  }
+
+  deleteMapOverlay(id: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.overlays, 'readwrite');
+
+      void tx
+        .objectStore(DB_TABLES.overlays)
+        .getKey(id)
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.overlays).delete(id);
+            resolve();
+          } else {
+            reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
+
+  deletePhoto(id: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.photos, 'readwrite');
+
+      void tx
+        .objectStore(DB_TABLES.photos)
+        .getKey(id)
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.photos).delete(id);
+            resolve();
+          } else {
+            reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
+
+  deleteMissionGroup(id: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.missionGroups, 'readwrite');
+
+      void tx
+        .objectStore(DB_TABLES.missionGroups)
+        .getKey(id)
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.missionGroups).delete(id);
+            resolve();
+          } else {
+            reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
+
+  deleteUser(id: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.users, 'readwrite');
+
+      void tx
+        .objectStore(DB_TABLES.users)
+        .getKey(id)
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.users).delete(id);
+            resolve();
+          } else {
+            reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
+
+  deleteNotification(id: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) throw new Error('Database not initialized');
+      const tx = this.db.transaction(DB_TABLES.notifications, 'readwrite');
+
+      void tx
+        .objectStore(DB_TABLES.notifications)
+        .getKey(id)
+        .then((result) => {
+          if (result) {
+            void tx.objectStore(DB_TABLES.notifications).delete(id);
+            resolve();
+          } else {
+            reject(new Error('Not Exist'));
+          }
+        });
+    });
+  }
 }

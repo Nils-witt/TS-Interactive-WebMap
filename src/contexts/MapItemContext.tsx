@@ -1,5 +1,14 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { DataProvider, DataProviderEventType } from '../dataProviders/DataProvider.ts';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
+import {
+  DataProvider,
+  DataProviderEventType,
+} from '../dataProviders/DataProvider.ts';
 import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler.ts';
 import { type MapItem } from '../enitities/MapItem.ts';
 import { DataBaseContext } from './DataBaseContext.tsx';
@@ -8,53 +17,60 @@ import { useApi } from './ApiContext.tsx';
 export const MapItemContext = createContext<MapItem[]>([]);
 
 export function MapItemProvider({ children }: { children: ReactNode }) {
+  const databaseProvider = useContext(DataBaseContext);
+  const apiProvider = useApi();
+  const dp = DataProvider.getInstance();
 
-    const databaseProvider = useContext(DataBaseContext);
-    const apiProvider = useApi();
-    const dp = DataProvider.getInstance();
+  const [mapItems, setMapItems] = useState<MapItem[]>(() =>
+    Array.from(DataProvider.getInstance().getAllMapItems().values()),
+  );
 
+  useEffect(() => {
+    const refresh = () => setMapItems(Array.from(dp.getAllMapItems().values()));
 
-    const [mapItems, setMapItems] = useState<MapItem[]>(
-        () => Array.from(DataProvider.getInstance().getAllMapItems().values())
-    );
-
-    useEffect(() => {
-        const refresh = () => setMapItems(Array.from(dp.getAllMapItems().values()));
-
-        const events = [
-            DataProviderEventType.MAP_ITEM_CREATED,
-            DataProviderEventType.MAP_ITEM_UPDATED,
-            DataProviderEventType.MAP_ITEM_DELETED,
-        ] as const;
-        events.forEach((e) => GlobalEventHandler.getInstance().on(e, refresh));
-        if (!databaseProvider) {
-            console.error('MapItemProvider: DatabaseProvider not available in context');
-            return;
+    const events = [
+      DataProviderEventType.MAP_ITEM_CREATED,
+      DataProviderEventType.MAP_ITEM_UPDATED,
+      DataProviderEventType.MAP_ITEM_DELETED,
+    ] as const;
+    events.forEach((e) => GlobalEventHandler.getInstance().on(e, refresh));
+    if (!databaseProvider) {
+      console.error(
+        'MapItemProvider: DatabaseProvider not available in context',
+      );
+      return;
+    }
+    void databaseProvider
+      .loadAllMapItems()
+      .then((result) => {
+        Object.values(result).forEach((item) => dp.addMapItem(item));
+        refresh();
+        if (apiProvider.hasToken()) {
+          apiProvider
+            .loadAllMapItems()
+            .then((remote) => {
+              Object.values(remote).forEach((item) => dp.addMapItem(item));
+              void databaseProvider.replaceAllMapItems(Object.values(remote));
+              refresh();
+            })
+            .catch((e) =>
+              console.error('MapItemContext: remote load failed', e),
+            );
         }
-        void databaseProvider.loadAllMapItems().then((result) => {
-            Object.values(result).forEach((item) => dp.addMapItem(item));
-            refresh();
-            if (apiProvider.hasToken()) {
-                apiProvider
-                    .loadAllMapItems()
-                    .then((remote) => {
-                        Object.values(remote).forEach((item) => dp.addMapItem(item));
-                        void databaseProvider.replaceAllMapItems(Object.values(remote));
-                        refresh();
-                    })
-                    .catch((e) => console.error('MapItemContext: remote load failed', e));
-            }
-        }).catch((e) => console.error('MapItemContext: DB load failed', e))
+      })
+      .catch((e) => console.error('MapItemContext: DB load failed', e));
 
+    return () =>
+      events.forEach((e) => GlobalEventHandler.getInstance().off(e, refresh));
+  }, [databaseProvider, apiProvider]);
 
-        return () => events.forEach((e) => GlobalEventHandler.getInstance().off(e, refresh));
-    }, [databaseProvider, apiProvider]);
-
-    return (
-        <MapItemContext.Provider value={mapItems}>{children}</MapItemContext.Provider>
-    );
+  return (
+    <MapItemContext.Provider value={mapItems}>
+      {children}
+    </MapItemContext.Provider>
+  );
 }
 
 export function useMapItems(): MapItem[] {
-    return useContext(MapItemContext);
+  return useContext(MapItemContext);
 }

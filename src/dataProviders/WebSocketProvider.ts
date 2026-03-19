@@ -1,7 +1,12 @@
 import { DataProvider } from './DataProvider.ts';
 import { ApplicationLogger } from '../ApplicationLogger.ts';
 import { Unit } from '../enitities/Unit.ts';
-import type { MapBaseLayerStruct, MapItemStruct, MapOverlayStruct, UnitStruct } from './structs/ApiResponseStruct.ts';
+import type {
+  MapBaseLayerStruct,
+  MapItemStruct,
+  MapOverlayStruct,
+  UnitStruct,
+} from './structs/ApiResponseStruct.ts';
 import { MapOverlay } from '../enitities/MapOverlay.ts';
 import { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
 import { MapItem } from '../enitities/MapItem.ts';
@@ -12,288 +17,335 @@ import { Notification } from '../enitities/Notification.ts';
  * ToDo: Add error handling and reconnection logic for WebSocket connection. Including preauthentication disconnect.
  */
 
-
 export type WebSocketEvent = 'open' | 'message' | 'error' | 'close';
 
-
 export class WebSocketProvider {
-    private static instance: WebSocketProvider | null = null;
+  private static instance: WebSocketProvider | null = null;
 
-    private constructor() { /* empty private constructor to prevent direct instantiation */ }
+  private constructor() {
+    /* empty private constructor to prevent direct instantiation */
+  }
 
-    private lastMessageRecived: number | null = null;
-    private socket: WebSocket | null = null;
-    private pingInterval: NodeJS.Timeout | null = null;
+  private lastMessageRecived: number | null = null;
+  private socket: WebSocket | null = null;
+  private pingInterval: NodeJS.Timeout | null = null;
 
-    private databaseProvider: DatabaseProvider | null = null;
-    private dataProvider: DataProvider = DataProvider.getInstance();
+  private databaseProvider: DatabaseProvider | null = null;
+  private dataProvider: DataProvider = DataProvider.getInstance();
 
-    private apiToken: string | null = null;
-    private apiUrl: string | null = null;
+  private apiToken: string | null = null;
+  private apiUrl: string | null = null;
 
-    private eventListeners: Record<WebSocketEvent, ((event: WebSocketEvent) => void)[]> = {} as Record<WebSocketEvent, ((event: WebSocketEvent) => void)[]>;
+  private eventListeners: Record<
+    WebSocketEvent,
+    ((event: WebSocketEvent) => void)[]
+  > = {} as Record<WebSocketEvent, ((event: WebSocketEvent) => void)[]>;
 
-    on(event: WebSocketEvent, listener: (event: WebSocketEvent) => void) {
-        if (!this.eventListeners[event]) {
-            this.eventListeners[event] = [];
+  on(event: WebSocketEvent, listener: (event: WebSocketEvent) => void) {
+    if (!this.eventListeners[event]) {
+      this.eventListeners[event] = [];
+    }
+    this.eventListeners[event].push(listener);
+  }
+
+  off(event: WebSocketEvent, listener: (event: WebSocketEvent) => void) {
+    if (!this.eventListeners[event]) return;
+    this.eventListeners[event] = this.eventListeners[event].filter(
+      (l) => l !== listener,
+    );
+  }
+
+  public static getInstance(): WebSocketProvider {
+    if (!WebSocketProvider.instance) {
+      WebSocketProvider.instance = new WebSocketProvider();
+    }
+    return WebSocketProvider.instance;
+  }
+  public setDatabaseProvider(databaseProvider: DatabaseProvider) {
+    this.databaseProvider = databaseProvider;
+  }
+
+  getConnectionURL() {
+    return this.apiUrl?.replace('http', 'ws') + '/ws?token=' + this.apiToken;
+  }
+
+  public updateConnectionDetails(token: string, apiUrl: string) {
+    this.apiToken = token;
+    this.apiUrl = apiUrl;
+    if (this.socket) {
+      this.socket.close();
+      this.socket = null;
+    }
+    this.start();
+  }
+
+  unitChangedSideEffects(oldUnit: Unit, newUnit: Unit) {
+    if (!oldUnit || !newUnit) return;
+    if (newUnit.getStatus() != oldUnit.getStatus()) {
+      const notification = new Notification({
+        id: window.crypto.randomUUID() as string,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        permissions: [],
+        title: newUnit.getName(),
+        timestamp: new Date().toISOString(),
+        content: `Status: ${oldUnit.getStatus()} -> ${newUnit.getStatus()}`,
+        unitId: newUnit.getId(),
+      });
+      if (this.databaseProvider) {
+        void this.databaseProvider.saveNotification(notification);
+      }
+      this.dataProvider.addNotification(notification);
+    }
+  }
+
+  updateModel(
+    topic: string,
+    data: {
+      entity: never;
+      entityType: string;
+      changeType: 'CREATED' | 'UPDATED' | 'DELETED';
+    },
+  ) {
+    ApplicationLogger.info('received update for topic: ' + topic, {
+      service: 'WebSocket',
+    });
+    const modelType = data.entityType.toLowerCase();
+    const parts = modelType.split('/');
+    const entityType = parts[0].toLowerCase();
+    const action = data.changeType;
+
+    if (entityType === 'unit') {
+      if (action === 'DELETED') {
+        const itemId = (data.entity as UnitStruct).id;
+        this.dataProvider.removeUnit(itemId);
+
+        if (this.databaseProvider) {
+          void this.databaseProvider.deleteUnit(itemId);
         }
-        this.eventListeners[event].push(listener);
-    }
-
-    off(event: WebSocketEvent, listener: (event: WebSocketEvent) => void) {
-        if (!this.eventListeners[event]) return;
-        this.eventListeners[event] = this.eventListeners[event].filter(l => l !== listener);
-    }
-
-
-    public static getInstance(): WebSocketProvider {
-        if (!WebSocketProvider.instance) {
-            WebSocketProvider.instance = new WebSocketProvider();
+        return;
+      }
+      const unitData = data.entity as UnitStruct;
+      const item = new Unit({
+        id: unitData.id,
+        createdAt: new Date(unitData.createdAt).toISOString(),
+        updatedAt: new Date(unitData.updatedAt).toISOString(),
+        permissions: unitData.permissions,
+        position: {
+          latitude: unitData.position.latitude,
+          longitude: unitData.position.longitude,
+          accuracy: unitData.position.accuracy,
+          timestamp: unitData.position.timestamp,
+        },
+        name: unitData.name,
+        unit_status: unitData.status,
+        symbol: unitData.icon as never,
+      });
+      const oldUnit = this.dataProvider.getAllUnits().get(item.getId());
+      if (
+        oldUnit &&
+        oldUnit.getUpdatedAt().getTime() == item.getUpdatedAt().getTime()
+      ) {
+        return;
+      }
+      this.unitChangedSideEffects(
+        this.dataProvider.getAllUnits().get(item.getId()) as Unit,
+        item,
+      );
+      this.dataProvider.addUnit(item);
+      if (this.databaseProvider) {
+        void this.databaseProvider.saveUnit(item);
+      }
+    } else if (entityType === 'mapoverlay') {
+      if (action === 'DELETED') {
+        const itemId = (data.entity as MapOverlayStruct).id;
+        this.dataProvider.removeMapOverlay(itemId);
+        if (this.databaseProvider) {
+          void this.databaseProvider.deleteMapOverlay(itemId);
         }
-        return WebSocketProvider.instance;
-    }
-    public setDatabaseProvider(databaseProvider: DatabaseProvider) {
-        this.databaseProvider = databaseProvider;
-    }
+        return;
+      }
+      const overlayData = data.entity as MapOverlayStruct;
+      const item = new MapOverlay({
+        id: overlayData.id,
+        createdAt: new Date(overlayData.createdAt).toISOString(),
+        updatedAt: new Date(overlayData.updatedAt).toISOString(),
+        name: overlayData.name,
+        url: overlayData.fullTileUrl,
+        layerVersion: overlayData.layerVersion,
+        permissions: overlayData.permissions,
+      });
+      this.dataProvider.addMapOverlay(item);
 
-    getConnectionURL() {
-        return this.apiUrl?.replace('http', 'ws') + '/ws?token=' + this.apiToken;
-    }
-
-    public updateConnectionDetails(token: string, apiUrl: string) {
-        this.apiToken = token;
-        this.apiUrl = apiUrl;
-        if (this.socket) {
-            this.socket.close();
-            this.socket = null;
+      if (this.databaseProvider) {
+        void this.databaseProvider.saveMapOverlay(item);
+      }
+    } else if (entityType === 'mapbaselayer') {
+      if (action === 'DELETED') {
+        const itemId = (data.entity as MapBaseLayerStruct).id;
+        if (this.databaseProvider) {
+          void this.databaseProvider.deleteMapStyle(itemId);
         }
-        this.start();
-    }
-
-    unitChangedSideEffects(oldUnit: Unit, newUnit: Unit) {
-        if (!oldUnit || !newUnit) return;
-        if (newUnit.getStatus() != oldUnit.getStatus()) {
-            const notification = new Notification({
-                id: window.crypto.randomUUID() as string,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                permissions: [],
-                title: newUnit.getName(),
-                timestamp: new Date().toISOString(),
-                content: `Status: ${oldUnit.getStatus()} -> ${newUnit.getStatus()}`,
-                unitId: newUnit.getId()
-            });
-            if (this.databaseProvider) {
-                void this.databaseProvider.saveNotification(notification);
-            }
-            this.dataProvider.addNotification(notification);
+        return;
+      }
+      const layerData = data.entity as MapBaseLayerStruct;
+      const item = new MapBaseLayer({
+        id: layerData.id,
+        createdAt: new Date(layerData.createdAt).toISOString(),
+        updatedAt: new Date(layerData.updatedAt).toISOString(),
+        permissions: layerData.permissions,
+        name: layerData.name,
+        url: layerData.url,
+        cacheUrl: layerData.cacheUrl,
+      });
+      this.dataProvider.setMapStyle(item);
+      if (this.databaseProvider) {
+        void this.databaseProvider.saveMapStyle(item);
+      }
+    } else if (entityType === 'mapitem') {
+      if (action === 'DELETED') {
+        const itemId = (data.entity as MapItemStruct).id;
+        this.dataProvider.deleteMapItem(itemId);
+        if (this.databaseProvider) {
+          void this.databaseProvider.deleteMapItem(itemId);
         }
+        return;
+      }
+      const itemData = data.entity as MapItemStruct;
+      const item = new MapItem({
+        id: itemData.id,
+        createdAt: new Date(itemData.createdAt).toISOString(),
+        updatedAt: new Date(itemData.updatedAt).toISOString(),
+        permissions: itemData.permissions,
+        name: itemData.name,
+        latitude: itemData.position.latitude,
+        longitude: itemData.position.longitude,
+        zoomLevel: itemData.zoomLevel,
+        groupId: itemData.mapGroupId,
+      });
+
+      this.dataProvider.addMapItem(item);
+      if (this.databaseProvider) {
+        void this.databaseProvider.saveMapItem(item);
+      }
+    } else {
+      console.log('Unknown entity type:', entityType);
+    }
+  }
+
+  start() {
+    ApplicationLogger.info('WebSocket Started', { service: 'WebSocket' });
+    if (this.socket) {
+      ApplicationLogger.info('WebSocket is already running', {
+        service: 'WebSocket',
+      });
+      return;
+    }
+    if (!this.apiToken || !this.apiUrl) {
+      ApplicationLogger.info(
+        'WebSocket connection details not set, cannot start WebSocket',
+        { service: 'WebSocket' },
+      );
+      return;
     }
 
-
-    updateModel(topic: string, data: {
-        entity: never, entityType: string,
-        changeType: 'CREATED' | 'UPDATED' | 'DELETED'
-    }) {
-        ApplicationLogger.info('received update for topic: ' + topic, { service: 'WebSocket' });
-        const modelType = data.entityType.toLowerCase();
-        const parts = modelType.split('/');
-        const entityType = parts[0].toLowerCase();
-        const action = data.changeType;
-
-        if (entityType === 'unit') {
-            if (action === 'DELETED') {
-                const itemId = (data.entity as UnitStruct).id;
-                this.dataProvider.removeUnit(itemId);
-
-                if (this.databaseProvider) {
-                    void this.databaseProvider.deleteUnit(itemId);
-                }
-                return;
-            }
-            const unitData = data.entity as UnitStruct;
-            const item = new Unit({
-                id: unitData.id,
-                createdAt: new Date(unitData.createdAt).toISOString(),
-                updatedAt: new Date(unitData.updatedAt).toISOString(),
-                permissions: unitData.permissions,
-                position: {
-                    latitude: unitData.position.latitude,
-                    longitude: unitData.position.longitude,
-                    accuracy: unitData.position.accuracy,
-                    timestamp: unitData.position.timestamp
-                },
-                name: unitData.name,
-                unit_status: unitData.status,
-                symbol: unitData.icon as never
-            });
-            const oldUnit = this.dataProvider.getAllUnits().get(item.getId());
-            if (oldUnit && (oldUnit.getUpdatedAt().getTime() == item.getUpdatedAt().getTime())) {
-                return;
-            }
-            this.unitChangedSideEffects(this.dataProvider.getAllUnits().get(item.getId()) as Unit, item);
-            this.dataProvider.addUnit(item);
-            if (this.databaseProvider) {
-                void this.databaseProvider.saveUnit(item);
-            }
-        } else if (entityType === 'mapoverlay') {
-            if (action === 'DELETED') {
-                const itemId = (data.entity as MapOverlayStruct).id;
-                this.dataProvider.removeMapOverlay(itemId);
-                if (this.databaseProvider) {
-                    void this.databaseProvider.deleteMapOverlay(itemId);
-                }
-                return;
-            }
-            const overlayData = data.entity as MapOverlayStruct;
-            const item = new MapOverlay(
-                {
-                    id: overlayData.id,
-                    createdAt: new Date(overlayData.createdAt).toISOString(),
-                    updatedAt: new Date(overlayData.updatedAt).toISOString(),
-                    name: overlayData.name,
-                    url: overlayData.fullTileUrl,
-                    layerVersion: overlayData.layerVersion,
-                    permissions: overlayData.permissions
-                }
-            );
-            this.dataProvider.addMapOverlay(item);
-
-            if (this.databaseProvider) {
-                void this.databaseProvider.saveMapOverlay(item);
-            }
-        } else if (entityType === 'mapbaselayer') {
-            if (action === 'DELETED') {
-                const itemId = (data.entity as MapBaseLayerStruct).id;
-                if (this.databaseProvider) {
-                    void this.databaseProvider.deleteMapStyle(itemId);
-                }
-                return;
-            }
-            const layerData = data.entity as MapBaseLayerStruct;
-            const item = new MapBaseLayer({
-                id: layerData.id,
-                createdAt: new Date(layerData.createdAt).toISOString(),
-                updatedAt: new Date(layerData.updatedAt).toISOString(),
-                permissions: layerData.permissions,
-                name: layerData.name,
-                url: layerData.url,
-                cacheUrl: layerData.cacheUrl
-            });
-            this.dataProvider.setMapStyle(item);
-            if (this.databaseProvider) {
-                void this.databaseProvider.saveMapStyle(item);
-            }
-        } else if (entityType === 'mapitem') {
-            if (action === 'DELETED') {
-                const itemId = (data.entity as MapItemStruct).id;
-                this.dataProvider.deleteMapItem(itemId);
-                if (this.databaseProvider) {
-                    void this.databaseProvider.deleteMapItem(itemId);
-                }
-                return;
-            }
-            const itemData = data.entity as MapItemStruct;
-            const item = new MapItem({
-                id: itemData.id,
-                createdAt: new Date(itemData.createdAt).toISOString(),
-                updatedAt: new Date(itemData.updatedAt).toISOString(),
-                permissions: itemData.permissions,
-                name: itemData.name,
-                latitude: itemData.position.latitude,
-                longitude: itemData.position.longitude,
-                zoomLevel: itemData.zoomLevel,
-                groupId: itemData.mapGroupId
-            });
-
-            this.dataProvider.addMapItem(item);
-            if (this.databaseProvider) {
-                void this.databaseProvider.saveMapItem(item);
-            }
+    this.socket = new WebSocket(this.getConnectionURL());
+    const entityTypes = ['unit', 'mapoverlay', 'mapbaselayer', 'mapitem'];
+    this.socket.onopen = (event) => {
+      this.eventListeners['open']?.forEach((listener) => listener('open'));
+      ApplicationLogger.info('WebSocket connection opened', {
+        service: 'WebSocket',
+        event: event,
+      });
+      for (const entityType of entityTypes) {
+        this.socket!.send('SUBSCRIBE /entities/' + entityType);
+      }
+      this.socket!.send('GET /entities/units');
+      if (this.lastMessageRecived != null) {
+        ApplicationLogger.info(
+          'Requesting updates since last message received: ' +
+            new Date(this.lastMessageRecived).toISOString(),
+          { service: 'WebSocket' },
+        );
+        this.socket!.send('REQUEST_UPDATES_SINCE ' + this.lastMessageRecived);
+      }
+      if (this.pingInterval) {
+        clearInterval(this.pingInterval);
+      }
+      this.pingInterval = setInterval(() => {
+        if (this.socket?.readyState === WebSocket.OPEN) {
+          this.socket.send('ping');
+        }
+      }, 3000);
+    };
+    this.socket.onmessage = (event) => {
+      if (event.data == 'ping' || event.data == 'pong') {
+        return;
+      }
+      this.lastMessageRecived = Date.now();
+      if (
+        (event.data as string).startsWith('Subscribed') ||
+        (event.data as string).startsWith('REQUEST_UPDATES_SINCE')
+      ) {
+        ApplicationLogger.info(
+          'WebSocket subscription confirmed: ' + event.data,
+          { service: 'WebSocket' },
+        );
+        return;
+      }
+      try {
+        const data = JSON.parse(event.data as string) as {
+          topic: string;
+          payload: never;
+        };
+        if (data.topic.trim().startsWith('/entities/')) {
+          this.updateModel(data.topic, data.payload);
         } else {
-            console.log('Unknown entity type:', entityType);
+          ApplicationLogger.info(
+            'Received message: ' + data.topic + ' is unknown',
+            { service: 'WebSocket' },
+          );
         }
-    }
+      } catch (error) {
+        console.error(
+          'Error parsing WebSocket message:',
+          error,
+          'Message data:',
+          event.data,
+        );
+        ApplicationLogger.info('Received message: (DCE) ' + event.data, {
+          service: 'WebSocket',
+        });
+      }
+    };
+    this.socket.onclose = (event) => {
+      this.eventListeners['close']?.forEach((listener) => listener('close'));
+      this.socket = null;
+      ApplicationLogger.info('WebSocket connection closed', {
+        service: 'WebSocket',
+        event: event,
+      });
+      this.start();
+    };
+    this.socket.onerror = (event) => {
+      this.eventListeners['error']?.forEach((listener) => listener('error'));
+      console.error('WebSocket error:', event);
+    };
+  }
 
-    start() {
-        ApplicationLogger.info('WebSocket Started', { service: 'WebSocket' });
-        if (this.socket) {
-            ApplicationLogger.info('WebSocket is already running', { service: 'WebSocket' });
-            return;
-        }
-        if (!this.apiToken || !this.apiUrl) {
-            ApplicationLogger.info('WebSocket connection details not set, cannot start WebSocket', { service: 'WebSocket' });
-            return;
-        }
-
-        this.socket = new WebSocket(this.getConnectionURL());
-        const entityTypes = ['unit', 'mapoverlay', 'mapbaselayer', 'mapitem'];
-        this.socket.onopen = (event) => {
-            this.eventListeners['open']?.forEach(listener => listener('open'));
-            ApplicationLogger.info('WebSocket connection opened', { service: 'WebSocket', event: event });
-            for (const entityType of entityTypes) {
-                this.socket!.send('SUBSCRIBE /entities/' + entityType);
-            }
-            this.socket!.send('GET /entities/units');
-            if (this.lastMessageRecived != null) {
-                ApplicationLogger.info('Requesting updates since last message received: ' + new Date(this.lastMessageRecived).toISOString(), { service: 'WebSocket' });
-                this.socket!.send('REQUEST_UPDATES_SINCE ' + this.lastMessageRecived);
-            }
-            if (this.pingInterval) {
-                clearInterval(this.pingInterval);
-            }
-            this.pingInterval = setInterval(() => {
-                if (this.socket?.readyState === WebSocket.OPEN) {
-                    this.socket.send('ping');
-                }
-            }, 3000);
-        };
-        this.socket.onmessage = (event) => {
-            if (event.data == 'ping' || event.data == 'pong') {
-                return;
-            }
-            this.lastMessageRecived = Date.now();
-            if ((event.data as string).startsWith('Subscribed') || (event.data as string).startsWith('REQUEST_UPDATES_SINCE')) {
-                ApplicationLogger.info('WebSocket subscription confirmed: ' + event.data, { service: 'WebSocket' });
-                return;
-            }
-            try {
-                const data = JSON.parse(event.data as string) as { topic: string, payload: never };
-                if (data.topic.trim().startsWith('/entities/')) {
-                    this.updateModel(data.topic, data.payload);
-                } else {
-                    ApplicationLogger.info('Received message: ' + data.topic + ' is unknown', { service: 'WebSocket' });
-                }
-            } catch (error) {
-                console.error('Error parsing WebSocket message:', error, 'Message data:', event.data);
-                ApplicationLogger.info('Received message: (DCE) ' + event.data, { service: 'WebSocket' });
-            }
-        };
-        this.socket.onclose = (event) => {
-            this.eventListeners['close']?.forEach(listener => listener('close'));
-            this.socket = null;
-            ApplicationLogger.info('WebSocket connection closed', { service: 'WebSocket', event: event });
-            this.start();
-        };
-        this.socket.onerror = (event) => {
-            this.eventListeners['error']?.forEach(listener => listener('error'));
-            console.error('WebSocket error:', event);
-        };
+  public stop() {
+    if (this.socket) {
+      this.socket.close();
+      this.socket = null;
     }
-
-    public stop() {
-        if (this.socket) {
-            this.socket.close();
-            this.socket = null;
-        }
-        if (this.pingInterval) {
-            clearInterval(this.pingInterval);
-            this.pingInterval = null;
-        }
-        ApplicationLogger.info('WebSocket Stopped', { service: 'WebSocket' });
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
     }
+    ApplicationLogger.info('WebSocket Stopped', { service: 'WebSocket' });
+  }
 
-    public isConnected(): boolean {
-        return this.socket?.readyState === WebSocket.OPEN;
-    }
+  public isConnected(): boolean {
+    return this.socket?.readyState === WebSocket.OPEN;
+  }
 }

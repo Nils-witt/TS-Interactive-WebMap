@@ -23,19 +23,23 @@ import type { Notification } from '../enitities/Notification.ts';
  * Used for the pub/sub pattern to notify subscribers of data changes.
  */
 export class DataProviderEvent extends Event {
-    /** Event type identifier, corresponds to DataProviderEventType values */
-    eventType: string;
-    /** Data payload associated with the event */
-    data: number | object | string | boolean | null;
-    /** Data payload associated with the event */
-    oldData?: number | object | string | boolean;
+  /** Event type identifier, corresponds to DataProviderEventType values */
+  eventType: string;
+  /** Data payload associated with the event */
+  data: number | object | string | boolean | null;
+  /** Data payload associated with the event */
+  oldData?: number | object | string | boolean;
 
-    constructor(eventType: string, data: string | object | number | boolean | null, oldData?: string | object | number | boolean ) {
-        super(eventType);
-        this.eventType = eventType;
-        this.data = data;
-        this.oldData = oldData;
-    }
+  constructor(
+    eventType: string,
+    data: string | object | number | boolean | null,
+    oldData?: string | object | number | boolean,
+  ) {
+    super(eventType);
+    this.eventType = eventType;
+    this.data = data;
+    this.oldData = oldData;
+  }
 }
 
 /**
@@ -43,57 +47,56 @@ export class DataProviderEvent extends Event {
  * Used to standardize event type strings and prevent typos.
  */
 export enum DataProviderEventType {
-    /** Triggered when a map location is created */
-    MAP_ITEM_CREATED = 'mapLocations-created',
-    /** Triggered when a map location is updated */
-    MAP_ITEM_UPDATED = 'mapLocations-updated',
-    /** Triggered when a map location is deleted */
-    MAP_ITEM_DELETED = 'mapLocation-deleted',
-    /** Triggered when the base map style is changed */
-    MAP_STYLE_UPDATED = 'mapStyle-updated',
-    /** Triggered when map groups are added or updated */
-    MAP_GROUPS_UPDATED = 'mapGroups-updated',
-    /** Triggered when a new map group is created */
-    MAP_GROUPS_CREATED = 'mapGroups-created',
-    /** Triggered when a map group is deleted */
-    MAP_GROUPS_DELETED = 'mapGroups-deleted',
-    /** Triggered when a new overlay is added to the map */
-    OVERLAY_ADDED = 'overlay-added',
-    /** Triggered when an existing overlay is updated */
-    OVERLAY_UPDATED = 'overlay-updated',
-    /** Triggered when an overlay is removed **/
-    OVERLAY_DELETED = 'overlay-deleted',
+  /** Triggered when a map location is created */
+  MAP_ITEM_CREATED = 'mapLocations-created',
+  /** Triggered when a map location is updated */
+  MAP_ITEM_UPDATED = 'mapLocations-updated',
+  /** Triggered when a map location is deleted */
+  MAP_ITEM_DELETED = 'mapLocation-deleted',
+  /** Triggered when the base map style is changed */
+  MAP_STYLE_UPDATED = 'mapStyle-updated',
+  /** Triggered when map groups are added or updated */
+  MAP_GROUPS_UPDATED = 'mapGroups-updated',
+  /** Triggered when a new map group is created */
+  MAP_GROUPS_CREATED = 'mapGroups-created',
+  /** Triggered when a map group is deleted */
+  MAP_GROUPS_DELETED = 'mapGroups-deleted',
+  /** Triggered when a new overlay is added to the map */
+  OVERLAY_ADDED = 'overlay-added',
+  /** Triggered when an existing overlay is updated */
+  OVERLAY_UPDATED = 'overlay-updated',
+  /** Triggered when an overlay is removed **/
+  OVERLAY_DELETED = 'overlay-deleted',
 
-    UNIT_ADDED = 'unit-added',
-    UNIT_UPDATED = 'unit-updated',
-    UNIT_DELETED = 'unit-deleted',
+  UNIT_ADDED = 'unit-added',
+  UNIT_UPDATED = 'unit-updated',
+  UNIT_DELETED = 'unit-deleted',
 
-    USER_ADDED = 'user-added',
-    USER_UPDATED = 'user-updated',
-    USER_DELETED = 'user-deleted',
+  USER_ADDED = 'user-added',
+  USER_UPDATED = 'user-updated',
+  USER_DELETED = 'user-deleted',
 
-    MISSION_GROUPS_CREATED = 'missionGroups-created',
-    MISSION_GROUPS_UPDATED = 'missionGroups-updated',
-    MISSION_GROUPS_DELETED = 'missionGroups-deleted',
+  MISSION_GROUPS_CREATED = 'missionGroups-created',
+  MISSION_GROUPS_UPDATED = 'missionGroups-updated',
+  MISSION_GROUPS_DELETED = 'missionGroups-deleted',
 
-    PHOTO_CREATED = 'photo-created',
-    PHOTO_UPDATED = 'photo-updated',
-    PHOTO_DELETED = 'photo-deleted',
+  PHOTO_CREATED = 'photo-created',
+  PHOTO_UPDATED = 'photo-updated',
+  PHOTO_DELETED = 'photo-deleted',
 
-    NOTIFICATION_CREATED = 'notification-created',
-    NOTIFICATION_UPDATED = 'notification-updated',
-    NOTIFICATION_DELETED = 'notification-deleted',
+  NOTIFICATION_CREATED = 'notification-created',
+  NOTIFICATION_UPDATED = 'notification-updated',
+  NOTIFICATION_DELETED = 'notification-deleted',
 
+  ACTIVE_USER_UPDATED = 'active-user-updated',
 
-    ACTIVE_USER_UPDATED = 'active-user-updated',
-
-    MAP_CENTER_UPDATED = 'map-center-updated',
-    MAP_ZOOM_UPDATED = 'map-zoom-updated',
-    API_URL_UPDATED = 'api-url-updated',
-    LOCAL_API_TOKEN_UPDATED = 'local-api-token-updated',
-    MAP_CONFIG_UPDATED = 'map-config-updated',
-    /** Triggered when the set of active (visible) overlay IDs changes */
-    ACTIVE_OVERLAYS_UPDATED = 'active-overlays-updated',
+  MAP_CENTER_UPDATED = 'map-center-updated',
+  MAP_ZOOM_UPDATED = 'map-zoom-updated',
+  API_URL_UPDATED = 'api-url-updated',
+  LOCAL_API_TOKEN_UPDATED = 'local-api-token-updated',
+  MAP_CONFIG_UPDATED = 'map-config-updated',
+  /** Triggered when the set of active (visible) overlay IDs changes */
+  ACTIVE_OVERLAYS_UPDATED = 'active-overlays-updated',
 }
 
 /**
@@ -103,394 +106,519 @@ export enum DataProviderEventType {
  * Uses the Singleton pattern to ensure only one instance exists throughout the application.
  */
 export class DataProvider {
-    /** Storage for map location objects, indexed by their IDs */
-    private mapLocations = new Map<string, MapItem>();
+  /** Storage for map location objects, indexed by their IDs */
+  private mapLocations = new Map<string, MapItem>();
 
-    /** Current map style configuration */
-    private mapStyle: MapBaseLayer | undefined;
+  /** Current map style configuration */
+  private mapStyle: MapBaseLayer | undefined;
 
-    /** Collection of overlay layers that can be added to the map */
-    private overlays: Map<string, MapOverlay> = new Map<string, MapOverlay>();
+  /** Collection of overlay layers that can be added to the map */
+  private overlays: Map<string, MapOverlay> = new Map<string, MapOverlay>();
 
-    /** Collection of map groups for organizing map elements */
-    private mapGroups: Map<string, MapGroup> = new Map<string, MapGroup>();
+  /** Collection of map groups for organizing map elements */
+  private mapGroups: Map<string, MapGroup> = new Map<string, MapGroup>();
 
-    /** Collection of mission groups for organizing mission-related data */
-    private missionGroups: Map<string, MissionGroup> = new Map<string, MissionGroup>();
+  /** Collection of mission groups for organizing mission-related data */
+  private missionGroups: Map<string, MissionGroup> = new Map<
+    string,
+    MissionGroup
+  >();
 
-    private units: Map<string, Unit> = new Map<string, Unit>();
+  private units: Map<string, Unit> = new Map<string, Unit>();
 
-    private users: Map<string, User> = new Map<string, User>();
+  private users: Map<string, User> = new Map<string, User>();
 
-    private photos: Map<string, Photo> = new Map<string, Photo>();
+  private photos: Map<string, Photo> = new Map<string, Photo>();
 
-    private notifications: Map<string, Notification> = new Map<string, Notification>();
+  private notifications: Map<string, Notification> = new Map<
+    string,
+    Notification
+  >();
 
-    private mapCenter: LngLat = new LngLat(0.0, 0.0); // Default center of the map
-    private mapZoom: number;
+  private mapCenter: LngLat = new LngLat(0.0, 0.0); // Default center of the map
+  private mapZoom: number;
 
-    private mapConfig: MapConfig = new MapConfig();
+  private mapConfig: MapConfig = new MapConfig();
 
-    /** Set of overlay IDs that are currently visible, persisted to localStorage */
-    private activeOverlays: Set<string>;
+  /** Set of overlay IDs that are currently visible, persisted to localStorage */
+  private activeOverlays: Set<string>;
 
-    /** Singleton instance reference */
-    private static instance: DataProvider;
+  /** Singleton instance reference */
+  private static instance: DataProvider;
 
-    /**
-     * Private constructor to prevent direct instantiation.
-     * Part of the Singleton pattern implementation.
-     */
-    private constructor() {
-        this.mapZoom = 2; // Default zoom level
-        this.activeOverlays = new Set(JSON.parse(localStorage.getItem('activeOverlays') ?? '[]') as string[]);
+  /**
+   * Private constructor to prevent direct instantiation.
+   * Part of the Singleton pattern implementation.
+   */
+  private constructor() {
+    this.mapZoom = 2; // Default zoom level
+    this.activeOverlays = new Set(
+      JSON.parse(localStorage.getItem('activeOverlays') ?? '[]') as string[],
+    );
+  }
+
+  /**
+   * Gets the singleton instance of DataProvider.
+   * Creates the instance if it doesn't exist yet.
+   *
+   * @returns The singleton DataProvider instance
+   */
+  public static getInstance(): DataProvider {
+    if (!DataProvider.instance) {
+      DataProvider.instance = new DataProvider();
     }
+    return DataProvider.instance;
+  }
 
-    /**
-     * Gets the singleton instance of DataProvider.
-     * Creates the instance if it doesn't exist yet.
-     *
-     * @returns The singleton DataProvider instance
-     */
-    public static getInstance(): DataProvider {
-        if (!DataProvider.instance) {
-            DataProvider.instance = new DataProvider();
-        }
-        return DataProvider.instance;
+  public setLocalApiToken(token?: string): void {
+    if (token) {
+      localStorage.setItem('localApiToken', token);
+    } else {
+      localStorage.removeItem('localApiToken');
     }
+    this.triggerEvent(
+      new DataProviderEvent(
+        DataProviderEventType.LOCAL_API_TOKEN_UPDATED,
+        token || null,
+      ),
+    );
+  }
 
+  /**
+   * Dispatches an event to all registered listeners for the specified event type.
+   *
+   * @param eventType - The type of event to trigger
+   * @param data - The data to include with the event
+   */
+  private triggerEvent(event: DataProviderEvent): void {
+    GlobalEventHandler.getInstance().emit(event.eventType, event);
+  }
 
-    public setLocalApiToken(token?: string): void {
-        if (token) {
-            localStorage.setItem('localApiToken', token);
-        } else {
-            localStorage.removeItem('localApiToken');
-        }
-        this.triggerEvent(new DataProviderEvent(DataProviderEventType.LOCAL_API_TOKEN_UPDATED, token || null));
+  /**
+   * Adds a new map location to the data store and notifies subscribers.
+   *
+   * @param id - Unique identifier for the location
+   * @param item - The location object to store
+   */
+  public addMapItem(item: MapItem): void {
+    if (this.mapLocations.has(item.getId())) {
+      const oldItem = this.mapLocations.get(item.getId());
+      this.mapLocations.set(item.getId(), item);
+      this.triggerEvent(
+        new DataProviderEvent(
+          DataProviderEventType.MAP_ITEM_UPDATED,
+          item,
+          oldItem,
+        ),
+      );
+    } else {
+      this.mapLocations.set(item.getId(), item);
+      this.triggerEvent(
+        new DataProviderEvent(DataProviderEventType.MAP_ITEM_CREATED, item),
+      );
     }
+  }
 
-    /**
-     * Dispatches an event to all registered listeners for the specified event type.
-     *
-     * @param eventType - The type of event to trigger
-     * @param data - The data to include with the event
-     */
-    private triggerEvent(event: DataProviderEvent): void {
-        GlobalEventHandler.getInstance().emit(event.eventType, event);
+  /**
+   * Retrieves all stored map locations.
+   *
+   * @returns Map of all location objects indexed by their IDs
+   */
+  public getAllMapItems(): Map<string, MapItem> {
+    return this.mapLocations;
+  }
+
+  public deleteMapItem(id: string): void {
+    if (this.mapLocations.has(id)) {
+      const item = this.mapLocations.get(id);
+      this.mapLocations.delete(id);
+      this.triggerEvent(
+        new DataProviderEvent(DataProviderEventType.MAP_ITEM_DELETED, [item]),
+      );
+    } else {
+      console.warn(`Map location with ID ${id} does not exist.`);
     }
+  }
 
-    /**
-     * Adds a new map location to the data store and notifies subscribers.
-     *
-     * @param id - Unique identifier for the location
-     * @param item - The location object to store
-     */
-    public addMapItem(item: MapItem): void {
-        if (this.mapLocations.has(item.getId())) {
-            const oldItem = this.mapLocations.get(item.getId());
-            this.mapLocations.set(item.getId(), item);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_ITEM_UPDATED, item, oldItem));
-        } else {
-            this.mapLocations.set(item.getId(), item);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_ITEM_CREATED, item));
-        }
+  /**
+   * Adds a new map group to the data store and notifies subscribers.
+   *
+   * @param id - Unique identifier for the group
+   * @param group - The map group object to store
+   */
+  public addMapGroup(group: MapGroup): void {
+    const id = group.getId();
+    if (this.mapGroups.has(id)) {
+      const oldGroup = this.mapGroups.get(id);
+      this.mapGroups.set(id, group);
+      this.triggerEvent(
+        new DataProviderEvent(
+          DataProviderEventType.MAP_GROUPS_UPDATED,
+          group,
+          oldGroup,
+        ),
+      );
+    } else {
+      this.mapGroups.set(id, group);
+      this.triggerEvent(
+        new DataProviderEvent(DataProviderEventType.MAP_GROUPS_CREATED, group),
+      );
     }
+  }
 
-    /**
-     * Retrieves all stored map locations.
-     *
-     * @returns Map of all location objects indexed by their IDs
-     */
-    public getAllMapItems(): Map<string, MapItem> {
-        return this.mapLocations;
+  /**
+   * Retrieves all stored map groups.
+   *
+   * @returns Map of all group objects indexed by their IDs
+   */
+  public getAllMapGroups(): Map<string, MapGroup> {
+    return this.mapGroups;
+  }
+
+  /**
+   * Sets the current map style and notifies subscribers.
+   *
+   * @param style - The map style configuration to use
+   */
+  public setMapStyle(style: MapBaseLayer): void {
+    this.mapStyle = style;
+    this.triggerEvent(
+      new DataProviderEvent(DataProviderEventType.MAP_STYLE_UPDATED, style),
+    );
+  }
+
+  /**
+   * Retrieves the current map style configuration.
+   *
+   * @returns The current map style or undefined if not set
+   */
+  public getMapStyle(): MapBaseLayer | undefined {
+    return this.mapStyle;
+  }
+
+  /**
+   * Adds a new overlay layer to the data store and notifies subscribers.
+   *
+   * @param id - Unique identifier for the overlay
+   * @param overlay - The overlay configuration to store
+   */
+  public addMapOverlay(overlay: MapOverlay): void {
+    if (this.overlays.has(overlay.getId())) {
+      const oldOverlay = this.overlays.get(overlay.getId());
+      this.overlays.set(overlay.getId(), overlay);
+      this.triggerEvent(
+        new DataProviderEvent(
+          DataProviderEventType.OVERLAY_UPDATED,
+          overlay,
+          oldOverlay,
+        ),
+      );
+    } else {
+      this.overlays.set(overlay.getId(), overlay);
+      this.triggerEvent(
+        new DataProviderEvent(DataProviderEventType.OVERLAY_ADDED, overlay),
+      );
     }
+  }
 
-
-    public deleteMapItem(id: string): void {
-        if (this.mapLocations.has(id)) {
-            const item = this.mapLocations.get(id);
-            this.mapLocations.delete(id);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_ITEM_DELETED, [item]));
-        } else {
-            console.warn(`Map location with ID ${id} does not exist.`);
-        }
+  public removeMapOverlay(id: string): void {
+    if (this.overlays.has(id)) {
+      const overlay = this.overlays.get(id);
+      if (!overlay) return;
+      this.overlays.delete(id);
+      this.triggerEvent(
+        new DataProviderEvent(DataProviderEventType.OVERLAY_DELETED, overlay),
+      );
+    } else {
+      console.warn(`Overlay with ID ${id} does not exist.`);
     }
+  }
 
-    /**
-     * Adds a new map group to the data store and notifies subscribers.
-     *
-     * @param id - Unique identifier for the group
-     * @param group - The map group object to store
-     */
-    public addMapGroup(group: MapGroup): void {
-        const id = group.getId();
-        if (this.mapGroups.has(id)) {
-            const oldGroup = this.mapGroups.get(id);
-            this.mapGroups.set(id, group);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_GROUPS_UPDATED, group, oldGroup));
-        } else {
-            this.mapGroups.set(id, group);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_GROUPS_CREATED, group));
-        }
+  /**
+   * Retrieves all stored overlay layers.
+   *
+   * @returns Map of all overlay configurations indexed by their IDs
+   */
+  public getAllMapOverlays(): Map<string, MapOverlay> {
+    return this.overlays;
+  }
+
+  public addUnit(unit: Unit): void {
+    if (unit.getId()) {
+      if (this.units.has(unit.getId())) {
+        const oldUnit = this.units.get(unit.getId());
+        this.units.set(unit.getId(), unit);
+        this.triggerEvent(
+          new DataProviderEvent(
+            DataProviderEventType.UNIT_UPDATED,
+            unit,
+            oldUnit,
+          ),
+        );
+      } else {
+        this.units.set(unit.getId(), unit);
+        this.triggerEvent(
+          new DataProviderEvent(DataProviderEventType.UNIT_ADDED, unit),
+        );
+      }
     }
+  }
 
-    /**
-     * Retrieves all stored map groups.
-     *
-     * @returns Map of all group objects indexed by their IDs
-     */
-    public getAllMapGroups(): Map<string, MapGroup> {
-        return this.mapGroups;
+  public getAllUnits(): Map<string, Unit> {
+    return this.units;
+  }
+
+  public removeUnit(id: string): void {
+    if (this.units.has(id)) {
+      const unit = this.units.get(id);
+      if (!unit) return;
+      this.units.delete(id);
+      this.triggerEvent(
+        new DataProviderEvent(DataProviderEventType.UNIT_DELETED, unit),
+      );
     }
+  }
 
-    /**
-     * Sets the current map style and notifies subscribers.
-     *
-     * @param style - The map style configuration to use
-     */
-    public setMapStyle(style: MapBaseLayer): void {
-        this.mapStyle = style;
-        this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_STYLE_UPDATED, style));
+  public getMapCenter(): LngLat {
+    return this.mapCenter;
+  }
+
+  public setMapCenter(center: LngLat): void {
+    this.mapCenter = center;
+    this.triggerEvent(
+      new DataProviderEvent(DataProviderEventType.MAP_CENTER_UPDATED, center),
+    );
+  }
+
+  public getMapZoom(): number {
+    return this.mapZoom;
+  }
+
+  public setMapZoom(zoom: number): void {
+    this.mapZoom = zoom;
+    this.triggerEvent(
+      new DataProviderEvent(DataProviderEventType.MAP_ZOOM_UPDATED, zoom),
+    );
+  }
+
+  public setApiUrl(url: string): void {
+    localStorage.setItem('apiUrl', url);
+    this.triggerEvent(
+      new DataProviderEvent(DataProviderEventType.API_URL_UPDATED, url),
+    );
+  }
+
+  public getApiUrl(): string {
+    return localStorage.getItem('apiUrl') || '/api';
+  }
+
+  public getLocalApiToken(): string {
+    return localStorage.getItem('localApiToken') || '';
+  }
+
+  public getMapConfig(): MapConfig {
+    return this.mapConfig;
+  }
+
+  public setMapConfig(value: MapConfig) {
+    this.mapConfig = value;
+    this.triggerEvent(
+      new DataProviderEvent(DataProviderEventType.MAP_CONFIG_UPDATED, value),
+    );
+  }
+
+  /** Returns the set of overlay IDs that are currently marked as visible. */
+  public getActiveMapOverlays(): Set<string> {
+    return this.activeOverlays;
+  }
+
+  /**
+   * Replaces the active overlay set, persists to localStorage and emits an event.
+   *
+   * @param ids - Set of overlay IDs that should be visible
+   */
+  public setActiveMapOverlays(ids: Set<string>): void {
+    this.activeOverlays = ids;
+    localStorage.setItem('activeOverlays', JSON.stringify(Array.from(ids)));
+    this.triggerEvent(
+      new DataProviderEvent(
+        DataProviderEventType.ACTIVE_OVERLAYS_UPDATED,
+        Array.from(ids),
+      ),
+    );
+  }
+
+  public on(
+    eventType: string,
+    listener: (event: DataProviderEvent) => void,
+  ): void {
+    GlobalEventHandler.getInstance().on(
+      eventType,
+      listener as (event: Event) => void,
+    );
+  }
+
+  public off(
+    eventType: string,
+    listener: (event: DataProviderEvent) => void,
+  ): void {
+    GlobalEventHandler.getInstance().off(
+      eventType,
+      listener as (event: Event) => void,
+    );
+  }
+
+  public addUser(user: User): void {
+    if (this.users.has(user.getId())) {
+      const oldUser = this.users.get(user.getId());
+      this.users.set(user.getId(), user);
+      this.triggerEvent(
+        new DataProviderEvent(
+          DataProviderEventType.USER_UPDATED,
+          user,
+          oldUser,
+        ),
+      );
+    } else {
+      this.users.set(user.getId(), user);
+      this.triggerEvent(
+        new DataProviderEvent(DataProviderEventType.USER_ADDED, user),
+      );
     }
+  }
 
-    /**
-     * Retrieves the current map style configuration.
-     *
-     * @returns The current map style or undefined if not set
-     */
-    public getMapStyle(): MapBaseLayer | undefined {
-        return this.mapStyle;
+  public getAllUsers(): Map<string, User> {
+    return this.users;
+  }
+
+  public removeUser(id: string): void {
+    if (this.users.has(id)) {
+      const user = this.users.get(id);
+      if (!user) return;
+      this.users.delete(id);
+      this.triggerEvent(
+        new DataProviderEvent(DataProviderEventType.USER_DELETED, user),
+      );
     }
+  }
 
-    /**
-     * Adds a new overlay layer to the data store and notifies subscribers.
-     *
-     * @param id - Unique identifier for the overlay
-     * @param overlay - The overlay configuration to store
-     */
-    public addMapOverlay(overlay: MapOverlay): void {
-        if (this.overlays.has(overlay.getId())) {
-            const oldOverlay = this.overlays.get(overlay.getId());
-            this.overlays.set(overlay.getId(), overlay);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.OVERLAY_UPDATED, overlay, oldOverlay));
-        } else {
-            this.overlays.set(overlay.getId(), overlay);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.OVERLAY_ADDED, overlay));
-        }
+  public addMissionGroup(missionGroup: MissionGroup): void {
+    if (this.missionGroups.has(missionGroup.getId())) {
+      this.missionGroups.set(missionGroup.getId(), missionGroup);
+      this.triggerEvent(
+        new DataProviderEvent(
+          DataProviderEventType.MISSION_GROUPS_UPDATED,
+          missionGroup,
+        ),
+      );
+    } else {
+      this.missionGroups.set(missionGroup.getId(), missionGroup);
+      this.triggerEvent(
+        new DataProviderEvent(
+          DataProviderEventType.MISSION_GROUPS_CREATED,
+          missionGroup,
+        ),
+      );
     }
+  }
 
-    public removeMapOverlay(id: string): void {
-        if (this.overlays.has(id)) {
-            const overlay = this.overlays.get(id);
-            if (!overlay) return;
-            this.overlays.delete(id);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.OVERLAY_DELETED, overlay));
-        } else {
-            console.warn(`Overlay with ID ${id} does not exist.`);
-        }
+  public getAllMissionGroups(): Map<string, MissionGroup> {
+    return this.missionGroups;
+  }
+
+  public removeMissionGroup(id: string): void {
+    if (this.missionGroups.has(id)) {
+      const missionGroup = this.missionGroups.get(id);
+      if (!missionGroup) return;
+      this.missionGroups.delete(id);
+      this.triggerEvent(
+        new DataProviderEvent(
+          DataProviderEventType.MISSION_GROUPS_DELETED,
+          missionGroup,
+        ),
+      );
     }
+  }
 
-    /**
-     * Retrieves all stored overlay layers.
-     *
-     * @returns Map of all overlay configurations indexed by their IDs
-     */
-    public getAllMapOverlays(): Map<string, MapOverlay> {
-        return this.overlays;
+  public addPhoto(photo: Photo): void {
+    if (!photo.getId()) {
+      console.warn('Trying to add photo without ID');
+      return;
     }
-
-    public addUnit(unit: Unit): void {
-        if (unit.getId()) {
-            if (this.units.has(unit.getId())) {
-                const oldUnit = this.units.get(unit.getId());
-                this.units.set(unit.getId(), unit);
-                this.triggerEvent(new DataProviderEvent(DataProviderEventType.UNIT_UPDATED, unit, oldUnit));
-            } else {
-                this.units.set(unit.getId(), unit);
-                this.triggerEvent(new DataProviderEvent(DataProviderEventType.UNIT_ADDED, unit));
-            }
-        }
+    if (this.photos.has(photo.getId())) {
+      const oldPhoto = this.photos.get(photo.getId());
+      this.photos.set(photo.getId(), photo);
+      this.triggerEvent(
+        new DataProviderEvent(
+          DataProviderEventType.PHOTO_UPDATED,
+          photo,
+          oldPhoto,
+        ),
+      );
+    } else {
+      this.photos.set(photo.getId(), photo);
+      this.triggerEvent(
+        new DataProviderEvent(DataProviderEventType.PHOTO_CREATED, photo),
+      );
     }
+  }
 
-    public getAllUnits(): Map<string, Unit> {
-        return this.units;
+  public getAllPhotos(): Map<string, Photo> {
+    return this.photos;
+  }
+
+  public removePhoto(id: string): void {
+    if (this.photos.has(id)) {
+      const photo = this.photos.get(id);
+      if (!photo) return;
+      this.photos.delete(id);
+      this.triggerEvent(
+        new DataProviderEvent(DataProviderEventType.PHOTO_DELETED, photo),
+      );
     }
+  }
 
-    public removeUnit(id: string): void {
-        if (this.units.has(id)) {
-            const unit = this.units.get(id);
-            if (!unit) return;
-            this.units.delete(id);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.UNIT_DELETED, unit));
-        }
+  public addNotification(notification: Notification) {
+    if (!notification.getId()) {
+      console.warn('Trying to add notification without ID');
+      return;
     }
-
-    public getMapCenter(): LngLat {
-        return this.mapCenter;
+    if (this.notifications.has(notification.getId())) {
+      const oldNotification = this.notifications.get(notification.getId());
+      this.notifications.set(notification.getId(), notification);
+      this.triggerEvent(
+        new DataProviderEvent(
+          DataProviderEventType.NOTIFICATION_UPDATED,
+          notification,
+          oldNotification,
+        ),
+      );
+    } else {
+      this.notifications.set(notification.getId(), notification);
+      this.triggerEvent(
+        new DataProviderEvent(
+          DataProviderEventType.NOTIFICATION_CREATED,
+          notification,
+        ),
+      );
     }
+  }
 
-    public setMapCenter(center: LngLat): void {
-        this.mapCenter = center;
-        this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_CENTER_UPDATED, center));
+  public getAllNotifications(): Map<string, Notification> {
+    return this.notifications;
+  }
+
+  public removeNotification(id: string) {
+    if (this.notifications.has(id)) {
+      const notification = this.notifications.get(id);
+      if (!notification) return;
+      this.notifications.delete(id);
+      this.triggerEvent(
+        new DataProviderEvent(
+          DataProviderEventType.NOTIFICATION_DELETED,
+          notification,
+        ),
+      );
     }
-
-    public getMapZoom(): number {
-        return this.mapZoom;
-    }
-
-    public setMapZoom(zoom: number): void {
-        this.mapZoom = zoom;
-        this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_ZOOM_UPDATED, zoom));
-
-    }
-
-    public setApiUrl(url: string): void {
-        localStorage.setItem('apiUrl', url);
-        this.triggerEvent(new DataProviderEvent(DataProviderEventType.API_URL_UPDATED, url));
-    }
-
-    public getApiUrl(): string {
-        return localStorage.getItem('apiUrl') || '/api';
-    }
-
-    public getLocalApiToken(): string {
-        return localStorage.getItem('localApiToken') || '';
-    }
-
-
-    public getMapConfig(): MapConfig {
-        return this.mapConfig;
-    }
-
-    public setMapConfig(value: MapConfig) {
-        this.mapConfig = value;
-        this.triggerEvent(new DataProviderEvent(DataProviderEventType.MAP_CONFIG_UPDATED, value));
-    }
-
-    /** Returns the set of overlay IDs that are currently marked as visible. */
-    public getActiveMapOverlays(): Set<string> {
-        return this.activeOverlays;
-    }
-
-    /**
-     * Replaces the active overlay set, persists to localStorage and emits an event.
-     *
-     * @param ids - Set of overlay IDs that should be visible
-     */
-    public setActiveMapOverlays(ids: Set<string>): void {
-        this.activeOverlays = ids;
-        localStorage.setItem('activeOverlays', JSON.stringify(Array.from(ids)));
-        this.triggerEvent(new DataProviderEvent(DataProviderEventType.ACTIVE_OVERLAYS_UPDATED, Array.from(ids)));
-    }
-
-    public on(eventType: string, listener: (event: DataProviderEvent) => void): void {
-        GlobalEventHandler.getInstance().on(eventType, listener as ((event: Event) => void));
-    }
-
-    public off(eventType: string, listener: (event: DataProviderEvent) => void): void {
-        GlobalEventHandler.getInstance().off(eventType, listener as ((event: Event) => void));
-    }
-
-    public addUser(user: User): void {
-        if (this.users.has(user.getId())) {
-            const oldUser = this.users.get(user.getId());
-            this.users.set(user.getId(), user);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.USER_UPDATED, user, oldUser));
-        } else {
-            this.users.set(user.getId(), user);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.USER_ADDED, user));
-        }
-    }
-
-    public getAllUsers(): Map<string, User> {
-        return this.users;
-    }
-
-    public removeUser(id: string): void {
-        if (this.users.has(id)) {
-            const user = this.users.get(id);
-            if (!user) return;
-            this.users.delete(id);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.USER_DELETED, user));
-        }
-    }
-
-    public addMissionGroup(missionGroup: MissionGroup): void {
-        if (this.missionGroups.has(missionGroup.getId())) {
-            this.missionGroups.set(missionGroup.getId(), missionGroup);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MISSION_GROUPS_UPDATED, missionGroup));
-        } else {
-            this.missionGroups.set(missionGroup.getId(), missionGroup);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MISSION_GROUPS_CREATED, missionGroup));
-        }
-    }
-
-    public getAllMissionGroups(): Map<string, MissionGroup> {
-        return this.missionGroups;
-    }
-
-    public removeMissionGroup(id: string): void {
-        if (this.missionGroups.has(id)) {
-            const missionGroup = this.missionGroups.get(id);
-            if (!missionGroup) return;
-            this.missionGroups.delete(id);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.MISSION_GROUPS_DELETED, missionGroup));
-        }
-    }
-
-    public addPhoto(photo: Photo): void {
-        if (!photo.getId()) {
-            console.warn('Trying to add photo without ID');
-            return;
-        }
-        if (this.photos.has(photo.getId())) {
-            const oldPhoto = this.photos.get(photo.getId());
-            this.photos.set(photo.getId(), photo);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.PHOTO_UPDATED, photo, oldPhoto));
-        } else {
-            this.photos.set(photo.getId(), photo);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.PHOTO_CREATED, photo));
-        }
-    }
-
-    public getAllPhotos(): Map<string, Photo> {
-        return this.photos;
-    }
-
-    public removePhoto(id: string): void {
-        if (this.photos.has(id)) {
-            const photo = this.photos.get(id);
-            if (!photo) return;
-            this.photos.delete(id);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.PHOTO_DELETED, photo));
-        }
-    }
-
-    public addNotification(notification: Notification){
-        if (!notification.getId()) {
-            console.warn('Trying to add notification without ID');
-            return;
-        }
-        if (this.notifications.has(notification.getId())) {
-            const oldNotification = this.notifications.get(notification.getId());
-            this.notifications.set(notification.getId(), notification);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.NOTIFICATION_UPDATED, notification, oldNotification));
-        } else {
-            this.notifications.set(notification.getId(), notification);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.NOTIFICATION_CREATED, notification));
-        }
-    }
-
-    public getAllNotifications(): Map<string, Notification> {
-        return this.notifications;
-    }
-
-    public removeNotification(id: string) {
-        if (this.notifications.has(id)) {
-            const notification = this.notifications.get(id);
-            if (!notification) return;
-            this.notifications.delete(id);
-            this.triggerEvent(new DataProviderEvent(DataProviderEventType.NOTIFICATION_DELETED, notification));
-        }
-    }
+  }
 }

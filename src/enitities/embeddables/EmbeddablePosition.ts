@@ -1,66 +1,69 @@
-
-
 export interface IPosition {
-    latitude: number;
-    longitude: number;
-    accuracy: number;
-    timestamp: string;
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  timestamp: string;
 }
 
 export class EmbeddablePosition {
-    latitude: number;
-    longitude: number;
-    accuracy: number;
-    timestamp: Date;
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  timestamp: Date;
 
-    constructor(latitude: number, longitude: number, accuracy: number, timestamp: Date) {
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.accuracy = accuracy;
-        this.timestamp = timestamp;
-    }
+  constructor(
+    latitude: number,
+    longitude: number,
+    accuracy: number,
+    timestamp: Date,
+  ) {
+    this.latitude = latitude;
+    this.longitude = longitude;
+    this.accuracy = accuracy;
+    this.timestamp = timestamp;
+  }
 
-    public static of(data?: IPosition): EmbeddablePosition | null {
-        if (!data) return null;
-        return new EmbeddablePosition(
-            data.latitude,
-            data.longitude,
-            data.accuracy,
-            new Date(data.timestamp)
-        );
-    }
+  public static of(data?: IPosition): EmbeddablePosition | null {
+    if (!data) return null;
+    return new EmbeddablePosition(
+      data.latitude,
+      data.longitude,
+      data.accuracy,
+      new Date(data.timestamp),
+    );
+  }
 
-    record(): IPosition {
-        return {
-            latitude: this.latitude,
-            longitude: this.longitude,
-            accuracy: this.accuracy,
-            timestamp: this.timestamp.toISOString(),
-        };
-    }
+  record(): IPosition {
+    return {
+      latitude: this.latitude,
+      longitude: this.longitude,
+      accuracy: this.accuracy,
+      timestamp: this.timestamp.toISOString(),
+    };
+  }
 
-    clone(): EmbeddablePosition {
-        return new EmbeddablePosition(
-            this.latitude,
-            this.longitude,
-            this.accuracy,
-            new Date(this.timestamp.getTime())
-        );
-    }
+  clone(): EmbeddablePosition {
+    return new EmbeddablePosition(
+      this.latitude,
+      this.longitude,
+      this.accuracy,
+      new Date(this.timestamp.getTime()),
+    );
+  }
 
-    public getLatitude(): number {
-        return this.latitude;
-    }
+  public getLatitude(): number {
+    return this.latitude;
+  }
 
-    public getLongitude(): number {
-        return this.longitude;
-    }
+  public getLongitude(): number {
+    return this.longitude;
+  }
 
-    public getAccuracy(): number {
-        return this.accuracy;
-    }
+  public getAccuracy(): number {
+    return this.accuracy;
+  }
 
-    public getTimestamp(): Date {
-        return this.timestamp;
-    }
+  public getTimestamp(): Date {
+    return this.timestamp;
+  }
 }

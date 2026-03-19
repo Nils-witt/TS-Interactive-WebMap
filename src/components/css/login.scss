@@ -86,11 +86,13 @@
         border: 1px solid #e6e7eb;
         background: #fff;
         outline: none;
-        transition: box-shadow 120ms ease, border-color 120ms ease;
+        transition:
+          box-shadow 120ms ease,
+          border-color 120ms ease;
         font-size: 0.95rem;
 
         &:focus {
-          box-shadow: 0 0 0 4px rgba(59,130,246,0.08);
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
           border-color: #3b82f6;
         }
       }
@@ -124,13 +126,21 @@
         border-radius: 8px;
         border: none;
         color: white;
-        background: linear-gradient(180deg,#2563eb,#1e40af);
+        background: linear-gradient(180deg, #2563eb, #1e40af);
         font-weight: 600;
         cursor: pointer;
-        transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+        transition:
+          transform 120ms ease,
+          box-shadow 120ms ease,
+          opacity 120ms ease;
 
-        &:active { transform: translateY(1px); }
-        &:disabled { opacity: 0.6; cursor: not-allowed; }
+        &:active {
+          transform: translateY(1px);
+        }
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
       }
     }
 
@@ -153,6 +163,8 @@
 
 /* small screens - slightly tweak layout */
 @media (max-width: 420px) {
-  .login-card { width: 94%; padding: 1rem; }
+  .login-card {
+    width: 94%;
+    padding: 1rem;
+  }
 }
-

@@ -1,103 +1,106 @@
-import { AbstractEntity, type DBRecord, type IAbstractEntity } from './AbstractEntity';
-import { EmbeddablePosition, type IPosition } from './embeddables/EmbeddablePosition';
-
-
+import {
+  AbstractEntity,
+  type DBRecord,
+  type IAbstractEntity,
+} from './AbstractEntity';
+import {
+  EmbeddablePosition,
+  type IPosition,
+} from './embeddables/EmbeddablePosition';
 
 export interface IPhoto extends IAbstractEntity {
-    name: string;
-    position?: IPosition;
-    authorId: string;
-    missionGroupId: string;
+  name: string;
+  position?: IPosition;
+  authorId: string;
+  missionGroupId: string;
 }
 
 export class Photo extends AbstractEntity {
-    private name: string;
-    private position: EmbeddablePosition | null;
-    private authorId: string;
-    private missionGroupId: string;
+  private name: string;
+  private position: EmbeddablePosition | null;
+  private authorId: string;
+  private missionGroupId: string;
 
+  constructor(data: IPhoto) {
+    super(data.id, data.createdAt, data.updatedAt, data.permissions);
+    this.name = data.name;
+    this.position = EmbeddablePosition.of(data.position);
+    this.authorId = data.authorId;
+    this.missionGroupId = data.missionGroupId;
+  }
 
-    constructor(data: IPhoto) {
-        super(data.id, data.createdAt, data.updatedAt, data.permissions);
-        this.name = data.name;
-        this.position = EmbeddablePosition.of(data.position);
-        this.authorId = data.authorId;
-        this.missionGroupId = data.missionGroupId;
+  public static of(data: DBRecord): Photo {
+    return new Photo({
+      id: data.id as string,
+      createdAt: new Date(data.createdAt as string).toISOString(),
+      updatedAt: new Date(data.updatedAt as string).toISOString(),
+      permissions: data.permissions as string[],
+      name: data.name as string,
+      position: data.position as IPosition,
+      authorId: data.authorId as string,
+      missionGroupId: data.missionGroupId as string,
+    });
+  }
+
+  record(): DBRecord {
+    return {
+      ...super.record(),
+      name: this.name,
+      position: this.position ? this.position.record() : null,
+      authorId: this.authorId,
+      missionGroupId: this.missionGroupId,
+    };
+  }
+
+  public clone(): Photo {
+    return new Photo({
+      id: this.getId(),
+      createdAt: this.getCreatedAt().toISOString(),
+      updatedAt: this.getUpdatedAt().toISOString(),
+      permissions: this.getPermissions(),
+      name: this.name,
+      position: this.position ? this.position.record() : undefined,
+      authorId: this.authorId,
+      missionGroupId: this.missionGroupId,
+    });
+  }
+
+  public getImageSrc(apiUrl: string, apiToken: string): string {
+    if (!this.getId()) {
+      return '';
     }
+    return apiUrl + '/photos/' + this.getId() + '/image?token=' + apiToken;
+  }
 
-    public static of(data: DBRecord): Photo {
-        return new Photo({
-            id: data.id as string,
-            createdAt: new Date(data.createdAt as string).toISOString(),
-            updatedAt: new Date(data.updatedAt as string).toISOString(),
-            permissions: data.permissions as string[],
-            name: data.name as string,
-            position: data.position as IPosition,
-            authorId: data.authorId as string,
-            missionGroupId: data.missionGroupId as string
-        });
-    }
+  public getName(): string {
+    return this.name;
+  }
 
-    record(): DBRecord {
-        return {
-            ...super.record(),
-            name: this.name,
-            position: this.position ? this.position.record() : null,
-            authorId: this.authorId,
-            missionGroupId: this.missionGroupId,
-        };
-    }
+  public getPosition(): EmbeddablePosition | null {
+    return this.position;
+  }
 
-    public clone(): Photo {
-        return new Photo({
-            id: this.getId(),
-            createdAt: this.getCreatedAt().toISOString(),
-            updatedAt: this.getUpdatedAt().toISOString(),
-            permissions: this.getPermissions(),
-            name: this.name,
-            position: this.position ? this.position.record() : undefined,
-            authorId: this.authorId,
-            missionGroupId: this.missionGroupId,
-        });
-    }
+  public getAuthorId(): string {
+    return this.authorId;
+  }
 
+  public getMissionGroupId(): string {
+    return this.missionGroupId;
+  }
 
-    public getImageSrc(apiUrl: string, apiToken: string): string {
-        if (!this.getId()) {
-            return '';
-        }
-        return apiUrl + '/photos/' + this.getId() + '/image?token=' + apiToken;
-    }
+  public setName(name: string) {
+    this.name = name;
+  }
 
-    public getName(): string {
-        return this.name;
-    }
+  public setPosition(position: EmbeddablePosition | null) {
+    this.position = position;
+  }
 
-    public getPosition(): EmbeddablePosition | null {
-        return this.position;
-    }
+  public setAuthorId(authorId: string) {
+    this.authorId = authorId;
+  }
 
-    public getAuthorId(): string {
-        return this.authorId;
-    }
-
-    public getMissionGroupId(): string {
-        return this.missionGroupId;
-    }
-
-    public setName(name: string) {
-        this.name = name;
-    }
-
-    public setPosition(position: EmbeddablePosition | null) {
-        this.position = position;
-    }
-
-    public setAuthorId(authorId: string) {
-        this.authorId = authorId;
-    }
-
-    public setMissionGroupId(missionGroupId: string) {
-        this.missionGroupId = missionGroupId;
-    }
+  public setMissionGroupId(missionGroupId: string) {
+    this.missionGroupId = missionGroupId;
+  }
 }

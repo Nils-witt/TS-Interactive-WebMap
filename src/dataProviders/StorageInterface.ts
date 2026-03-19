@@ -18,57 +18,61 @@ import type { IPosition } from '../enitities/embeddables/EmbeddablePosition.ts';
 import type { Notification } from '../enitities/Notification.ts';
 
 export interface StorageInterface {
+  setUp(): Promise<void>;
 
-    setUp(): Promise<void>;
+  loadAllUnits(): Promise<Record<string, Unit>>;
+  loadAllMapGroups(): Promise<Record<string, MapGroup>>;
+  loadAllMapItems(): Promise<Record<string, MapItem>>;
+  loadAllMapStyles(): Promise<Record<string, MapBaseLayer>>;
+  loadAllMapOverlays(): Promise<Record<string, MapOverlay>>;
+  loadAllPhotos(): Promise<Record<string, Photo>>;
+  loadAllUsers(): Promise<Record<string, User>>;
+  loadAllMissionGroups(): Promise<Record<string, MissionGroup>>;
+  loadAllNotifications(): Promise<Record<string, Notification>>;
 
-    loadAllUnits(): Promise<Record<string, Unit>>;
-    loadAllMapGroups(): Promise<Record<string, MapGroup>>;
-    loadAllMapItems(): Promise<Record<string, MapItem>>;
-    loadAllMapStyles(): Promise<Record<string, MapBaseLayer>>;
-    loadAllMapOverlays(): Promise<Record<string, MapOverlay>>;
-    loadAllPhotos(): Promise<Record<string, Photo>>;
-    loadAllUsers(): Promise<Record<string, User>>;
-    loadAllMissionGroups(): Promise<Record<string, MissionGroup>>;
-    loadAllNotifications(): Promise<Record<string, Notification>>;
+  loadUnit(id: string): Promise<Unit>;
+  loadMapGroup(id: string): Promise<MapGroup>;
+  loadMapItem(id: string): Promise<MapItem>;
+  loadMapStyle(id: string): Promise<MapBaseLayer>;
+  loadMapOverlay(id: string): Promise<MapOverlay>;
+  loadPhoto(id: string): Promise<Photo>;
+  loadUser(id: string): Promise<User>;
+  loadMissionGroup(id: string): Promise<MissionGroup>;
+  loadNotification(id: string): Promise<Notification>;
 
-    loadUnit(id: string): Promise<Unit>;
-    loadMapGroup(id: string): Promise<MapGroup>;
-    loadMapItem(id: string): Promise<MapItem>;
-    loadMapStyle(id: string): Promise<MapBaseLayer>;
-    loadMapOverlay(id: string): Promise<MapOverlay>;
-    loadPhoto(id: string): Promise<Photo>;
-    loadUser(id: string): Promise<User>;
-    loadMissionGroup(id: string): Promise<MissionGroup>;
-    loadNotification(id: string): Promise<Notification>;
+  replaceAllUnits(units: Unit[]): Promise<void>;
+  replaceAllMapGroups(mapGroups: MapGroup[]): Promise<void>;
+  replaceAllMapItems(mapItems: MapItem[]): Promise<void>;
+  replaceAllMapStyles(mapStyles: MapBaseLayer[]): Promise<void>;
+  replaceAllMapOverlays(mapOverlays: MapOverlay[]): Promise<void>;
+  replaceAllPhotos(photos: Photo[]): Promise<void>;
+  replaceAllUsers(users: User[]): Promise<void>;
+  replaceAllMissionGroups(missionGroups: MissionGroup[]): Promise<void>;
+  replaceAllNotifications(notifications: Notification[]): Promise<void>;
 
-    replaceAllUnits(units: Unit[]): Promise<void>;
-    replaceAllMapGroups(mapGroups: MapGroup[]): Promise<void>;
-    replaceAllMapItems(mapItems: MapItem[]): Promise<void>;
-    replaceAllMapStyles(mapStyles: MapBaseLayer[]): Promise<void>;
-    replaceAllMapOverlays(mapOverlays: MapOverlay[]): Promise<void>;
-    replaceAllPhotos(photos: Photo[]): Promise<void>;
-    replaceAllUsers(users: User[]): Promise<void>;
-    replaceAllMissionGroups(missionGroups: MissionGroup[]): Promise<void>;
-    replaceAllNotifications(notifications: Notification[]): Promise<void>;
+  saveUnit(unit: Unit): Promise<Unit>;
+  saveMapGroup(mapGroup: MapGroup): Promise<MapGroup>;
+  saveMapItem(mapItem: MapItem): Promise<MapItem>;
+  saveMapStyle(mapStyle: MapBaseLayer): Promise<MapBaseLayer>;
+  saveMapOverlay(mapOverlay: MapOverlay): Promise<MapOverlay>;
+  savePhoto(photo: Photo): Promise<Photo>;
+  savePhotoImage(
+    image: File,
+    position: IPosition | null,
+    name: string,
+    missionGroupId: string,
+  ): Promise<Photo>;
+  saveUser(user: User): Promise<User>;
+  saveMissionGroup(missionGroup: MissionGroup): Promise<MissionGroup>;
+  saveNotification(notification: Notification): Promise<Notification>;
 
-    saveUnit(unit: Unit): Promise<Unit>;
-    saveMapGroup(mapGroup: MapGroup): Promise<MapGroup>;
-    saveMapItem(mapItem: MapItem): Promise<MapItem>;
-    saveMapStyle(mapStyle: MapBaseLayer): Promise<MapBaseLayer>;
-    saveMapOverlay(mapOverlay: MapOverlay): Promise<MapOverlay>;
-    savePhoto(photo: Photo): Promise<Photo>;
-    savePhotoImage(image: File, position: IPosition | null, name: string, missionGroupId: string): Promise<Photo>;
-    saveUser(user: User): Promise<User>;
-    saveMissionGroup(missionGroup: MissionGroup): Promise<MissionGroup>;
-    saveNotification(notification: Notification): Promise<Notification>;
-
-    deleteUnit(id: string): Promise<void>;
-    deleteMapGroup(id: string): Promise<void>;
-    deleteMapItem(id: string): Promise<void>;
-    deleteMapStyle(id: string): Promise<void>;
-    deleteMapOverlay(id: string): Promise<void>;
-    deletePhoto(id: string): Promise<void>;
-    deleteUser(id: string): Promise<void>;
-    deleteMissionGroup(id: string): Promise<void>;
-    deleteNotification(id: string): Promise<void>;
+  deleteUnit(id: string): Promise<void>;
+  deleteMapGroup(id: string): Promise<void>;
+  deleteMapItem(id: string): Promise<void>;
+  deleteMapStyle(id: string): Promise<void>;
+  deleteMapOverlay(id: string): Promise<void>;
+  deletePhoto(id: string): Promise<void>;
+  deleteUser(id: string): Promise<void>;
+  deleteMissionGroup(id: string): Promise<void>;
+  deleteNotification(id: string): Promise<void>;
 }

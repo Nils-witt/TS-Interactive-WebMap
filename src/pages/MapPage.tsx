@@ -1,9 +1,7 @@
-import type {JSX} from "react";
-import {MapComponent} from "../components/MapComponent.tsx";
+import type { JSX } from 'react';
+import { MapComponent } from '../components/MapComponent.tsx';
 function MapPage(): JSX.Element {
-
-
-    return <MapComponent/>;
+  return <MapComponent />;
 }
 
 export default MapPage;

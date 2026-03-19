@@ -1,11 +1,11 @@
-import {StrictMode} from 'react'
-import {createRoot} from 'react-dom/client'
-import {registerSW} from "virtual:pwa-register";
-import {BrowserRouter} from 'react-router-dom';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { registerSW } from 'virtual:pwa-register';
+import { BrowserRouter } from 'react-router-dom';
 
-import App from './App'
+import App from './App';
 
-import './css/index.scss'
+import './css/index.scss';
 
 import 'maplibre-gl/dist/maplibre-gl.css'; // See notes below
 
@@ -14,72 +14,78 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
-import * as Sentry from "@sentry/react";
+import * as Sentry from '@sentry/react';
 
 Sentry.init({
-  dsn: "https://5773f7764e44fa1e4a63b8367ff4c8e9@o256272.ingest.us.sentry.io/4511059980713984",
+  dsn: 'https://5773f7764e44fa1e4a63b8367ff4c8e9@o256272.ingest.us.sentry.io/4511059980713984',
   // Setting this option to true will send default PII data to Sentry.
   // For example, automatic IP address collection on events
-  sendDefaultPii: true
+  sendDefaultPii: true,
 });
 
 // apply theme as early as possible to avoid flash
 (() => {
-    try {
-        const stored = localStorage.getItem('theme');
-        if (stored === 'dark') document.documentElement.classList.add('dark');
-        else if (stored === 'light') document.documentElement.classList.remove('dark');
-        else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
-    } catch {
-        // ignore
-    }
+  try {
+    const stored = localStorage.getItem('theme');
+    if (stored === 'dark') document.documentElement.classList.add('dark');
+    else if (stored === 'light')
+      document.documentElement.classList.remove('dark');
+    else if (
+      window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches
+    )
+      document.documentElement.classList.add('dark');
+  } catch {
+    // ignore
+  }
 })();
 try {
-navigator.serviceWorker.addEventListener("message", (event: MessageEvent<{ cmd: string }>) => {
-    if (event.data.cmd === "reload") {
-        console.log("Reloading page due to service worker update");
+  navigator.serviceWorker.addEventListener(
+    'message',
+    (event: MessageEvent<{ cmd: string }>) => {
+      if (event.data.cmd === 'reload') {
+        console.log('Reloading page due to service worker update');
         window.location.reload();
-    }
-});
+      }
+    },
+  );
 } catch (e) {
-    console.warn(e);
+  console.warn(e);
 }
 
-const intervalMS = 60 * 60 * 1000
+const intervalMS = 60 * 60 * 1000;
 
 try {
-    registerSW({
-        onRegisteredSW(swUrl: string, r: ServiceWorkerRegistration | undefined) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-expressions,@typescript-eslint/no-misused-promises
-            r && setInterval(async () => {
-                if (r.installing || !navigator)
-                    return
+  registerSW({
+    onRegisteredSW(swUrl: string, r: ServiceWorkerRegistration | undefined) {
+      /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
+      r &&
+        /* eslint-disable-next-line @typescript-eslint/no-misused-promises */
+        setInterval(async () => {
+          if (r.installing || !navigator) return;
 
-                if (('connection' in navigator) && !navigator.onLine)
-                    return
+          if ('connection' in navigator && !navigator.onLine) return;
 
-                const resp = await fetch(swUrl, {
-                    cache: 'no-store',
-                    headers: {
-                        'cache': 'no-store',
-                        'cache-control': 'no-cache',
-                    },
-                })
+          const resp = await fetch(swUrl, {
+            cache: 'no-store',
+            headers: {
+              cache: 'no-store',
+              'cache-control': 'no-cache',
+            },
+          });
 
-                if (resp?.status === 200)
-                    await r.update()
-            }, intervalMS)
-        }
-    })
+          if (resp?.status === 200) await r.update();
+        }, intervalMS);
+    },
+  });
 } catch (e) {
-    console.error(e)
+  console.error(e);
 }
 
-
 createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-        <BrowserRouter>
-            <App/>
-        </BrowserRouter>
-    </StrictMode>,
-)
+  <StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </StrictMode>,
+);
