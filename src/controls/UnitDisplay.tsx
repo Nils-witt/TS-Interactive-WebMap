@@ -1,35 +1,87 @@
-import { UnitRepresentation } from "./UnitRepresentation.tsx";
-import { useContext } from 'react';
-import { UnitsContext } from "../contexts/UnitsContext.tsx"
-import { MapConfigContext } from "../contexts/MapConfigContext.tsx";
-import { ActiveUserContext } from "../contexts/ActiveUserContext.tsx";
+import { UnitRepresentation } from './UnitRepresentation.tsx';
+import { useContext, useState } from 'react';
+import { UnitsContext } from '../contexts/UnitsContext.tsx';
+import { MapConfigContext } from '../contexts/MapConfigContext.tsx';
+import { ActiveUserContext } from '../contexts/ActiveUserContext.tsx';
+import { MapUnitContextMenu } from '../components/contextMenu/MapUnitContextMenu.tsx';
+import type { Unit } from '../enitities/Unit.ts';
+import { DataProvider } from '../dataProviders/DataProvider.ts';
+import { DataBaseContext } from '../contexts/DataBaseContext.tsx';
+import { useApi } from '../contexts/ApiContext.tsx';
 export interface UnitDisplayProps {
-    showId?: string | null;
-    showOnly?: string[];
-    showAlways?: boolean;
-    iconSize?: number;
-    showStatusBar?: boolean;
+  showId?: string | null;
+  showOnly?: string[];
+  showAlways?: boolean;
+  iconSize?: number;
+  showStatusBar?: boolean;
 }
 
 export function UnitDisplay(props: UnitDisplayProps): React.JSX.Element {
+  const dp = DataProvider.getInstance();
+  const databaseProvider = useContext(DataBaseContext);
+  const apiProvider = useApi();
 
-    const units = useContext(UnitsContext);
-    const mapConfig = useContext(MapConfigContext);
-    const activeUser = useContext(ActiveUserContext);
+  const units = useContext(UnitsContext);
+  const mapConfig = useContext(MapConfigContext);
+  const activeUser = useContext(ActiveUserContext);
 
-    return <>
-        {units.map((unit) => {
-            if (props.showOnly && !props.showOnly.includes(unit.getId())) {
-                return null;
+  const [contextMenuPosition, setContextMenuPosition] = useState({
+    x: 0,
+    y: 0,
+  });
+  const [contextMenuUnit, setContextMenuUnit] = useState<Unit | null>(null);
+
+  const saveUnit = (updated: Unit) => {
+    apiProvider
+      .saveUnit(updated)
+      .then((response) => {
+        dp.addUnit(response);
+        if (databaseProvider) {
+          void databaseProvider.saveUnit(response);
+        }
+      })
+      .catch((e) => {
+        console.error('Failed to save unit', e);
+      });
+  };
+
+  return (
+    <>
+      {units.map((unit) => {
+        if (props.showOnly && !props.showOnly.includes(unit.getId())) {
+          return null;
+        }
+        if (mapConfig.getExcludeStatuses().includes(unit.getStatus() || -1)) {
+          return null;
+        }
+        return (
+          <UnitRepresentation
+            key={unit.getId()}
+            unit={unit}
+            iconSize={props.iconSize || mapConfig.getUnitIconSize()}
+            showStatusBar={props.showStatusBar || mapConfig.getShowUnitStatus()}
+            hideUnitsAfterPositionUpdate={mapConfig.getHideUnitsAfterPositionUpdate()}
+            excludeStatuses={mapConfig.getExcludeStatuses()}
+            showAlways={
+              props.showAlways ||
+              unit.getId() == props.showId ||
+              activeUser?.getUnitId() == unit.getId()
             }
-            return <UnitRepresentation
-                key={unit.getId()}
-                unit={unit}
-                iconSize={props.iconSize || mapConfig.getUnitIconSize()}
-                showStatusBar={props.showStatusBar || mapConfig.getShowUnitStatus()}
-                hideUnitsAfterPositionUpdate={mapConfig.getHideUnitsAfterPositionUpdate()}
-                excludeStatuses={mapConfig.getExcludeStatuses()}
-                showAlways={props.showAlways || unit.getId() == props.showId || activeUser?.getUnitId() == unit.getId()} />;
-        })}
-    </>;
+            onContextMenu={(e, unit) => {
+              setContextMenuPosition({ x: e.clientX, y: e.clientY });
+              setContextMenuUnit(unit);
+            }}
+          />
+        );
+      })}
+
+      <MapUnitContextMenu
+        unit={contextMenuUnit}
+        open={contextMenuUnit != null}
+        position={contextMenuPosition}
+        onClose={() => setContextMenuUnit(null)}
+        onEdit={saveUnit}
+      />
+    </>
+  );
 }

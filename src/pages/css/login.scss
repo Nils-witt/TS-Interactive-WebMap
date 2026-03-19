@@ -4,11 +4,13 @@
   --text-default: #0f1724;
 
   /* Dark theme variables */
-  --bg-dark: #0b1220;        /* primary dark background */
-  --bg-dark-elev: #0f1724;   /* slightly lighter for subtle depth */
-  --text-on-dark: #e6eef6;   /* near-white, gentle on the eyes */
+  --bg-dark: #0b1220; /* primary dark background */
+  --bg-dark-elev: #0f1724; /* slightly lighter for subtle depth */
+  --text-on-dark: #e6eef6; /* near-white, gentle on the eyes */
 
-  font-family: Open Sans, sans-serif;
+  font-family:
+    Open Sans,
+    sans-serif;
 }
 
 .login-container {
@@ -17,7 +19,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-
 
   .login-theme-toggle {
     position: absolute;
@@ -41,7 +42,11 @@
 .dark {
   .login-container {
     /* use a subtle gradient for depth and fallback variable */
-    background: linear-gradient(180deg, var(--bg-dark, #0b1220) 0%, var(--bg-dark-elev, #0f1724) 100%);
+    background: linear-gradient(
+      180deg,
+      var(--bg-dark, #0b1220) 0%,
+      var(--bg-dark-elev, #0f1724) 100%
+    );
     color: var(--text-on-dark);
   }
 }
