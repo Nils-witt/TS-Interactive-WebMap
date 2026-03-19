@@ -22,6 +22,7 @@ import { type MapOverlay } from '../enitities/MapOverlay.ts';
 import CacheProvider from '../dataProviders/CacheProvider.ts';
 import { MapOverlayContext } from '../contexts/MapOverlayContext.tsx';
 import { DataProvider } from '../dataProviders/DataProvider.ts';
+import { useApi } from '../contexts/ApiContext.tsx';
 
 type SortField = 'name' | 'url' | 'opacity' | 'order';
 type SortOrder = 'asc' | 'desc';
@@ -30,18 +31,20 @@ function OverlayTableRow({ overlay }: { overlay: MapOverlay }): JSX.Element {
     const btnRef = useRef<HTMLButtonElement | null>(null);
     const [order, setOrder] = useState<number>(overlay.getOrder());
 
+    const apiProvider = useApi();
+
     const downloadLayer = async () => {
         if (btnRef.current) {
             btnRef.current.disabled = true;
             btnRef.current.innerText = 'Downloading…';
-            await CacheProvider.getInstance().cacheOverlay(overlay, btnRef.current);
+            await CacheProvider.getInstance().cacheOverlay(overlay, apiProvider, btnRef.current);
         } else {
-            await CacheProvider.getInstance().cacheOverlay(overlay);
+            await CacheProvider.getInstance().cacheOverlay(overlay, apiProvider);
         }
     };
 
     useEffect(() => {
-        void CacheProvider.getInstance().getOverlayCacheState(overlay).then((res) => {
+        void CacheProvider.getInstance().getOverlayCacheState(overlay, apiProvider).then((res) => {
             if (btnRef.current) {
                 if (res.missing.length === 0) {
                     btnRef.current.disabled = true;
@@ -66,7 +69,7 @@ function OverlayTableRow({ overlay }: { overlay: MapOverlay }): JSX.Element {
     };
 
     const downloadVectorTiles = async (overlay: MapOverlay) => {
-        await CacheProvider.getInstance().cacheVectorForOverlay(overlay, DataProvider.getInstance().getMapStyle()!);
+        await CacheProvider.getInstance().cacheVectorForOverlay(overlay, DataProvider.getInstance().getMapStyle()!, apiProvider);
     };
 
 
@@ -109,7 +112,7 @@ function OverlayTableRow({ overlay }: { overlay: MapOverlay }): JSX.Element {
     );
 }
 
-export function OverlaysPage(): JSX.Element {    
+export function OverlaysPage(): JSX.Element {
     const overlays = useContext(MapOverlayContext);
 
     const [nameFilter, setNameFilter] = useState('');

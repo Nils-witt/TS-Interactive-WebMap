@@ -17,7 +17,7 @@ export function MapUnitContextMenu(props: MapUnitContextMenuProps): JSX.Element 
         if (!props.unit || !map) return;
 
 
-        map.current?.getMap().once('click', (e) => {
+        void map.current?.getMap().once('click', (e) => {
             const { lng, lat } = e.lngLat;
             const unit = props.unit!.clone();
             unit.setPosition(new EmbeddablePosition(lat, lng, 0.0, new Date()));
@@ -57,5 +57,4 @@ interface MapUnitContextMenuProps {
     unit: Unit | null;
     onClose: () => void;
     onEdit: (unit: Unit) => void;
-    onDelete: (unit: Unit) => void;
 }

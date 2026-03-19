@@ -5,9 +5,9 @@ import { MapConfigContext } from "../contexts/MapConfigContext.tsx";
 import { ActiveUserContext } from "../contexts/ActiveUserContext.tsx";
 import { MapUnitContextMenu } from "../components/contextMenu/MapUnitContextMenu.tsx";
 import type { Unit } from "../enitities/Unit.ts";
-import { ApiProvider } from "../dataProviders/ApiProvider.ts";
 import { DataProvider } from "../dataProviders/DataProvider.ts";
 import { DataBaseContext } from "../contexts/DataBaseContext.tsx";
+import { useApi } from "../contexts/ApiContext.tsx";
 export interface UnitDisplayProps {
     showId?: string | null;
     showOnly?: string[];
@@ -19,6 +19,7 @@ export interface UnitDisplayProps {
 export function UnitDisplay(props: UnitDisplayProps): React.JSX.Element {
     const dp = DataProvider.getInstance();
     const databaseProvider = useContext(DataBaseContext);
+    const apiProvider = useApi();
 
     const units = useContext(UnitsContext);
     const mapConfig = useContext(MapConfigContext);
@@ -29,13 +30,15 @@ export function UnitDisplay(props: UnitDisplayProps): React.JSX.Element {
 
 
     const saveUnit = (updated: Unit) => {
-        ApiProvider.getInstance()
+        apiProvider
             .saveUnit(updated)
             .then((response) => {
                 dp.addUnit(response);
                 if (databaseProvider) {
-                    databaseProvider.saveUnit(response);
+                    void databaseProvider.saveUnit(response);
                 }
+            }).catch((e) => {
+                console.error('Failed to save unit', e);
             });
     }
 
@@ -62,6 +65,6 @@ export function UnitDisplay(props: UnitDisplayProps): React.JSX.Element {
             />;
         })}
 
-        <MapUnitContextMenu unit={contextMenuUnit} open={contextMenuUnit != null} position={contextMenuPosition} onClose={() => setContextMenuUnit(null)} onEdit={saveUnit} onDelete={() => { }} />
+        <MapUnitContextMenu unit={contextMenuUnit} open={contextMenuUnit != null} position={contextMenuPosition} onClose={() => setContextMenuUnit(null)} onEdit={saveUnit} />
     </>;
 }

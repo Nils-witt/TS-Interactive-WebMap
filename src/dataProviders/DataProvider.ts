@@ -26,11 +26,11 @@ export class DataProviderEvent extends Event {
     /** Event type identifier, corresponds to DataProviderEventType values */
     eventType: string;
     /** Data payload associated with the event */
-    data: number | object | string | boolean;
+    data: number | object | string | boolean | null;
     /** Data payload associated with the event */
     oldData?: number | object | string | boolean;
 
-    constructor(eventType: string, data: string | object | number | boolean, oldData?: string | object | number | boolean) {
+    constructor(eventType: string, data: string | object | number | boolean | null, oldData?: string | object | number | boolean ) {
         super(eventType);
         this.eventType = eventType;
         this.data = data;
@@ -90,7 +90,7 @@ export enum DataProviderEventType {
     MAP_CENTER_UPDATED = 'map-center-updated',
     MAP_ZOOM_UPDATED = 'map-zoom-updated',
     API_URL_UPDATED = 'api-url-updated',
-    API_TOKEN_UPDATED = 'api-token-updated',
+    LOCAL_API_TOKEN_UPDATED = 'local-api-token-updated',
     MAP_CONFIG_UPDATED = 'map-config-updated',
     /** Triggered when the set of active (visible) overlay IDs changes */
     ACTIVE_OVERLAYS_UPDATED = 'active-overlays-updated',
@@ -157,6 +157,16 @@ export class DataProvider {
             DataProvider.instance = new DataProvider();
         }
         return DataProvider.instance;
+    }
+
+
+    public setLocalApiToken(token?: string): void {
+        if (token) {
+            localStorage.setItem('localApiToken', token);
+        } else {
+            localStorage.removeItem('localApiToken');
+        }
+        this.triggerEvent(new DataProviderEvent(DataProviderEventType.LOCAL_API_TOKEN_UPDATED, token || null));
     }
 
     /**
@@ -343,13 +353,8 @@ export class DataProvider {
         return localStorage.getItem('apiUrl') || '/api';
     }
 
-    public setApiToken(token: string): void {
-        localStorage.setItem('apiToken', token);
-        this.triggerEvent(new DataProviderEvent(DataProviderEventType.API_TOKEN_UPDATED, token));
-    }
-
-    public getApiToken(): string {
-        return localStorage.getItem('apiToken') || '';
+    public getLocalApiToken(): string {
+        return localStorage.getItem('localApiToken') || '';
     }
 
 

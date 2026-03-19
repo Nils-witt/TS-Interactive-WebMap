@@ -6,8 +6,8 @@
 
 import {type ReactElement, useState} from "react";
 
-
 import './css/login.scss'
+import { useAuth } from "react-oidc-context";
 
 export interface LoginComponentProps {
     handleLogin: (username: string, password: string) => void,
@@ -16,9 +16,17 @@ export interface LoginComponentProps {
 }
 
 export function LoginComponent(props: LoginComponentProps): ReactElement {
+    const auth = useAuth();
+    
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [remember, setRemember] = useState(false);
+
+
+    const startSSO = () => {
+        console.log("Starting SSO login");
+        void auth.signinRedirect()
+    }
+
 
     return (
         <div className="login-card">
@@ -58,16 +66,12 @@ export function LoginComponent(props: LoginComponentProps): ReactElement {
                     />
                 </label>
 
-                <div className="login-meta-row">
-                    <label className="remember">
-                        <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-                        <span>Remember me</span>
-                    </label>
-                    <a className="forgot-link" href="/admin">Admin</a>
+                <div className="login-actions">
+                    <button type="submit" disabled={props.locked} className="primary">Sign in</button>
                 </div>
 
                 <div className="login-actions">
-                    <button type="submit" disabled={props.locked} className="primary">Sign in</button>
+                    <button type="button" disabled={props.locked} className="primary" onClick={startSSO}>SSO</button>
                 </div>
 
                 {props.error && <p className="error-message">{props.error}</p>}

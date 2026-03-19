@@ -21,7 +21,7 @@ export class Utilities {
 
 
     static logout(): void {
-        localStorage.removeItem('apiToken');
+        localStorage.removeItem('localApiToken');
         document.location.reload();
     }
 

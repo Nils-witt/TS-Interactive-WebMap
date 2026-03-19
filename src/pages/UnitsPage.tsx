@@ -29,11 +29,11 @@ import MapIcon from '@mui/icons-material/Map';
 import EditIcon from '@mui/icons-material/Edit';
 import { DataProvider } from '../dataProviders/DataProvider.ts';
 import { Unit } from '../enitities/Unit.ts';
-import { ApiProvider } from '../dataProviders/ApiProvider.ts';
 import { UnitsContext } from '../contexts/UnitsContext.tsx';
 import { STATUS_COLORS, STATUS_LABELS } from '../gDefs.ts';
 import { UnitStatusDialog } from '../components/dialogs/UnitStatusDialog.tsx';
 import { UnitEditDialog } from '../components/dialogs/UnitEditDialog.tsx';
+import { useApi } from '../contexts/ApiContext.tsx';
 
 // ---------------------------------------------------------------------------
 // Status helpers
@@ -49,6 +49,7 @@ export function UnitsPage(): JSX.Element {
     const dp = DataProvider.getInstance();
 
     const units = useContext(UnitsContext);
+    const apiProvider = useApi();
 
     const [nameFilter, setNameFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState<number[]>([...STATUS_FILTER_OPTIONS]);
@@ -68,7 +69,7 @@ export function UnitsPage(): JSX.Element {
         const edited = editStatusUnit;
         edited.setStatus(status);
         console.log('Saving unit with new status:', status);
-        ApiProvider.getInstance()
+        apiProvider
             .saveUnit(edited)
             .then((saved) => {
                 dp.addUnit(saved);
@@ -80,7 +81,7 @@ export function UnitsPage(): JSX.Element {
 
     const saveEditDialog = (updated: Unit) => {
         if (!editingUnit) return;
-        ApiProvider.getInstance()
+        apiProvider
             .saveUnit(updated)
             .then((saved) => {
                 dp.addUnit(saved);

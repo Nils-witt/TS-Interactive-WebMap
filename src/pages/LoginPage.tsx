@@ -1,15 +1,20 @@
 import {type JSX, useEffect, useState} from "react";
 import {LoginComponent} from "../components/LoginComponent.tsx";
-import {ApiProvider} from "../dataProviders/ApiProvider.ts";
 import {DarkToggle} from "../components/DarkToggle.tsx";
 
 import './css/login.scss'
+import { useAuth } from "react-oidc-context";
+import { useApi } from "../contexts/ApiContext.tsx";
+import { DataProvider } from "../dataProviders/DataProvider.ts";
 
 export function LoginPage(): JSX.Element {
-    const apiProvider = ApiProvider.getInstance();
+    //const apiProvider = ApiProvider.getInstance();
 
     const [error, setError] = useState<string| null>(null);
     const [locked, setLocked] = useState(false);
+    
+    const auth = useAuth();
+    const apiProvider = useApi();
 
     const [theme, setTheme] = useState<'light'|'dark'>(() => {
         try {
@@ -33,15 +38,24 @@ export function LoginPage(): JSX.Element {
     const handleLogin = (username: string, password: string) => {
         setLocked(true);
         setError(null);
-        apiProvider.login(username, password).catch(() => {
+        
+        apiProvider.login(username, password)
+        .then(token => {
+            console.log("Login successful, token:", token);
+            DataProvider.getInstance().setLocalApiToken(token);
+            setError(null);
+        })
+        .catch(() => {
             setError("Login failed");
             setLocked(false);
         });
     }
 
     useEffect(() => {
-        void apiProvider.testLogin();
-    }, [])
+        if (auth.isAuthenticated) {
+            console.log("User is authenticated", auth.user?.access_token);
+        }
+    }, [auth])
 
     return <div className="login-container">
         <div className="login-theme-toggle">

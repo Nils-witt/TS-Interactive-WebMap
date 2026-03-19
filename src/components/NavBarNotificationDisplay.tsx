@@ -21,11 +21,11 @@ export function NavBarNotificationDisplay() {
         const notification = new Notification({
             title: 'Forbidden',
             content: 'You do not have permission to access this resource.',
-            timestamp: Date.now(),
+            timestamp: new Date().toISOString(),
             id: `forbidden-${Date.now()}`,
             permissions: [],
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         });
         handleNewNotification(notification, 5000);
     };

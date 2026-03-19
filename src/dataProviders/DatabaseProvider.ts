@@ -6,7 +6,7 @@
  * Purpose: enable local offline persistence and syncing with remote ApiProvider.
  */
 
-import { type IDBPDatabase, openDB } from 'idb';
+import { deleteDB, type IDBPDatabase, openDB } from 'idb';
 import type { StorageInterface } from './StorageInterface.ts';
 import { MapOverlay } from '../enitities/MapOverlay.ts';
 import { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
@@ -53,6 +53,15 @@ export class DatabaseProvider implements StorageInterface {
         if (this.isSetUp) {
             callback(this);
         }
+    }
+
+    public clearAll(): Promise<void> {
+        return new Promise<void>((resolve) => {
+            if (!this.db) throw new Error('Database not initialized');
+            void deleteDB(this.DB_NAME).then(() => {
+                resolve();
+            });
+        });
     }
 
     public async setUp(): Promise<void> {

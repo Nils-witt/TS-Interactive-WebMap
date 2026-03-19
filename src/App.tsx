@@ -1,7 +1,5 @@
-import { type JSX, useEffect, useState } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { GlobalEventHandler } from "./dataProviders/GlobalEventHandler.ts";
-import { ApiProviderEventTypes } from "./dataProviders/ApiProvider.ts";
+import { useEffect, useState } from 'react'
+import { Outlet, Route, Routes } from 'react-router-dom';
 import { LoginPage } from "./pages/LoginPage.tsx";
 import MapPage from "./pages/MapPage.tsx";
 import { ApplicationLogger } from "./ApplicationLogger.ts";
@@ -15,7 +13,6 @@ import { MissionGroupsPage } from './pages/MissionGroupsPage.tsx';
 import { CachePage } from './pages/CachePage.tsx';
 import { NavLayout } from './components/NavLayout.tsx';
 import { DatabaseProvider } from './dataProviders/DatabaseProvider.ts';
-import { WebSocketProvider } from './dataProviders/WebSocketProvider.ts';
 import { DisplayPage } from './pages/DisplayPage.tsx';
 import { UnitsProvider } from './contexts/UnitsContext.tsx';
 import { MapConfigProvider } from './contexts/MapConfigContext.tsx';
@@ -28,11 +25,23 @@ import { ActiveUserProvider } from './contexts/ActiveUserContext.tsx';
 import { MapBaseLayerProvider } from './contexts/MapBaseLayerContext.tsx';
 import { DataBaseContext } from './contexts/DataBaseContext.tsx';
 import { UsersProvider } from './contexts/UsersContext.tsx';
+import { AuthProvider, type AuthProviderProps } from "react-oidc-context";
+import { User, WebStorageStateStore } from 'oidc-client-ts';
+import { ApiContextProvider, useApi } from './contexts/ApiContext.tsx';
 
-function ProtectedRoute({ loggedin, children }: { loggedin: boolean; children: JSX.Element }) {
-    if (!loggedin) return <Navigate to="/login" replace />;
-    return children;
-}
+const oidcConfig: AuthProviderProps = {
+    authority: "https://sso.nils-witt.de/application/o/tac-man/",
+    client_id: "d87qffuHwIBuhq2l8IBSL4SqOmz2DHMpfqxdGlJX",
+    redirect_uri: window.location.origin,
+    scope: "openid profile email",
+    userStore: new WebStorageStateStore({ store: window.localStorage }),
+    automaticSilentRenew: true,
+    onSigninCallback: (user?: User) => {
+        if (user) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
+};
 
 function LoadingScreen() {
     return (
@@ -46,16 +55,7 @@ function LoadingScreen() {
 
 function App() {
     const [isLoading, setLoading] = useState(true);
-    const [loggedin, setLoggedin] = useState<boolean>(false);
     const [databaseProvider, setDatabaseProvider] = useState<DatabaseProvider | null>(null);
-
-    useEffect(() => {
-        if(!databaseProvider) return;
-        const webSocketProvider = WebSocketProvider.getInstance();
-        webSocketProvider.setDatabaseProvider(databaseProvider);
-        webSocketProvider.start();
-
-    }, [databaseProvider]);
     useEffect(() => {
         const instance = DatabaseProvider.getInstance();
         void instance.setUpDone(() => {
@@ -65,11 +65,6 @@ function App() {
 
 
         new BroadcastChannel('setApiBase').postMessage({ 'url': DataProvider.getInstance().getApiUrl() });
-
-        const onUnauthorized = () => { setLoggedin(false); };
-        const onLoginSuccess = () => { setLoggedin(true); };
-        GlobalEventHandler.getInstance().on(ApiProviderEventTypes.UNAUTHORIZED, onUnauthorized);
-        GlobalEventHandler.getInstance().on(ApiProviderEventTypes.LOGIN_SUCCESS, onLoginSuccess);
         void (async () => {
             try {
                 const res = await fetch('/config.json');
@@ -85,86 +80,92 @@ function App() {
             }
         })();
 
-        const pKey = localStorage.getItem('apiToken');
-
-        if (pKey) {
-            setLoggedin(true);
-        }
         setLoading(false);
-        return () => {
-            GlobalEventHandler.getInstance().off(ApiProviderEventTypes.UNAUTHORIZED, onUnauthorized);
-            GlobalEventHandler.getInstance().off(ApiProviderEventTypes.LOGIN_SUCCESS, onLoginSuccess);
-        };
     }, []);
 
     return (
         <>
-        {(navigator.serviceWorker.controller == null && !window.location.host.startsWith('localhost')) || isLoading || databaseProvider == null ? (
-            <>
-                {navigator.serviceWorker.controller == null ? (<p style={{ color: 'red', textAlign: 'center' }}>Service Worker not active. Please ensure the SW is registered and active for the app to function properly.</p>) : (<></>)}
-                {databaseProvider == null ? (<p style={{ color: 'red', textAlign: 'center' }}>DB not connected</p>) :(<></>)}
-
-
-                <LoadingScreen />
-            </>
-        ):(
-        <DataBaseContext.Provider value={databaseProvider}>
-            <MapBaseLayerProvider>
-                <MapConfigProvider>
-                    <MapGroupProvider>
-                        <MapItemProvider>
-                            <MapOverlayProvider>
-                                <MissionGroupProvider>
-                                    <PhotoProvider>
-                                        <UnitsProvider>
-                                            <UsersProvider>
-                                                <ActiveUserProvider>
-                                                    <Routes>
-                                                        <Route path="/login" element={loggedin ? <Navigate to="/" replace /> : <LoginPage />} />
-                                                        <Route path="/display" element={
-                                                            <ProtectedRoute loggedin={loggedin}><DisplayPage /></ProtectedRoute>
-                                                        } />
-                                                        <Route element={<NavLayout />}>
-                                                            <Route path="/photo" element={
-                                                                <ProtectedRoute loggedin={loggedin}><PhotoPage /></ProtectedRoute>
-                                                            } />
-                                                            <Route path="/locations" element={
-                                                                <ProtectedRoute loggedin={loggedin}><MapLocationPage /></ProtectedRoute>
-                                                            } />
-                                                            <Route path="/settings" element={
-                                                                <ProtectedRoute loggedin={loggedin}><SettingsPage /></ProtectedRoute>
-                                                            } />
-                                                            <Route path="/units" element={
-                                                                <ProtectedRoute loggedin={loggedin}><UnitsPage /></ProtectedRoute>
-                                                            } />
-                                                            <Route path="/overlays" element={
-                                                                <ProtectedRoute loggedin={loggedin}><OverlaysPage /></ProtectedRoute>
-                                                            } />
-                                                            <Route path="/mission-groups" element={
-                                                                <ProtectedRoute loggedin={loggedin}><MissionGroupsPage /></ProtectedRoute>
-                                                            } />
-                                                            <Route path="/caches" element={
-                                                                <ProtectedRoute loggedin={loggedin}><CachePage /></ProtectedRoute>
-                                                            } />
-                                                            <Route path="*" element={
-                                                                <ProtectedRoute loggedin={loggedin}><MapPage /></ProtectedRoute>
-                                                            } />
-                                                        </Route>
-                                                    </Routes>
-                                                </ActiveUserProvider>
-                                            </UsersProvider>
-                                        </UnitsProvider>
-                                    </PhotoProvider>
-                                </MissionGroupProvider>
-                            </MapOverlayProvider>
-                        </MapItemProvider>
-                    </MapGroupProvider>
-                </MapConfigProvider>
-            </MapBaseLayerProvider>
-        </DataBaseContext.Provider>
-        )}
+            {(navigator.serviceWorker.controller == null && !window.location.host.startsWith('localhost')) || isLoading || databaseProvider == null ? (
+                <>
+                    {navigator.serviceWorker.controller == null ? (<p style={{ color: 'red', textAlign: 'center' }}>Service Worker not active. Please ensure the SW is registered and active for the app to function properly.</p>) : (<></>)}
+                    {databaseProvider == null ? (<p style={{ color: 'red', textAlign: 'center' }}>DB not connected</p>) : (<></>)}
+                    <LoadingScreen />
+                </>
+            ) : (
+                <DataBaseContext.Provider value={databaseProvider}>
+                    <AuthProvider {...oidcConfig}>
+                        <ApiContextProvider>
+                            <Routes>
+                                <Route element={<DateProvidingContextProvider />}>
+                                    <Route path="/display" element={
+                                        <DisplayPage />
+                                    } />
+                                    <Route element={<NavLayout />}>
+                                        <Route path="/photo" element={
+                                            <PhotoPage />
+                                        } />
+                                        <Route path="/locations" element={
+                                            <MapLocationPage />
+                                        } />
+                                        <Route path="/settings" element={
+                                            <SettingsPage />
+                                        } />
+                                        <Route path="/units" element={
+                                            <UnitsPage />
+                                        } />
+                                        <Route path="/overlays" element={
+                                            <OverlaysPage />
+                                        } />
+                                        <Route path="/mission-groups" element={
+                                            <MissionGroupsPage />
+                                        } />
+                                        <Route path="/caches" element={
+                                            <CachePage />
+                                        } />
+                                        <Route path="*" element={
+                                            <MapPage />
+                                        } />
+                                    </Route>
+                                </Route>
+                            </Routes>
+                        </ApiContextProvider>
+                    </AuthProvider>
+                </DataBaseContext.Provider>
+            )}
         </>
     );
+}
+
+
+function DateProvidingContextProvider() {
+    const apiProvider = useApi();
+
+    if (!apiProvider.hasToken()) {
+        return <LoginPage />;
+    }
+    return (
+        <MapBaseLayerProvider>
+            <MapConfigProvider>
+                <MapGroupProvider>
+                    <MapItemProvider>
+                        <MapOverlayProvider>
+                            <MissionGroupProvider>
+                                <PhotoProvider>
+                                    <UnitsProvider>
+                                        <UsersProvider>
+                                            <ActiveUserProvider>
+                                                <Outlet />
+                                            </ActiveUserProvider>
+                                        </UsersProvider>
+                                    </UnitsProvider>
+                                </PhotoProvider>
+                            </MissionGroupProvider>
+                        </MapOverlayProvider>
+                    </MapItemProvider>
+                </MapGroupProvider>
+            </MapConfigProvider>
+        </MapBaseLayerProvider>
+    )
 }
 
 

@@ -1,4 +1,3 @@
-import { DataProvider } from '../dataProviders/DataProvider';
 import { AbstractEntity, type DBRecord, type IAbstractEntity } from './AbstractEntity';
 import { EmbeddablePosition, type IPosition } from './embeddables/EmbeddablePosition';
 
@@ -63,11 +62,11 @@ export class Photo extends AbstractEntity {
     }
 
 
-    public getImageSrc(): string {
+    public getImageSrc(apiUrl: string, apiToken: string): string {
         if (!this.getId()) {
             return '';
         }
-        return DataProvider.getInstance().getApiUrl() + '/photos/' + this.getId() + '/image?token=' + DataProvider.getInstance().getApiToken();
+        return apiUrl + '/photos/' + this.getId() + '/image?token=' + apiToken;
     }
 
     public getName(): string {

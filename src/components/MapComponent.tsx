@@ -38,7 +38,6 @@ import {
     TextField,
 } from '@mui/material';
 import { MapItem } from "../enitities/MapItem.ts";
-import { ApiProvider } from "../dataProviders/ApiProvider.ts";
 import './css/mapContextMenu.scss';
 import type { Unit } from '../enitities/Unit.ts';
 import { UnitsContext } from '../contexts/UnitsContext.tsx';
@@ -46,6 +45,7 @@ import { LocalStorageProvider } from '../dataProviders/LocalStorageProvider.ts';
 import { MapItemContext } from '../contexts/MapItemContext.tsx';
 import { MapGroupContext } from '../contexts/MapGroupContext.tsx';
 import { useMapBaseLayer } from '../contexts/MapBaseLayerContext.tsx';
+import { useApi } from '../contexts/ApiContext.tsx';
 
 export function MapComponent() {
     const keyValueStore = new LocalStorageProvider();
@@ -69,6 +69,7 @@ export function MapComponent() {
     const units = useContext(UnitsContext);
     const items = useContext(MapItemContext);
     const groups = useContext(MapGroupContext);
+    const apiProvider = useApi();
 
 
     useEffect(() => {
@@ -97,14 +98,14 @@ export function MapComponent() {
     useEffect(() => {
         if (qGroup) {
             setShowGroupId(qGroup);
-        }else {
+        } else {
             setShowGroupId(undefined);
         }
     }, [qGroup]);
 
 
     useEffect(() => {
-        if(qItem){
+        if (qItem) {
             items.forEach((i) => {
                 if (i.getId() === qItem) {
                     setShowItem(i);
@@ -112,7 +113,7 @@ export function MapComponent() {
                     setMapCenter([i.getLongitude(), i.getLatitude()]);
                 }
             });
-        }else {
+        } else {
             setShowItem(undefined);
         }
 
@@ -153,8 +154,8 @@ export function MapComponent() {
     const saveCreateDialog = () => {
         const item = new MapItem({
             id: crypto.randomUUID(),
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
             permissions: [], // New items are editable by default
             latitude: parseFloat(createLat),
             longitude: parseFloat(createLng),
@@ -164,7 +165,7 @@ export function MapComponent() {
             groupId: createGroupId || null,
         });
         // Just create the item remotely; it will be added to the map via WebSocket update to ensure real-time consistency with the backend and other clients.
-        void ApiProvider.getInstance().saveMapItem(item);
+        void apiProvider.saveMapItem(item);
         setCreateOpen(false);
     };
 
@@ -206,8 +207,8 @@ export function MapComponent() {
             >
                 <GeolocateControl />
                 <NavigationControl />
-                <ReactLayerControl position="bottom-left"/>
-                <ReactSearchControl position="top-left"/>
+                <ReactLayerControl position="bottom-left" />
+                <ReactSearchControl position="top-left" />
 
                 <RouteDisplay></RouteDisplay>
                 <UnitDisplay showId={showUnit ? showUnit.getId() : undefined} />

@@ -18,7 +18,7 @@ export function AssignUnitsDialog(props: AssignUnitsDialogProps): JSX.Element {
 
     const onSave = () => {
         if (!props.missionGroup) return;
-        const mg = props.missionGroup!.clone();
+        const mg = props.missionGroup.clone();
         mg.setUnitIds(selectedUnitIds);
         props.onEdit(mg);
         props.onClose();

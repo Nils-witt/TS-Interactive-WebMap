@@ -27,11 +27,11 @@ import EditIcon from '@mui/icons-material/Edit';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import PlaceIcon from '@mui/icons-material/Place';
 import { styled } from '@mui/material/styles';
-import { ApiProvider } from '../dataProviders/ApiProvider';
 import { Photo } from '../enitities/Photo';
 import { DataProvider } from '../dataProviders/DataProvider';
 import { PhotoContext } from '../contexts/PhotoContext';
 import { MissionGroupContext } from '../contexts/MissionGroupContext'
+import { useApi } from '../contexts/ApiContext';
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -51,6 +51,7 @@ export function PhotoPage(): JSX.Element {
     const isSm = useMediaQuery(theme.breakpoints.down('md'));
 
     const dp = DataProvider.getInstance();
+    const apiProvider = useApi();
 
     const photos = useContext(PhotoContext);
     const [selected, setSelected] = useState<Photo | null>(null);
@@ -122,7 +123,7 @@ export function PhotoPage(): JSX.Element {
     const submitCreateDialog = () => {
         if (!createFile) return;
         setCreating(true);
-        ApiProvider.getInstance()
+        apiProvider
             .savePhotoImage(createFile, createLatitude || createLongitude ? { latitude: parseFloat(createLatitude), longitude: parseFloat(createLongitude), accuracy: 0, timestamp: new Date().toISOString() } : null, createName.trim(), missionGroupFilter)
             .then((photo) => {
                 dp.addPhoto(photo);
@@ -166,7 +167,7 @@ export function PhotoPage(): JSX.Element {
 
     const confirmDeletePhoto = () => {
         if (!editingPhoto || !editingPhoto.getId()) return;
-        ApiProvider.getInstance().deletePhoto(editingPhoto.getId())
+        apiProvider.deletePhoto(editingPhoto.getId())
             .then(() => {
                 dp.removePhoto(editingPhoto.getId());
                 setConfirmDelete(false);
@@ -181,8 +182,8 @@ export function PhotoPage(): JSX.Element {
         const lng = parseFloat(editLongitude);
         const updated = new Photo({
             id: editingPhoto.getId(),
-            createdAt: editingPhoto.getCreatedAt().getTime(),
-            updatedAt: Date.now(),
+            createdAt: editingPhoto.getCreatedAt().toISOString(),
+            updatedAt: new Date().toISOString(),
             permissions: editingPhoto.getPermissions(),
             name: editName.trim(),
             position: (!isNaN(lat) && !isNaN(lng) && editLatitude !== '' && editLongitude !== '')
@@ -197,7 +198,7 @@ export function PhotoPage(): JSX.Element {
             missionGroupId: editingPhoto.getMissionGroupId(),
         });
         setEditSaving(true);
-        ApiProvider.getInstance()
+        apiProvider
             .savePhoto(updated)
             .then((saved) => {
                 dp.addPhoto(saved);
@@ -265,7 +266,7 @@ export function PhotoPage(): JSX.Element {
                                 onClick={() => setSelected(photo)}
                             >
                                 <img
-                                    src={photo.getImageSrc()}
+                                    src={photo.getImageSrc(apiProvider.getURL() ?? '', apiProvider.getToken())}
                                     alt={photo.getName()}
                                     loading="lazy"
                                     style={{ display: 'block', width: '100%' }}
@@ -490,7 +491,7 @@ export function PhotoPage(): JSX.Element {
                         </DialogTitle>
                         <DialogContent sx={{ p: 0, textAlign: 'center', backgroundColor: '#000' }}>
                             <img
-                                src={selected.getImageSrc()}
+                                src={selected.getImageSrc(apiProvider.getURL() ?? '', apiProvider.getToken())}
                                 alt={selected.getName()}
                                 style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }}
                             />

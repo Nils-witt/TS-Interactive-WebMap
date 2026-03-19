@@ -1,4 +1,4 @@
-import { Dialog, DialogTitle, DialogContent, TextField, DialogActions, Button, Box } from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box } from "@mui/material";
 import { useState, useEffect } from "react";
 import { STATUS_COLORS, STATUS_LABELS } from "../../gDefs";
 import type { Unit } from "../../enitities/Unit";
@@ -9,9 +9,6 @@ import type { Unit } from "../../enitities/Unit";
 export function UnitStatusDialog(props: UnitStatusDialogProps) {
 
     const [status, setStatus] = useState<number>(-1);
-    const save = () => {
-        props.onSave(status);
-    }
 
     useEffect(() => {
         setStatus(props.unit?.getStatus() || -1);

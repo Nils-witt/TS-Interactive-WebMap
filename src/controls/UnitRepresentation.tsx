@@ -54,7 +54,7 @@ export function UnitRepresentation(props: UnitRepresentationProps): React.JSX.El
     return <>
         {show && props.unit.getImgSrc() != '' ? (
             <Marker latitude={props.unit.getPosition()!.latitude} longitude={props.unit.getPosition()!.longitude}>
-                <div style={{ width: props.iconSize > 10 ? props.iconSize : 75 }} className='unit-respresentation-container' onContextMenu={(e) => props.onContextMenu({ clientX: e.clientX, clientY: e.clientY }, props.unit)}>
+                <div style={{ width: props.iconSize > 10 ? props.iconSize : 75 }} className='unit-respresentation-container' onContextMenu={(e) => props.unit.getPermissions().includes('EDIT') && props.onContextMenu({ clientX: e.clientX, clientY: e.clientY }, props.unit)}>
                     <img
                         src={props.unit.getImgSrc()}
                         alt={props.unit.getName()}

@@ -18,7 +18,7 @@ export function AssignMapGroupsDialog(props: AssignMapGroupsDialogProps): JSX.El
 
     const onSave = () => {
         if (!props.missionGroup) return;
-        const mg = props.missionGroup!.clone();
+        const mg = props.missionGroup.clone();
         mg.setMapGroupIds(selectedMapGroupIds);
         props.onEdit(mg);
         props.onClose();

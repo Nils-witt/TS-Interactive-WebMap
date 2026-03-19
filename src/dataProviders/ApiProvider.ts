@@ -7,7 +7,6 @@
  */
 
 import { MapItem } from '../enitities/MapItem.ts';
-import { DataProvider } from './DataProvider';
 import { GlobalEventHandler } from './GlobalEventHandler';
 import { MapOverlay } from '../enitities/MapOverlay.ts';
 import { MapBaseLayer } from '../enitities/MapBaseLayer.ts';
@@ -49,30 +48,41 @@ export enum ApiProviderEventTypes {
 
 export class ApiProvider implements StorageInterface {
 
-    private static instance: ApiProvider;
+    private apiToken: string | null = null;
+    private apiUrl: string;
 
-    private constructor() { /* empty */
+    public constructor(apiUrl: string, apiToken?: string) {
+        this.apiUrl = apiUrl;
+        this.apiToken = apiToken || null;
     }
 
     setUp(): Promise<void> {
         throw new Error('Method not implemented.');
     }
-
-    public static getInstance(): ApiProvider {
-        if (!ApiProvider.instance) {
-            ApiProvider.instance = new ApiProvider();
-        }
-        return ApiProvider.instance;
-    }
-
     private notifyListeners(event: ApiProviderEventTypes, data: { message: string }): void {
         GlobalEventHandler.getInstance().emit(event, new ApiProviderEvent(event, data));
     }
 
+
+    public hasToken(): boolean {
+        return this.apiToken != null;
+    }
+
+    public getToken(): string {
+        if (!this.apiToken) {
+            throw new Error('API token is not set');
+        }
+        return this.apiToken;
+    }
+
+    public getURL(): string {
+        return this.apiUrl;
+    }
+
     public async testLogin(): Promise<void> {
-        const url = DataProvider.getInstance().getApiUrl() + '/token';
+        const url = this.apiUrl + '/token';
         const headers = new Headers();
-        headers.append('Authorization', `Bearer ${DataProvider.getInstance().getApiToken()}`);
+        headers.append('Authorization', `Bearer ${this.apiToken}`);
 
         const requestOptions = {
             method: 'GET',
@@ -89,8 +99,8 @@ export class ApiProvider implements StorageInterface {
     }
 
 
-    public async login(username: string, password: string): Promise<void> {
-        const url = DataProvider.getInstance().getApiUrl() + '/token';
+    public async login(username: string, password: string): Promise<string> {
+        const url = this.apiUrl + '/token';
         const myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/json');
 
@@ -106,9 +116,7 @@ export class ApiProvider implements StorageInterface {
             const res = await fetch(url, requestOptions);
             if (res.ok) {
                 const data: { token: string; userId: string } = await res.json() as { token: string; userId: string };
-                DataProvider.getInstance().setApiToken(data.token); // Store the token for future requests
-                localStorage.setItem('activeUser', data.userId);
-                this.notifyListeners(ApiProviderEventTypes.LOGIN_SUCCESS, { message: 'Login successful' });
+                return data.token;
             } else {
                 throw new Error(`HTTP error! status: ${res.status}`);
             }
@@ -118,15 +126,10 @@ export class ApiProvider implements StorageInterface {
         }
     }
 
-    public logout(): void {
-        localStorage.removeItem('apiToken');
-        window.location.reload();
-    }
-
     private async callApi(url: string, method: string, headers: Headers = new Headers(), body?: object): Promise<unknown> {
 
-        if (DataProvider.getInstance().getApiToken()) {
-            headers.append('Authorization', `Bearer ${DataProvider.getInstance().getApiToken()}`);
+        if (this.apiToken) {
+            headers.append('Authorization', `Bearer ${this.apiToken}`);
         }
 
         const requestOptions: RequestInit = {
@@ -142,7 +145,7 @@ export class ApiProvider implements StorageInterface {
         if (!response.ok) {
             if (response.status === 401) {
                 this.notifyListeners(ApiProviderEventTypes.UNAUTHORIZED, { message: `Unauthorized access - check your token. ${response.status}` });
-            }else if (response.status === 403) {
+            } else if (response.status === 403) {
                 this.notifyListeners(ApiProviderEventTypes.FORBIDDEN, { message: `Forbidden - you don't have permission to access this resource. ${response.status}` });
             }
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -164,7 +167,7 @@ export class ApiProvider implements StorageInterface {
     loadAllUnits(): Promise<Record<string, Unit>> {
         return new Promise<Record<string, Unit>>((resolve, reject) => {
             const units: Record<string, Unit> = {};
-            const url = DataProvider.getInstance().getApiUrl() + '/units';
+            const url = this.apiUrl + '/units';
 
             this.fetchData(url)
                 .then(raw => {
@@ -200,7 +203,7 @@ export class ApiProvider implements StorageInterface {
     loadAllMapGroups(): Promise<Record<string, MapGroup>> {
         return new Promise<Record<string, MapGroup>>((resolve, reject) => {
             const groups: Record<string, MapGroup> = {};
-            const url = DataProvider.getInstance().getApiUrl() + '/map/groups';
+            const url = this.apiUrl + '/map/groups';
 
             this.fetchData(url)
                 .then(raw => {
@@ -229,7 +232,7 @@ export class ApiProvider implements StorageInterface {
         return new Promise<Record<string, MapItem>>((resolve, reject) => {
             const items: Record<string, MapItem> = {};
 
-            const url = DataProvider.getInstance().getApiUrl() + '/map/items';
+            const url = this.apiUrl + '/map/items';
             this.fetchData(url)
                 .then(raw => {
                     const data = raw as ApiResponseStruct;
@@ -264,7 +267,7 @@ export class ApiProvider implements StorageInterface {
 
         return new Promise<Record<string, MapBaseLayer>>((resolve, reject) => {
             const mapStyles: Record<string, MapBaseLayer> = {};
-            const url = DataProvider.getInstance().getApiUrl() + '/map/baselayers';
+            const url = this.apiUrl + '/map/baselayers';
             this.fetchData(url)
                 .then(raw => {
                     const data = raw as ApiResponseStruct;
@@ -295,7 +298,7 @@ export class ApiProvider implements StorageInterface {
             const overlays: Record<string, MapOverlay> = {};
 
             try {
-                const url = DataProvider.getInstance().getApiUrl() + '/map/overlays';
+                const url = this.apiUrl + '/map/overlays';
                 this.fetchData(url)
                     .then(raw => {
                         const data = raw as ApiResponseStruct;
@@ -313,7 +316,7 @@ export class ApiProvider implements StorageInterface {
                                 description: '',
                                 order: 0,
                                 opacity: 1.0,
-                                permissions: layer.permissions 
+                                permissions: layer.permissions
                             });
                         }
                         return resolve(overlays);
@@ -331,7 +334,7 @@ export class ApiProvider implements StorageInterface {
     loadAllPhotos(): Promise<Record<string, Photo>> {
         return new Promise<Record<string, Photo>>((resolve, reject) => {
             const pictures: Record<string, Photo> = {};
-            const url = DataProvider.getInstance().getApiUrl() + '/photos';
+            const url = this.apiUrl + '/photos';
 
             this.fetchData(url)
                 .then(raw => {
@@ -367,7 +370,7 @@ export class ApiProvider implements StorageInterface {
     loadAllMissionGroups(): Promise<Record<string, MissionGroup>> {
         return new Promise<Record<string, MissionGroup>>((resolve, reject) => {
             const missionGroups: Record<string, MissionGroup> = {};
-            const url = DataProvider.getInstance().getApiUrl() + '/missiongroups';
+            const url = this.apiUrl + '/missiongroups';
 
             this.fetchData(url)
                 .then(raw => {
@@ -400,7 +403,7 @@ export class ApiProvider implements StorageInterface {
     loadAllUsers(): Promise<Record<string, User>> {
         return new Promise<Record<string, User>>((resolve, reject) => {
             const users: Record<string, User> = {};
-            const url = DataProvider.getInstance().getApiUrl() + '/users';
+            const url = this.apiUrl + '/users';
 
             this.fetchData(url)
                 .then(raw => {
@@ -511,7 +514,7 @@ export class ApiProvider implements StorageInterface {
     //-- Save Single
     saveUnit(unit: Unit): Promise<Unit> {
         return new Promise<Unit>((resolve, reject) => {
-            const url = DataProvider.getInstance().getApiUrl() + '/units/' + unit.getId();
+            const url = this.apiUrl + '/units/' + unit.getId();
             const body: Record<string, unknown> = {
                 name: unit.getName(),
                 status: unit.getStatus(),
@@ -567,7 +570,7 @@ export class ApiProvider implements StorageInterface {
                 }
             };
 
-            const url = DataProvider.getInstance().getApiUrl() + '/map/items' + (mapItem.getId() ? '/' + mapItem.getId() : '');
+            const url = this.apiUrl + '/map/items' + (mapItem.getId() ? '/' + mapItem.getId() : '');
 
             this.callApi(url, mapItem.getId() ? 'PUT' : 'POST', new Headers(), data)
                 .then((res) => {
@@ -598,7 +601,7 @@ export class ApiProvider implements StorageInterface {
 
     savePhoto(photo: Photo): Promise<Photo> {
         return new Promise<Photo>((resolve) => {
-            const url = DataProvider.getInstance().getApiUrl() + '/photos/' + photo.getId();
+            const url = this.apiUrl + '/photos/' + photo.getId();
             const body: Record<string, unknown> = { name: photo.getName() };
             if (photo.getPosition()) {
                 body['position'] = photo.getPosition()!.record();
@@ -626,7 +629,7 @@ export class ApiProvider implements StorageInterface {
     }
 
     savePhotoImage(img: File, position: IPosition | null, name: string, missionGroupId: string): Promise<Photo> {
-        const url = DataProvider.getInstance().getApiUrl() + '/photos';
+        const url = this.apiUrl + '/photos';
 
         const formData = new FormData();
         formData.append('file', img);
@@ -639,7 +642,7 @@ export class ApiProvider implements StorageInterface {
         return new Promise<Photo>((resolve, reject) => {
             fetch(url, {
                 method: 'POST',
-                headers: DataProvider.getInstance().getApiToken() ? { 'Authorization': `Bearer ${DataProvider.getInstance().getApiToken()}` } : undefined,
+                headers: this.apiToken ? { 'Authorization': `Bearer ${this.apiToken}` } : undefined,
                 body: formData
             })
                 .then(response => {
@@ -679,7 +682,7 @@ export class ApiProvider implements StorageInterface {
     saveMissionGroup(missionGroup: MissionGroup): Promise<MissionGroup> {
         return new Promise<MissionGroup>((resolve, reject) => {
             const data = missionGroup.record();
-            const url = DataProvider.getInstance().getApiUrl() + '/missiongroups' + (missionGroup.getId() ? '/' + missionGroup.getId() : '');
+            const url = this.apiUrl + '/missiongroups' + (missionGroup.getId() ? '/' + missionGroup.getId() : '');
 
             this.callApi(url, missionGroup.getId() ? 'PUT' : 'POST', new Headers(), data)
                 .then((res) => {
@@ -720,7 +723,7 @@ export class ApiProvider implements StorageInterface {
 
     deleteMapItem(id: string): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            const url = DataProvider.getInstance().getApiUrl() + '/map/items/' + id;
+            const url = this.apiUrl + '/map/items/' + id;
             void this.callApi(url, 'DELETE', new Headers())
                 .then(() => {
                     return resolve();
@@ -740,7 +743,7 @@ export class ApiProvider implements StorageInterface {
 
     deletePhoto(id: string): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            const url = DataProvider.getInstance().getApiUrl() + '/photos/' + id;
+            const url = this.apiUrl + '/photos/' + id;
             void this.callApi(url, 'DELETE', new Headers())
                 .then(() => {
                     return resolve();
@@ -757,7 +760,7 @@ export class ApiProvider implements StorageInterface {
 
     deleteMissionGroup(id: string): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            const url = DataProvider.getInstance().getApiUrl() + '/missiongroups/' + id;
+            const url = this.apiUrl + '/missiongroups/' + id;
             void this.callApi(url, 'DELETE', new Headers())
                 .then(() => {
                     return resolve();
@@ -783,7 +786,7 @@ export class ApiProvider implements StorageInterface {
             url = new URL(overlay.getUrl().substring(0, overlay.getUrl().search('{z}')), window.location.origin); // Ensure the URL is absolute
         }
 
-        const response = await fetch(url.href + '/index.json?accesstoken=' + DataProvider.getInstance().getApiToken(), {
+        const response = await fetch(url.href + '/index.json?accesstoken=' + this.apiToken, {
             cache: 'no-store',
             headers: {
                 'cache': 'no-store',

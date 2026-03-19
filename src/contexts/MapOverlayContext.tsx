@@ -1,21 +1,24 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { DataProvider, DataProviderEventType } from '../dataProviders/DataProvider.ts';
 import { GlobalEventHandler } from '../dataProviders/GlobalEventHandler.ts';
-import { ApiProvider } from '../dataProviders/ApiProvider.ts';
 import { type MapOverlay } from '../enitities/MapOverlay.ts';
 import { DataBaseContext } from './DataBaseContext.tsx';
+import { useApi } from './ApiContext.tsx';
 
 export const MapOverlayContext = createContext<MapOverlay[]>([]);
 
 export function MapOverlayProvider({ children }: { children: ReactNode }) {
     const channel = new BroadcastChannel('addOverlayCacheUrl')
+
     const databaseProvider = useContext(DataBaseContext);
+    const apiProvider = useApi();
+    const dp = DataProvider.getInstance();
+
     const [mapOverlays, setMapOverlays] = useState<MapOverlay[]>(
         () => Array.from(DataProvider.getInstance().getAllMapOverlays().values())
     );
 
     useEffect(() => {
-        const dp = DataProvider.getInstance();
         const refresh = () => setMapOverlays(Array.from(dp.getAllMapOverlays().values()));
 
         const events = [
@@ -30,7 +33,7 @@ export function MapOverlayProvider({ children }: { children: ReactNode }) {
         }
         void databaseProvider.loadAllMapOverlays().then((result) => {
             Object.values(result).forEach((layer) => {
-                
+
                 channel.postMessage(
                     {
                         id: layer.getId() + '_' + layer.getLayerVersion(),
@@ -42,36 +45,38 @@ export function MapOverlayProvider({ children }: { children: ReactNode }) {
                         id: layer.getId(),
                         version: layer.getLayerVersion()
                     });
-                    dp.addMapOverlay(layer);
+                dp.addMapOverlay(layer);
             });
             refresh();
-            return ApiProvider.getInstance()
-                .loadAllMapOverlays()
-                .then((remote) => {
-                    Object.values(remote).forEach((layer) => {
-                        channel.postMessage(
-                            {
-                                id: layer.getId() + '_' + layer.getLayerVersion(),
-                                url: layer.getUrl()
-                            });
+            if (apiProvider.hasToken()) {
+                apiProvider
+                    .loadAllMapOverlays()
+                    .then((remote) => {
+                        Object.values(remote).forEach((layer) => {
+                            channel.postMessage(
+                                {
+                                    id: layer.getId() + '_' + layer.getLayerVersion(),
+                                    url: layer.getUrl()
+                                });
 
-                        channel.postMessage(
-                            {
-                                id: layer.getId(),
-                                version: layer.getLayerVersion()
-                            });
-                        dp.addMapOverlay(layer);
+                            channel.postMessage(
+                                {
+                                    id: layer.getId(),
+                                    version: layer.getLayerVersion()
+                                });
+                            dp.addMapOverlay(layer);
 
-                    });
-                    void databaseProvider.replaceAllMapOverlays(Object.values(remote));
-                    refresh();
-                })
-                .catch((e) => console.error('MapOverlayContext: remote load failed', e));
+                        });
+                        void databaseProvider.replaceAllMapOverlays(Object.values(remote));
+                        refresh();
+                    })
+                    .catch((e) => console.error('MapOverlayContext: remote load failed', e));
+            }
         }).catch((e) => console.error('MapOverlayContext: DB load failed', e))
 
 
         return () => events.forEach((e) => GlobalEventHandler.getInstance().off(e, refresh));
-    }, [databaseProvider]);
+    }, [databaseProvider, apiProvider]);
 
     return (
         <MapOverlayContext.Provider value={mapOverlays}>{children}</MapOverlayContext.Provider>

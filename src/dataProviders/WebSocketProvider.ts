@@ -28,6 +28,9 @@ export class WebSocketProvider {
     private databaseProvider: DatabaseProvider | null = null;
     private dataProvider: DataProvider = DataProvider.getInstance();
 
+    private apiToken: string | null = null;
+    private apiUrl: string | null = null;
+
     private eventListeners: Record<WebSocketEvent, ((event: WebSocketEvent) => void)[]> = {} as Record<WebSocketEvent, ((event: WebSocketEvent) => void)[]>;
 
     on(event: WebSocketEvent, listener: (event: WebSocketEvent) => void) {
@@ -54,14 +57,21 @@ export class WebSocketProvider {
     }
 
     getConnectionURL() {
-        const base = DataProvider.getInstance().getApiUrl().replace('http', 'ws');
-        const token = DataProvider.getInstance().getApiToken();
-
-        return base + '/ws?token=' + token;
+        return this.apiUrl?.replace('http', 'ws') + '/ws?token=' + this.apiToken;
     }
 
+    public updateConnectionDetails(token: string, apiUrl: string) {
+        this.apiToken = token;
+        this.apiUrl = apiUrl;
+        if (this.socket) {
+            this.socket.close();
+            this.socket = null;
+        }
+        this.start();
+    }
 
     unitChangedSideEffects(oldUnit: Unit, newUnit: Unit) {
+        if (!oldUnit || !newUnit) return;
         if (newUnit.getStatus() != oldUnit.getStatus()) {
             const notification = new Notification({
                 id: window.crypto.randomUUID() as string,
@@ -211,6 +221,10 @@ export class WebSocketProvider {
             ApplicationLogger.info('WebSocket is already running', { service: 'WebSocket' });
             return;
         }
+        if (!this.apiToken || !this.apiUrl) {
+            ApplicationLogger.info('WebSocket connection details not set, cannot start WebSocket', { service: 'WebSocket' });
+            return;
+        }
 
         this.socket = new WebSocket(this.getConnectionURL());
         const entityTypes = ['unit', 'mapoverlay', 'mapbaselayer', 'mapitem'];
@@ -250,8 +264,9 @@ export class WebSocketProvider {
                 } else {
                     ApplicationLogger.info('Received message: ' + data.topic + ' is unknown', { service: 'WebSocket' });
                 }
-            } catch {
-                ApplicationLogger.info('Received message: ' + event.data, { service: 'WebSocket' });
+            } catch (error) {
+                console.error('Error parsing WebSocket message:', error, 'Message data:', event.data);
+                ApplicationLogger.info('Received message: (DCE) ' + event.data, { service: 'WebSocket' });
             }
         };
         this.socket.onclose = (event) => {

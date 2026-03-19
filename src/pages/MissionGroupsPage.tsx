@@ -2,7 +2,6 @@ import { type JSX, useContext, useMemo, useState } from 'react';
 import {
     Box,
     Button,
-    Checkbox,
     Chip,
     Container,
     Dialog,
@@ -12,9 +11,6 @@ import {
     Divider,
     IconButton,
     InputAdornment,
-    ListItem,
-    ListItemText,
-    ListItemButton,
     Paper,
     Table,
     TableBody,
@@ -31,14 +27,13 @@ import SearchIcon from '@mui/icons-material/Search';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { MissionGroupContext } from '../contexts/MissionGroupContext';
-import { UnitsContext } from '../contexts/UnitsContext';
 import type { MissionGroup } from '../enitities/MissionGroup';
 import { MissionGroupEditDialog } from '../components/dialogs/MissionGroupEditDialog';
-import { ApiProvider } from '../dataProviders/ApiProvider';
 import { DataProvider } from '../dataProviders/DataProvider';
 import { DataBaseContext } from '../contexts/DataBaseContext';
 import { AssignUnitsDialog } from '../components/dialogs/AssignUnitsDialog';
 import { AssignMapGroupsDialog } from '../components/dialogs/AssignMapGroups';
+import { useApi } from '../contexts/ApiContext';
 
 type SortField = 'name' | 'startTime' | 'endTime' | 'units' | 'mapGroups';
 type SortOrder = 'asc' | 'desc';
@@ -46,6 +41,7 @@ type SortOrder = 'asc' | 'desc';
 export function MissionGroupsPage(): JSX.Element {
     const dp = DataProvider.getInstance();
     const databaseProvider = useContext(DataBaseContext)
+    const apiProvider = useApi();
 
     const missionGroups = useContext(MissionGroupContext);
 
@@ -69,22 +65,24 @@ export function MissionGroupsPage(): JSX.Element {
 
     const saveEditedMissionGroup = (updated: MissionGroup) => {
 
-        ApiProvider.getInstance()
+        apiProvider
             .saveMissionGroup(updated)
             .then((response) => {
                 dp.addMissionGroup(response);
                 setEditingMissionGroup(null);
+            }).catch((error) => {
+                console.error('Failed to save mission group', error);
             });
     };
 
     const confirmDeleteMissionGroup = () => {
         if (!deletingMissionGroup) return;
 
-        ApiProvider.getInstance()
+        apiProvider
             .deleteMissionGroup(deletingMissionGroup.getId())
             .then(() => {
                 dp.removeMissionGroup(deletingMissionGroup.getId());
-                databaseProvider?.deleteMissionGroup(deletingMissionGroup.getId());
+                void databaseProvider?.deleteMissionGroup(deletingMissionGroup.getId());
                 setDeletingMissionGroup(null);
             })
             .catch((error) => {
@@ -96,7 +94,7 @@ export function MissionGroupsPage(): JSX.Element {
     const saveAssignedUnits = (mapGroup: MissionGroup) => {
         if (!mapGroup) return;
 
-        ApiProvider.getInstance()
+        apiProvider
             .saveMissionGroup(mapGroup)
             .then((response) => {
                 dp.addMissionGroup(response);
