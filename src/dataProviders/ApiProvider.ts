@@ -982,4 +982,21 @@ export class ApiProvider implements StorageInterface {
 
     return [];
   }
+
+  public async getCurrentUserId(): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const url = this.apiUrl + '/profile';
+      void this.callApi(url, 'GET', new Headers())
+        .then((response) => {
+          const data = response as { id: string };
+
+          return resolve(data.id);
+        })
+        .catch((error) => {
+          return reject(
+            new Error('Failed to get current user ID', { cause: error }),
+          );
+        });
+    });
+  }
 }

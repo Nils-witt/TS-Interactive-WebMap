@@ -144,7 +144,7 @@ export function NavLayout(): JSX.Element {
                   textDecoration: 'none',
                 }}
               >
-                Webmap
+                TacMan
               </Typography>
 
               <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
